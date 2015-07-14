@@ -38,12 +38,25 @@ For instance, generating a Poisson disk sampling in 2D in the region [(-10, -10)
 using namespace std;
 typedef Vec<float, 2> Vec2f;
 
+// Setup input parameters.
 float radius = 2.f;
 Vec2f x_min(-10.f);
 Vec2f x_max(10.f);
 uint32_t max_sample_attempts = 30;
 uint32_t seed = 1981;
 
-vector<Vec2f> samples = poissonDiskSampling(radius, x_min, x_max, max_sample_attempts, seed);
+vector<Vec2f> samples = thinks::poissonDiskSampling(radius, x_min, x_max, max_sample_attempts, seed);
 ```
-For simplicity, reasonable default values for ```max_sample_attempts``` and ```seed``` are set if not provided, making these parameters optional.
+For simplicity, reasonable default values for ```max_sample_attempts``` and ```seed``` are set if not provided, making these last two parameters optional.
+
+## Running Tests
+
+Running the tests is even easier than using the actual function. Simply call the test method specifying the number of dimensions as a template parameter:
+```C++
+#include <thinks/testPoissonDiskSampling.hpp>
+
+bool success1 = thinks::testPoissonDiskSampling<1>();
+bool success2 = thinks::testPoissonDiskSampling<2>();
+bool success3 = thinks::testPoissonDiskSampling<3>();
+bool success4 = thinks::testPoissonDiskSampling<4>();
+```
