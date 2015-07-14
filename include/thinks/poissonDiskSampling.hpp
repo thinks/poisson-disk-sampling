@@ -138,8 +138,10 @@ V sampleAnnulus(const typename V::value_type radius, const V& center,
   typedef typename V::value_type ValueType;
   assert(seed != nullptr);
   V offset;
-  const auto rand_min = V(static_cast<ValueType>(-2));
-  const auto rand_max = V(static_cast<ValueType>(+2));
+  V rand_min;
+  V rand_max;
+  fill_n(&rand_min[0], array_size<V>::size, static_cast<ValueType>(-2));
+  fill_n(&rand_max[0], array_size<V>::size, static_cast<ValueType>(+2));
   for (;;) {
     // Generate a random component in the range [-2, 2] for each dimension.
     offset = arrayRangeRandHash(rand_min, rand_max, seed);
@@ -162,7 +164,7 @@ V sampleAnnulus(const typename V::value_type radius, const V& center,
   return sample;
 }
 
-//!
+//! Returns grid integer coordinates from a sample.
 template <typename V> inline
 std::array<IndexType, array_size<V>::size>
 gridIndexFromSample(const V& x_sample, const V& x_min,
@@ -193,19 +195,12 @@ bool exclusiveInside(const V& x_min, const V& x_max, const V& x)
   return true;
 }
 
-//! Returns a value in the range [@a min_val, @a max_val].
+//! Returns a value in the range [@a min_value, @a max_value].
 template <typename T> inline
 T clamp(const T min_value, const T max_value, const T value)
 {
-  if (value < min_value) {
-    return min_value;
-  }
-  else if (value > max_value) {
-    return max_value;
-  }
-  return value;
-  //return value < min_value ? min_value :
-  //  (value > max_value ? max_value : value);
+  return value < min_value ? min_value :
+    (value > max_value ? max_value : value);
 }
 
 //! Pseudo-erase the value at @a index in the vector @v. The vector @a v is
@@ -222,10 +217,27 @@ void eraseUnordered(const std::size_t index, std::vector<T>* v)
 
 } // namespace detail
 
+//! Returns a list of samples that are guaranteed to:
+//! * No two samples are closer to each other than radius.
+//! * No samples is outside the region [@a x_min, @a x_max].
 //!
+//! The type V is some vector implementation, an extremely simple example
+//! being:
 //!
+//! template <typename T, std::size_t N>
+//! class Vec
+//! {
+//! public:
+//!   typedef T value_type;
+//!   static const std::size_t size = N;
+//!   Vec() {}
+//!   T& operator[](std::size_t i) { return _data[i]; }
+//!   const T& operator[](std::size_t i) const { return _data[i]; }
+//! private:
+//!   T _data[N];
+//! };
 //!
-//!
+//! Note that the built-in std::array satisfies this interface.
 template <typename V> inline
 std::vector<V>
 poissonDiskSampling(const typename V::value_type radius,
@@ -239,8 +251,6 @@ poissonDiskSampling(const typename V::value_type radius,
   static_assert(is_floating_point<ValueType>::value,
                 "ValueType must be floating point");
 
-  std::ofstream ofs("C:/Users/thinks/Desktop/thinks.txt");
-
   vector<V> samples;
   vector<uint32_t> active_indices;
 
@@ -250,7 +260,6 @@ poissonDiskSampling(const typename V::value_type radius,
     static_cast<ValueType>(0.999) * radius /
       sqrt(static_cast<ValueType>(detail::array_size<V>::size));
   const auto dx_grid_inv = static_cast<ValueType>(1) / dx_grid;
-  ofs << "grid_dx: " << dx_grid << endl;
 
   // Compute grid dimensions using grid cell size.
   IndexV grid_dimensions;
@@ -268,30 +277,21 @@ poissonDiskSampling(const typename V::value_type radius,
     accumulate(begin(grid_dimensions), end(grid_dimensions),
                static_cast<size_t>(1), multiplies<size_t>());
   vector<int32_t> grid(grid_linear_size, -1);
-  ofs << "grid size: " << grid.size() << endl;
 
   // First sample.
   auto local_seed = seed;
   auto x_sample = detail::arrayRangeRandHash(x_min, x_max, &local_seed);
-  for (size_t i = 0; i < 2; ++i) {
-    ofs << "x[" << i << "]: " << x_sample[i] << endl;
-  }
   auto j = detail::gridIndexFromSample(x_sample, x_min, dx_grid_inv);
   samples.push_back(x_sample);
   active_indices.push_back(0);
   auto k = detail::linearIndex(grid_dimensions, j);
-  ofs << "k: " << k << endl;
   grid[k] = 0;
-
 
   while (!active_indices.empty()) {
     const auto rand_active_index = static_cast<size_t>(detail::rangeRandHash(
       static_cast<ValueType>(0),
       static_cast<ValueType>(active_indices.size() - 0.0001),
       local_seed++));
-    ofs << "active: " << active_indices.size()
-        << ", seed: " << local_seed
-        << ", r: " << rand_active_index << endl;
     const auto rand_sample_index = active_indices[rand_active_index];
     bool found_sample = false;
     IndexV j_min;
@@ -299,11 +299,6 @@ poissonDiskSampling(const typename V::value_type radius,
     for (uint32_t attempt = 0; attempt < max_sample_attempts; ++attempt) {
       x_sample = detail::sampleAnnulus(radius, samples[rand_sample_index],
                                        &local_seed);
-      ofs << "  attempt: " << attempt << ", ";
-      for (size_t i =0; i < 2; ++i) {
-        ofs << "x[" << i << "]: " << x_sample[i] << ", ";
-      }
-      ofs << endl;
       // Check if sample is within bounds.
       if (!detail::exclusiveInside(x_min, x_max, x_sample)) {
         goto reject_sample;
@@ -322,14 +317,6 @@ poissonDiskSampling(const typename V::value_type radius,
           static_cast<int32_t>(
             (x_sample[i] - x_min[i] + radius) * dx_grid_inv)));
       }
-      for (size_t i =0; i < 2; ++i) {
-        ofs << "  j_min[" << i << "]: " << j_min[i] << ", ";
-      }
-      ofs << endl;
-      for (size_t i =0; i < 2; ++i) {
-        ofs << "  j_max[" << i << "]: " << j_max[i] << ", ";
-      }
-      ofs << endl;
 
       for (j = j_min;;) {
         // check if there's a sample at j that's too close to x
@@ -362,27 +349,26 @@ poissonDiskSampling(const typename V::value_type radius,
       // candidate, no further attempts necessary.
       done_j_loop:
       found_sample = true;
-      ofs << "    done_j, found: " << found_sample << endl;
       break;
 
       // The current candidate is too close to an existing sample,
       // move on to next attempt.
       reject_sample:
-      ofs << "    reject, found: " << found_sample << endl;
       ;
     }
 
     if (found_sample) {
-       const auto q = samples.size(); // New sample index.
-       samples.push_back(x_sample);
-       active_indices.push_back(q);
-       j = detail::gridIndexFromSample(x_sample, x_min, dx_grid_inv);
-       k = detail::linearIndex(grid_dimensions, j);
-       grid[k] = static_cast<int32_t>(q);
+      const auto q = samples.size(); // New sample index.
+      samples.push_back(x_sample);
+      active_indices.push_back(q);
+      j = detail::gridIndexFromSample(x_sample, x_min, dx_grid_inv);
+      k = detail::linearIndex(grid_dimensions, j);
+      grid[k] = static_cast<int32_t>(q);
     }
     else {
-       // since we couldn't find a sample on p's disk, we remove p from the active list
-       detail::eraseUnordered(rand_active_index, &active_indices);
+      // No valid sample was found on the disk of the current sample,
+      // remove the current sample from the active list.
+      detail::eraseUnordered(rand_active_index, &active_indices);
     }
   }
 
