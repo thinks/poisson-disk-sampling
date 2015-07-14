@@ -1,6 +1,6 @@
 # Poisson Disk Sampling
 
-This repository contains a [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poissonDiskSampling.hpp) library for generating Poisson disk samplings in any dimension. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is itself heavily based on the [public domain example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
+This repository contains a [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poissonDiskSampling.hpp) library for generating Poisson disk samplings in for an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is itself heavily based on the [public domain example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
 
 ## Contributions
 
@@ -21,7 +21,6 @@ public:
   typedef T value_type;
   static const std::size_t size = N;
   Vec() {}
-  Vec(T x) { std::fill_n(_data, N, x); }
   T& operator[](std::size_t i) { return _data[i]; }
   const T& operator[](std::size_t i) const { return _data[i]; }
 private:
