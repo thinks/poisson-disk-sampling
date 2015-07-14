@@ -47,7 +47,7 @@ uint32_t seed = 1981;
 
 vector<Vec2f> samples = thinks::poissonDiskSampling(radius, x_min, x_max, max_sample_attempts, seed);
 ```
-For simplicity, reasonable default values for ```max_sample_attempts``` and ```seed``` are set if not provided, making these last two parameters optional. Also, worth noting is that the built-in type ```std::array``` can be used as a vector type for those not interested in rolling their own (or have a suitable one lying around).
+For simplicity, reasonable default values for ```max_sample_attempts``` and ```seed``` are set if not provided, making these last two parameters optional. Also, worth noting is that the built-in type ```std::array``` can be used as a vector type for those not interested in rolling their own (or don't have a suitable one lying around).
 ```C++
 #include <array>
 #include <thinks/poissonDiskSampling.hpp>
