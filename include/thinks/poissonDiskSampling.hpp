@@ -237,7 +237,8 @@ void eraseUnordered(const std::size_t index, std::vector<T>* v)
 //!   T _data[N];
 //! };
 //!
-//! Note that the built-in std::array satisfies this interface.
+//! Note that the built-in std::array satisfies this interface (apart from
+//! the static size constant which is handled separately).
 template <typename V> inline
 std::vector<V>
 poissonDiskSampling(const typename V::value_type radius,
