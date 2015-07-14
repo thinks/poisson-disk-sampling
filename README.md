@@ -39,8 +39,12 @@ typedef Vec<float, 2> Vec2f;
 
 // Setup input parameters.
 float radius = 2.f;
-Vec2f x_min(-10.f);
-Vec2f x_max(10.f);
+Vec2f x_min;
+x_min[0] = -10.f;
+x_min[1] = -10.f;
+Vec2f x_max;
+x_max[0] = 10.f;
+x_max[1] = 10.f;
 uint32_t max_sample_attempts = 30;
 uint32_t seed = 1981;
 
