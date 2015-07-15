@@ -320,7 +320,8 @@ poissonDiskSampling(const typename V::value_type radius,
       }
 
       for (j = j_min;;) {
-        // check if there's a sample at j that's too close to x
+        // Check if there's a sample at j that's too close to the current
+        // candidate.
         k = detail::linearIndex(grid_dimensions, j);
         if (grid[k] >= 0 && grid[k] != rand_sample_index) {
           // if there is a sample point different from p
@@ -329,7 +330,7 @@ poissonDiskSampling(const typename V::value_type radius,
             goto reject_sample;
           }
         }
-        // move on to next j
+        // Move on to next j.
         for (size_t i = 0; i < detail::array_size<V>::size; ++i) {
           ++j[i];
           if (j[i] <= j_max[i]) {
@@ -340,7 +341,7 @@ poissonDiskSampling(const typename V::value_type radius,
               goto done_j_loop;
             }
             else {
-              j[i] = j_min[i]; // and try incrementing the next dimension along
+              j[i] = j_min[i];
             }
           }
         }
