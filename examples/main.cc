@@ -3,10 +3,15 @@
 // found in the top-level directory of this distribution.
 
 #include <json_example.h>
+#include <simple_example.h>
+#include <vec_example.h>
+
 
 int main(int argc, char* argv[])
 {
-  examples::JsonExample("D:/tmp/pds_example.json");
+  examples::JsonExample("./json_example.json");
+  examples::SimpleExample("./simple_example.txt");
+  examples::VecExample("./vec_example");
 
   return 0;
 }

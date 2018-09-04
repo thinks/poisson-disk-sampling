@@ -4,27 +4,15 @@
 
 #include <json_example.h>
 
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <fstream>
+#include <iomanip>
+
 #include <nlohmann/json.hpp>
 
 #include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
-
-
-namespace {
-
-template <typename T, std::size_t N>
-class Vec
-{
-public:
-  typedef T value_type;
-  static const std::size_t size = N;
-  Vec() {}
-  T& operator[](std::size_t i) { return _data[i]; }
-  const T& operator[](std::size_t i) const { return _data[i]; }
-private:
-  T _data[N];
-};
-
-} // namespace
 
 
 namespace examples {
@@ -32,20 +20,31 @@ namespace examples {
 void JsonExample(const std::string& filename)
 {
   namespace pds = thinks::poisson_disk_sampling;
+  using json = nlohmann::json;
 
-  typedef Vec<float, 2> Vec2f;
+  auto radius = 4.f;
+  auto x_min = std::array<float, 2>{ -10.f, -10.f };
+  auto x_max = std::array<float, 2>{ 10.f, 10.f };
+  constexpr auto max_sample_attempts = std::uint32_t{ 30 };
+  constexpr auto seed = std::uint32_t{ 1981 };
 
-  float radius = 2.f;
-  Vec2f x_min;
-  x_min[0] = -10.f;
-  x_min[1] = -10.f;
-  Vec2f x_max;
-  x_max[0] = 10.f;
-  x_max[1] = 10.f;
-  uint32_t max_sample_attempts = 30;
-  uint32_t seed = 1981;
+  auto samples = pds::PoissonDiskSampling(
+    radius, 
+    x_min, 
+    x_max, 
+    max_sample_attempts, 
+    seed);
 
-  //auto samples = pds::PoissonDiskSampling(radius, x_min, x_max, max_sample_attempts, seed);
+  json j;
+  j["min"] = x_min;// { x_min[0], x_min[1] };
+  j["max"] = x_max;// { x_max[0], x_max[1] };
+  j["radius"] = radius;
+  j["samples"] = samples;
+
+  auto ofs = std::ofstream(filename);
+  assert(ofs);
+  ofs << std::setw(4) << j;
+  ofs.close();
 }
 
 } // namespace examples
