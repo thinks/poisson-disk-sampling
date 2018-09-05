@@ -11,6 +11,7 @@
 #include <catch.hpp>
 
 #include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
+#include <utils/catch_utils.h>
 
 namespace pds = thinks::poisson_disk_sampling;
 
@@ -68,7 +69,8 @@ typename VecTraitsT::ValueType SquaredDistance(
   const VecT& u, 
   const VecT& v)
 {
-  static_assert(VecTraitsT::kSize > 0, "todo");
+  static_assert(VecTraitsT::kSize >= 1, 
+    "vec dimensionality must be >= 1");
 
   auto d = squared(VecTraitsT::Get(u, 0) - VecTraitsT::Get(v, 0));
   for (auto i = std::size_t{ 1 }; i < VecTraitsT::kSize; ++i) {
@@ -220,7 +222,7 @@ struct VecTraits<Vec4<T>>
 } // namespace thinks
 
 
-TEST_CASE("Test samples <std::array>", "[Container]")
+TEST_CASE("Test samples <std::array>", "[container]")
 {
   SECTION("N = 2")
   {
@@ -240,7 +242,7 @@ TEST_CASE("Test samples <std::array>", "[Container]")
 }
 
 
-TEST_CASE("Test samples <Vec>", "[Container]")
+TEST_CASE("Test samples <Vec>", "[container]")
 {
   SECTION("N = 2")
   {
@@ -259,5 +261,51 @@ TEST_CASE("Test samples <Vec>", "[Container]")
     typedef Vec4<float> VecType;
     TestPoissonDiskSampling<float, 4, VecType>();
     TestPoissonDiskSampling<double, 4, VecType>();
+  }
+}
+
+
+TEST_CASE("Invalid arguments", "[container]")
+{
+  SECTION("Negative radius")
+  {
+    // Strange work-around for catch framework.
+    REQUIRE_THROWS_MATCHES(
+      (TestPoissonDiskSampling<float, 2>(-1.f)),
+      std::invalid_argument,
+      utils::ExceptionContentMatcher{ "radius must be positive, was -1" });
+  }
+
+  SECTION("Min >= max")
+  {
+    // Not relevant here.
+    constexpr auto radius = 1.f;
+    constexpr auto x_min_value = 10.f;
+    constexpr auto x_max_value = -10.f;
+
+    // Strange work-around for catch framework.
+    REQUIRE_THROWS_MATCHES(
+      (TestPoissonDiskSampling<float, 2>(radius, x_min_value, x_max_value)),
+      std::invalid_argument,
+      utils::ExceptionContentMatcher{ 
+        "invalid bounds - max must be greater than min, was min: [10, 10], max: [-10, -10]" });
+  }
+
+  SECTION("Zero sample attempts")
+  {
+    // Not relevant here.
+    constexpr auto radius = 1.f;
+    constexpr auto x_min_value = -10.f;
+    constexpr auto x_max_value = 10.f;
+
+    constexpr auto max_sample_attempts = std::uint32_t{ 0 };
+
+    // Strange work-around for catch framework.
+    REQUIRE_THROWS_MATCHES(
+      (TestPoissonDiskSampling<float, 2>(radius, x_min_value, x_max_value,
+        max_sample_attempts)),
+      std::invalid_argument,
+      utils::ExceptionContentMatcher{ 
+        "max sample attempts must be greater than zero, was 0" });
   }
 }

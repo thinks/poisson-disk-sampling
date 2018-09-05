@@ -13,6 +13,7 @@
 #include <functional>
 #include <limits>
 #include <numeric>
+#include <sstream>
 #include <vector>
 
 namespace thinks {
@@ -404,6 +405,71 @@ Grid<FloatT, N> MakeGrid(
 } // namespace grid
 
 
+template <typename FloatT>
+void ThrowIfInvalidRadius(const FloatT radius)
+{
+  if (!(radius > FloatT{ 0 })) {
+    auto oss = std::ostringstream{};
+    oss << "radius must be positive, was " << radius;
+    throw std::invalid_argument(oss.str());
+  }
+}
+
+
+template <typename FloatT, std::size_t N>
+void ThrowIfInvalidBounds(
+  const std::array<FloatT, N>& x_min,
+  const std::array<FloatT, N>& x_max)
+{
+  constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
+  static_assert(kDims >= 1, "bounds dimensionality must be >= 1");
+
+  auto i = std::size_t{ 0 };
+  for (; i < kDims; ++i) {
+    if (!(x_max > x_min)) {
+      break;
+    }
+  }
+
+  if (i < kDims) {
+    auto oss_min = std::ostringstream{};
+    auto oss_max = std::ostringstream{};
+    oss_min << "[";
+    oss_max << "[";
+    for (auto j = std::size_t{ 0 }; j < kDims; ++j) {
+      oss_min << x_min[j];
+      oss_max << x_max[j];
+      if (j != kDims - 1) {
+        oss_min << ", ";
+        oss_max << ", ";
+      }
+    }
+    oss_min << "]";
+    oss_max << "]";
+
+    auto oss = std::ostringstream{};
+    oss << "invalid bounds - max must be greater than min, was " 
+      << "min: " << oss_min.str() << ", "
+      << "max: " << oss_max.str();
+
+    throw std::invalid_argument(oss.str());
+  }
+}
+
+
+inline
+void ThrowIfInvalidMaxSampleAttempts(
+  const std::uint32_t max_sample_attempts)
+{
+  if (!(max_sample_attempts > 0)) {
+    auto oss = std::ostringstream{};
+    oss << "max sample attempts must be greater than zero, was " 
+      << max_sample_attempts;
+    throw std::invalid_argument(oss.str());
+  }
+}
+
+
 template <typename VecT>
 struct ActiveSample
 {
@@ -618,11 +684,10 @@ std::vector<VecT> PoissonDiskSampling(
   static_assert(std::is_floating_point<FloatT>::value,
     "FloatT must be floating point");
 
-  // Check 
-  // - radius > 0
-  // - min < max
-  // - max_sample_attempts > 0
-
+  // Validate input.
+  ThrowIfInvalidRadius(radius);
+  ThrowIfInvalidBounds(x_min, x_max);
+  ThrowIfInvalidMaxSampleAttempts(max_sample_attempts);
 
   // Acceleration grid.
   auto grid = detail::grid::MakeGrid(radius, x_min, x_max);

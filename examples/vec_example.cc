@@ -28,14 +28,12 @@ struct MyVecTraits
 
   static constexpr auto kSize = 3;
 
-  static 
-    ValueType Get(const Vec3& v, const std::size_t i)
+  static ValueType Get(const Vec3& v, const std::size_t i)
   {
     return *(&v.x + i);
   }
 
-  static 
-    void Set(Vec3* const v, const std::size_t i, const ValueType val)
+  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
   {
     *(&v->x + i) = val;
   }
@@ -96,14 +94,12 @@ struct VecTraits<Vec3>
 
   static constexpr auto kSize = 3;
 
-  static 
-  ValueType Get(const Vec3& v, const std::size_t i)
+  static ValueType Get(const Vec3& v, const std::size_t i)
   {
     return *(&v.x + i);
   }
 
-  static 
-  void Set(Vec3* const v, const std::size_t i, const ValueType val)
+  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
   {
     *(&v->x + i) = val;
   }
