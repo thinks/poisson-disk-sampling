@@ -4,14 +4,16 @@
 
 #include <json_example.h>
 #include <simple_example.h>
-#include <vec_example.h>
+#include <vec_traits_in_namespace_example.h>
+#include <vec_traits_passed_in_example.h>
 
 
 int main(int argc, char* argv[])
 {
   examples::JsonExample("./json_example.json");
   examples::SimpleExample("./simple_example.txt");
-  examples::VecExample("./vec_example");
+  examples::VecTraitsInNamespaceExample("./vec_traits_in_namespace_example.txt");
+  examples::VecTraitsPassedInExample("./vec_traits_passed_in_example.txt");
 
   return 0;
 }

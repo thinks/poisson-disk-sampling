@@ -1,14 +1,14 @@
 # Poisson Disk Sampling
 
-This repository contains a [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poissonDiskSampling.hpp) library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is itself heavily based on the [public domain example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
+This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poissonDiskSampling.hpp), header only, no dependencies, library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is itself heavily based on the [public domain example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
 
 ## Contributions
 
 This repository contributes the following improvements compared to the public domain code released by the original author:
-* The code is self-contained in a [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poissonDiskSampling.hpp) file.
-* The code is placed in a namespace (```thinks::```)
+* The code is self-contained in a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h).
+* The code is placed in a namespace (```thinks::poisson_disk_sampling```)
 * The code relies almost only on built-in types and enables the user to easily inject the necessary types (see examples below).
-* A framework agnostic set of [tests](https://github.com/thinks/poisson-disk-sampling/blob/master/test/include/thinks/testPoissonDiskSampling.hpp) have been added so that stability can be measured in the future.
+* A set of [tests](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) have been added so that stability can be ensured. The tests are implemented in the [Catch2](https://github.com/catchorg/Catch2) framework.
 
 ## Example Usage
 
@@ -67,12 +67,16 @@ vector<Vec2f> samples = thinks::poissonDiskSampling(radius, x_min, x_max);
 
 ## Running Tests
 
-Running the tests is even easier than using the actual function. Simply call the test method specifying the number of dimensions as a template parameter:
-```C++
-#include <thinks/testPoissonDiskSampling.hpp>
+The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. A snapshot of the [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/test/catch2/catch.hpp) version of Catch2 is included in this repository. 
 
-bool success1 = thinks::testPoissonDiskSampling<1>();
-bool success2 = thinks::testPoissonDiskSampling<2>();
-bool success3 = thinks::testPoissonDiskSampling<3>();
-bool success4 = thinks::testPoissonDiskSampling<4>();
+Running the tests using [CTest](https://cmake.org/home/) is simple. In a terminal do the following (and similar for `Debug`):
+```bash
+$ cd d:
+$ git clone git@github.com:/thinks/poisson-disk-sampling.git D:/pds
+$ mkdir build-pds
+$ cd build-pds
+$ cmake ../pds
+$ cmake --build . --config Release
+$ ctest . -C Release
 ```
+For more detailed test output locate the test executable (_thinks_poisson_disk_sampling_test.exe_) in the build tree and run it directly.

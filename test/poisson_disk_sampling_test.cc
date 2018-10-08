@@ -8,7 +8,7 @@
 #include <iostream> // tmp?!?!
 #include <vector>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
 #include <utils/catch_utils.h>
@@ -269,7 +269,7 @@ TEST_CASE("Invalid arguments", "[container]")
 {
   SECTION("Negative radius")
   {
-    // Strange work-around for catch framework.
+    // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
       (TestPoissonDiskSampling<float, 2>(-1.f)),
       std::invalid_argument,
@@ -280,10 +280,11 @@ TEST_CASE("Invalid arguments", "[container]")
   {
     // Not relevant here.
     constexpr auto radius = 1.f;
+
     constexpr auto x_min_value = 10.f;
     constexpr auto x_max_value = -10.f;
 
-    // Strange work-around for catch framework.
+    // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
       (TestPoissonDiskSampling<float, 2>(radius, x_min_value, x_max_value)),
       std::invalid_argument,
@@ -300,7 +301,7 @@ TEST_CASE("Invalid arguments", "[container]")
 
     constexpr auto max_sample_attempts = std::uint32_t{ 0 };
 
-    // Strange work-around for catch framework.
+    // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
       (TestPoissonDiskSampling<float, 2>(radius, x_min_value, x_max_value,
         max_sample_attempts)),
