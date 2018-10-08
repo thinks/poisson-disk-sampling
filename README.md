@@ -7,9 +7,9 @@ All code in this repository is released under the [MIT license](https://en.wikip
 ## Contributions
 
 This repository contributes the following improvements compared to the public domain code released by the original author:
-* The code is self-contained in a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h).
-* The code is placed in a namespace (```thinks::poisson_disk_sampling```)
-* The code relies almost only on built-in types and enables the user to easily inject the necessary types (see examples below).
+* The code is in a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
+* The code is in a namespace (```thinks::poisson_disk_sampling```)
+* The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
 * A set of [tests](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) have been added so that stability can be ensured. The tests are implemented in the [Catch2](https://github.com/catchorg/Catch2) framework.
 
 ## Example Usage
