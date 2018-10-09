@@ -2,8 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef THINKS_POISSONDISKSAMPLING_HPP_INCLUDED
-#define THINKS_POISSONDISKSAMPLING_HPP_INCLUDED
+#ifndef THINKS_POISSON_DISK_SAMPLING_POISSON_DISK_SAMPLING_H_INCLUDED
+#define THINKS_POISSON_DISK_SAMPLING_POISSON_DISK_SAMPLING_H_INCLUDED
 
 #include <algorithm>
 #include <array>
@@ -652,10 +652,30 @@ bool ExistingSampleWithinRadius(
 } // namespace detail
 
 
+/*!
+Generic template for vector traits. Users may specialize this template
+for their own classes. 
+
+Specializations must have the following static interface.
+
+struct MyVecTraits<MyVec>
+{
+  typedef ... ValueType
+  static constexpr std::size_t kSize = ...
+
+  static ValueType Get(const MyVec&, std::size_t)
+  static void Get(MyVec* const, std::size_t, ValueType)
+}
+
+See specialization for std::array below as an example.
+*/
 template <typename VecT>
 struct VecTraits;
 
 
+/*!
+Specialization of vector traits for std::array.
+*/
 template <typename FloatT, std::size_t N>
 struct VecTraits<std::array<FloatT, N>>
 {
@@ -789,4 +809,4 @@ std::vector<VecT> PoissonDiskSampling(
 } // namespace poisson_disk_sampling
 } // namespace thinks
 
-#endif // THINKS_POISSONDISKSAMPLING_HPP_INCLUDED
+#endif // THINKS_POISSON_DISK_SAMPLING_POISSON_DISK_SAMPLING_H_INCLUDED
