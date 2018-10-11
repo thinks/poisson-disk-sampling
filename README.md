@@ -1,6 +1,6 @@
 # Poisson Disk Sampling
 
-This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h), header-only, no dependencies, C++ library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is based on the [public domain example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
+This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h), header-only, no dependencies, C++ library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is based on the public domain [example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
 
 All code in this repository is released under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
@@ -8,11 +8,11 @@ All code in this repository is released under the [MIT license](https://en.wikip
 
 This repository contributes the following improvements compared to the public domain code released by the original author:
 * The code is in a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
-* The code is in a namespace (```thinks::poisson_disk_sampling```)
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
-* A set of [tests](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) have been added so that stability can be ensured. The tests are implemented in the [Catch2](https://github.com/catchorg/Catch2) framework.
+* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) and section below).
+* The code is in a namespace (```thinks::poisson_disk_sampling```)
 
-## Example Usage
+## Usage
 
 Calling the Poisson disk sampling function is fairly straight-forward. Input is taken in the form of min/max coordinates in the relevant number of dimensions. The resulting sampling is returned as a set of points in that same dimensionality. The vector class used to specify the min/max bounds also determines the type of the returned points. Care has been taken to make sure that the required interface of this vector class is as minimal as possible. The following extremely simple vector class is sufficient:
 ```C++
@@ -67,7 +67,7 @@ array<float, 2> x_max = { 10.f, 10.f };
 vector<Vec2f> samples = thinks::poissonDiskSampling(radius, x_min, x_max);
 ```
 
-## Running Tests
+## Tests
 
 The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. A snapshot of the [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/test/catch2/catch.hpp) version of Catch2 is included in this repository. 
 
