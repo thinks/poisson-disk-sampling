@@ -700,27 +700,11 @@ struct VecTraits<std::array<FloatT, N>>
 };
 
 
-//! Returns a list of samples that are guaranteed to:
-//! * No two samples are closer to each other than @a radius.
-//! * No sample is outside the region [@a x_min, @a x_max].
-//!
-//! The type V is some vector implementation, an extremely simple example
-//! being:
-//!
-//! template <typename T, std::size_t N>
-//! struct Vec
-//! {
-//!   typedef T value_type;
-//!   static constexpr std::size_t size = N;
-//!   Vec() {}
-//!   T& operator[](std::size_t i) { return _data[i]; }
-//!   const T& operator[](std::size_t i) const { return _data[i]; }
-//! private:
-//!   T _data[N];
-//! };
-//!
-//! Note that the built-in std::array satisfies this interface (apart from
-//! the static size constant which is handled separately).
+/*! 
+Returns a list of samples that are guaranteed to:
+  * No two samples are closer to each other than radius.
+  * No sample is outside the region [x_min, x_max].
+*/
 template <
   typename FloatT, 
   std::size_t N, 
