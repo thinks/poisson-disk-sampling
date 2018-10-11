@@ -22,11 +22,16 @@ Poisson disk sampling aims to generate a set of samples within a bounded region 
 
 namespace pds = thinks::poisson_disk_sampling;
 
-constexpr auto radius = 2.f;
+// Input parameters.
+constexpr auto radius = 3.f;
 const auto x_min = std::array<float, 2>{{ -10.f, -10.f }};
 const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
+
+// Samples returned as std::vector<std::array<float, 2>>.
 const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
 ```
+The code snippet above generates a set of points in the range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results. On the right-hand side the radius has been plotted to illustrate the distance separating the points.
+![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/simple_example.png "Simple example")
 
 
 

@@ -22,11 +22,11 @@ void JsonExample(const std::string& filename)
   namespace pds = thinks::poisson_disk_sampling;
   using json = nlohmann::json;
 
-  auto radius = 4.f;
+  auto radius = 3.f;
   auto x_min = std::array<float, 2>{ -10.f, -10.f };
   auto x_max = std::array<float, 2>{ 10.f, 10.f };
   constexpr auto max_sample_attempts = std::uint32_t{ 30 };
-  constexpr auto seed = std::uint32_t{ 1981 };
+  constexpr auto seed = std::uint32_t{ 0 };
 
   auto samples = pds::PoissonDiskSampling(
     radius, 
