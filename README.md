@@ -73,7 +73,7 @@ std::vector<Vec3> Foo()
 {
   namespace pds = thinks::poisson_disk_sampling;
 
-  constexpr auto radius = 2.f;
+  constexpr auto radius = 3.f;
   const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
   const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
   const auto samples = 
@@ -82,8 +82,53 @@ std::vector<Vec3> Foo()
   return samples;
 }
 ```
+The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type.
+```C++
+struct Vec3
+{
+  float x;
+  float y;
+  float z;
+};
 
+namespace thinks {
+namespace poisson_disk_sampling {
 
+template<>
+struct VecTraits<Vec3>
+{
+  typedef float ValueType;
+
+  static constexpr auto kSize = 3;
+
+  static ValueType Get(const Vec3& v, const std::size_t i)
+  {
+    return *(&v.x + i);
+  }
+
+  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
+  {
+    *(&v->x + i) = val;
+  }
+};
+
+} // namespace poisson_disk_sampling
+} // namespace thinks
+
+std::vector<Vec3> Foo()
+{
+  namespace pds = thinks::poisson_disk_sampling;
+
+  constexpr auto radius = 3.f;
+  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
+  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
+
+  // No need to explicitly specify traits here.
+  const auto samples = pds::PoissonDiskSampling<float, 3, Vec3>(
+    radius, x_min, x_max);
+  return samples;
+}
+```
 
 ## Tests
 
