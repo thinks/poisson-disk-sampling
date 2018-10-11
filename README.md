@@ -31,6 +31,7 @@ std::vector<std::array<float, 2>> Foo()
   const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
 
   // Samples returned as std::vector<std::array<float, 2>>.
+  // Default seed and max attempts.
   const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
   return samples;
 }
@@ -39,11 +40,11 @@ The code snippet above generates a set of points in the range [-10, 10] separate
 
 ![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/simple_example.png "Simple example")
 
-There are two additional parameters of the `PoissonDiskSampling` function, `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. The images below illustrates the effect of varying `seed` and `max_sample_attempts`. 
+There are two additional parameters of the `PoissonDiskSampling` function: `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. Both `seed` and `max_sample_attempts` have reasonable default values so they need not always be specified. The images below illustrates the effect of varying `seed` and `max_sample_attempts`. 
 
 ![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/seed_and_attempts.png "Seed and attempts")
 
-By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner array has the same type as those used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type.
+By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type.
 ```C++
 struct Vec3
 {
