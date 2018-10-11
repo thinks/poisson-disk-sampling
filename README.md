@@ -14,6 +14,22 @@ This repository contributes the following improvements compared to the public do
 
 ## Usage
 
+Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
+```C++
+#include <array>
+
+#include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
+
+namespace pds = thinks::poisson_disk_sampling;
+
+constexpr auto radius = 2.f;
+const auto x_min = std::array<float, 2>{{ -10.f, -10.f }};
+const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
+const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
+```
+
+
+
 Calling the Poisson disk sampling function is fairly straight-forward. Input is taken in the form of min/max coordinates in the relevant number of dimensions. The resulting sampling is returned as a set of points in that same dimensionality. The vector class used to specify the min/max bounds also determines the type of the returned points. Care has been taken to make sure that the required interface of this vector class is as minimal as possible. The following extremely simple vector class is sufficient:
 ```C++
 template <typename T, std::size_t N>
