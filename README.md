@@ -17,82 +17,73 @@ This repository contributes the following improvements compared to the public do
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
 ```C++
 #include <array>
+#include <vector>
 
 #include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
 
-namespace pds = thinks::poisson_disk_sampling;
+std::vector<std::array<float, 2>> Foo()
+{
+  namespace pds = thinks::poisson_disk_sampling;
 
-// Input parameters.
-constexpr auto radius = 3.f;
-const auto x_min = std::array<float, 2>{{ -10.f, -10.f }};
-const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
+  // Input parameters.
+  constexpr auto radius = 3.f;
+  const auto x_min = std::array<float, 2>{{ -10.f, -10.f }};
+  const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
 
-// Samples returned as std::vector<std::array<float, 2>>.
-const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
+  // Samples returned as std::vector<std::array<float, 2>>.
+  const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
+  return samples;
+}
 ```
 The code snippet above generates a set of points in the range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results. On the right-hand side the radius has been plotted to illustrate the distance separating the points. Here it is clear that each circle contains only a single point.
 
 ![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/simple_example.png "Simple example")
 
-There are two additional parameters of the `PoissonDiskSampling` function, `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling, at the cost of computation time. The images below illustrates the effect of varying `seed` and `max_sample_attempts`. 
+There are two additional parameters of the `PoissonDiskSampling` function, `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. The images below illustrates the effect of varying `seed` and `max_sample_attempts`. 
 
 ![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/seed_and_attempts.png "Seed and attempts")
 
-
-
-
-Calling the Poisson disk sampling function is fairly straight-forward. Input is taken in the form of min/max coordinates in the relevant number of dimensions. The resulting sampling is returned as a set of points in that same dimensionality. The vector class used to specify the min/max bounds also determines the type of the returned points. Care has been taken to make sure that the required interface of this vector class is as minimal as possible. The following extremely simple vector class is sufficient:
+By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner array has the same type as those used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type.
 ```C++
-template <typename T, std::size_t N>
-class Vec
+struct Vec3
 {
-public:
-  typedef T value_type;
-  static const std::size_t size = N;
-  Vec() {}
-  T& operator[](std::size_t i) { return _data[i]; }
-  const T& operator[](std::size_t i) const { return _data[i]; }
-private:
-  T _data[N];
+  float x;
+  float y;
+  float z;
 };
+
+struct Vec3Traits
+{
+  typedef float ValueType;
+
+  static constexpr auto kSize = 3;
+
+  static ValueType Get(const Vec3& v, const std::size_t i)
+  {
+    return *(&v.x + i);
+  }
+
+  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
+  {
+    *(&v->x + i) = val;
+  }
+};
+
+std::vector<Vec3> Foo()
+{
+  namespace pds = thinks::poisson_disk_sampling;
+
+  constexpr auto radius = 2.f;
+  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
+  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
+  const auto samples = 
+    pds::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
+      radius, x_min, x_max);
+  return samples;
+}
 ```
 
-For instance, generating a Poisson disk sampling in 2D in the region [(-10, -10), (10, 10)] could be done with the following lines of code:
-```C++
-#include <cstdint>
-#include <vector>
-#include <thinks/poissonDiskSampling.hpp>
 
-using namespace std;
-typedef Vec<float, 2> Vec2f;
-
-// Setup input parameters.
-float radius = 2.f;
-Vec2f x_min;
-x_min[0] = -10.f;
-x_min[1] = -10.f;
-Vec2f x_max;
-x_max[0] = 10.f;
-x_max[1] = 10.f;
-uint32_t max_sample_attempts = 30;
-uint32_t seed = 1981;
-
-vector<Vec2f> samples = thinks::poissonDiskSampling(radius, x_min, x_max, max_sample_attempts, seed);
-```
-For simplicity, reasonable default values for ```max_sample_attempts``` and ```seed``` are set if not provided, making these last two parameters optional. Also, worth noting is that the built-in type ```std::array``` can be used as a vector type for those not interested in rolling their own (or don't have a suitable one lying around).
-```C++
-#include <array>
-#include <thinks/poissonDiskSampling.hpp>
-
-using namespace std;
-
-// Setup input parameters.
-float radius = 2.f;
-array<float, 2> x_min = { -10.f, -10.f };
-array<float, 2> x_max = { 10.f, 10.f };
-
-vector<Vec2f> samples = thinks::poissonDiskSampling(radius, x_min, x_max);
-```
 
 ## Tests
 
