@@ -30,8 +30,14 @@ const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
 // Samples returned as std::vector<std::array<float, 2>>.
 const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
 ```
-The code snippet above generates a set of points in the range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results. On the right-hand side the radius has been plotted to illustrate the distance separating the points.
+The code snippet above generates a set of points in the range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results. On the right-hand side the radius has been plotted to illustrate the distance separating the points. Here it is clear that each circle contains only a single point.
+
 ![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/simple_example.png "Simple example")
+
+There are two additional parameters of the `PoissonDiskSampling` function, `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling, at the cost of computation time. The images below illustrates the effect of varying `seed` and `max_sample_attempts`. 
+
+![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/seed_and_attempts.png "Seed and attempts")
+
 
 
 
