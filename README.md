@@ -44,7 +44,7 @@ There are two additional parameters of the `PoissonDiskSampling` function: `seed
 
 ![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/seed_and_attempts.png "Seed and attempts")
 
-By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type.
+By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type, as in function `Foo` in the snippet below. The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type, as in function `Bar` below.
 ```C++
 struct Vec3
 {
@@ -68,28 +68,6 @@ struct Vec3Traits
   {
     *(&v->x + i) = val;
   }
-};
-
-std::vector<Vec3> Foo()
-{
-  namespace pds = thinks::poisson_disk_sampling;
-
-  constexpr auto radius = 3.f;
-  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
-  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
-  const auto samples = 
-    pds::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
-      radius, x_min, x_max);
-  return samples;
-}
-```
-The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type.
-```C++
-struct Vec3
-{
-  float x;
-  float y;
-  float z;
 };
 
 namespace thinks {
@@ -123,13 +101,27 @@ std::vector<Vec3> Foo()
   constexpr auto radius = 3.f;
   const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
   const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
+  
+  // Explicitly passing in our own traits class.
+  const auto samples = 
+    pds::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
+      radius, x_min, x_max);
+  return samples;
+}
+
+std::vector<Vec3> Bar()
+{
+  namespace pds = thinks::poisson_disk_sampling;
+
+  constexpr auto radius = 3.f;
+  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
+  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
 
   // No need to explicitly specify traits here.
   const auto samples = pds::PoissonDiskSampling<float, 3, Vec3>(
     radius, x_min, x_max);
   return samples;
 }
-```
 
 ## Tests
 
