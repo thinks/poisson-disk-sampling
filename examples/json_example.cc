@@ -36,8 +36,8 @@ void JsonExample(const std::string& filename)
     seed);
 
   json j;
-  j["min"] = x_min;// { x_min[0], x_min[1] };
-  j["max"] = x_max;// { x_max[0], x_max[1] };
+  j["min"] = x_min;
+  j["max"] = x_max;
   j["radius"] = radius;
   j["samples"] = samples;
 
