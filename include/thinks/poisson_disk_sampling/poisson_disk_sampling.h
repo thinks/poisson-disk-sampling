@@ -37,7 +37,7 @@ T clamp(const T min_value, const T max_value, const T value)
 
 
 /*!
-Returns x squared, without checking for overflow.
+Returns x squared (not checking for overflow).
 */
 template <typename T> T squared(const T x) { return x * x; }
 
