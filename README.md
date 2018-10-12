@@ -122,6 +122,7 @@ std::vector<Vec3> Bar()
     radius, x_min, x_max);
   return samples;
 }
+```
 
 ## Tests
 
