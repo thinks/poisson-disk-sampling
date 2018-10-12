@@ -40,7 +40,7 @@ The code snippet above generates a set of points in the range [-10, 10] separate
 
 ![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/simple_example.png "Simple example")
 
-There are two additional parameters of the `PoissonDiskSampling` function: `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. Both `seed` and `max_sample_attempts` have reasonable default values so they need not always be specified. The images below illustrates the effect of varying `seed` and `max_sample_attempts`. 
+There are two additional parameters of the `PoissonDiskSampling` function: `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. Both `seed` and `max_sample_attempts` have reasonable default values so they need not always be specified. The images below illustrate the effect of varying `seed` and `max_sample_attempts`. 
 
 ![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/seed_and_attempts.png "Seed and attempts")
 
