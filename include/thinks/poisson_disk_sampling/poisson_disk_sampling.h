@@ -27,7 +27,7 @@ Returns value clamped to the min/max boundaries.
 */
 template <typename T>
 T clamp(const T min_value, const T max_value, const T value) {
-  assert(min_value <= max_value && "min <= max");
+  assert(min_value <= max_value && "min_value <= max_value");
   return value < min_value ? min_value
                            : (value > max_value ? max_value : value);
 }
@@ -83,7 +83,7 @@ bool Inside(const VecT& x, const std::array<FloatT, N>& x_min,
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
   for (auto i = std::size_t{0}; i < VecTraitsT::kSize; ++i) {
-    const auto xi = VecTraitsT::Get(x, i);
+    const auto xi = static_cast<FloatT>(VecTraitsT::Get(x, i));
     assert(x_min[i] < x_max[i] && "min < max");
     if (x_min[i] > xi || xi > x_max[i]) {
       return false;
@@ -263,12 +263,13 @@ class Grid {
   Returns the index for a position along the i'th axis.
   Note that the returned index may be negative.
   */
-  template <typename FloatT>
+  template <typename FloatT2>
   typename IndexType::value_type AxisIndex(const std::size_t i,
-                                           const FloatT pos) const {
+                                           const FloatT2 pos) const {
     typedef typename IndexType::value_type IndexValueType;
 
-    return static_cast<IndexValueType>((pos - x_min_[i]) * dx_inv_);
+    return static_cast<IndexValueType>((static_cast<FloatT>(pos) - x_min_[i]) *
+                                       dx_inv_);
   }
 
   /*!
@@ -310,8 +311,8 @@ class Grid {
       assert(index[i] < size_[i] && "index outside grid");
 
       // Note: Not checking for "overflow".
-      d *= size_[i - 1];
-      k += index[i] * d;
+      d *= static_cast<std::size_t>(size_[i - 1]);
+      k += static_cast<std::size_t>(index[i]) * d;
     }
     return k;
   }
@@ -473,7 +474,8 @@ VecT RandAnnulusSample(const VecT& center, const FloatT radius,
       // Add the offset scaled by radius to the center coordinate to
       // produce the final sample.
       for (auto i = std::size_t{0}; i < VecTraitsT::kSize; ++i) {
-        const auto pi = VecTraitsT::Get(center, i) + radius * offset[i];
+        const auto pi = static_cast<FloatT>(VecTraitsT::Get(center, i)) +
+                        radius * offset[i];
         VecTraitsT::Set(&p, i, static_cast<VecValueType>(pi));
       }
       break;
@@ -522,7 +524,7 @@ GridIndexRange<typename grid::Grid<FloatT, N>::IndexType> GridNeighborhood(
   for (auto i = std::size_t{0}; i < kDims; ++i) {
     const auto xi_min = GridIndexValueType{0};
     const auto xi_max = static_cast<GridIndexValueType>(grid_size[i] - 1);
-    const auto xi = VecTraitsT::Get(sample, i);
+    const auto xi = static_cast<FloatT>(VecTraitsT::Get(sample, i));
     const auto xi_sub = grid.AxisIndex(i, xi - radius);
     const auto xi_add = grid.AxisIndex(i, xi + radius);
     min_index[i] = util::clamp(xi_min, xi_max, xi_sub);
@@ -544,9 +546,11 @@ bool ExistingSampleWithinRadius(
   auto index = min_index;
   do {
     const auto cell_index = grid.Cell(index);
-    if (cell_index >= 0 && cell_index != active_sample_index) {
-      const auto cell_sample = samples[cell_index];
-      const auto d = util::SquaredDistance<VecTraitsT>(sample, cell_sample);
+    if (cell_index >= 0 &&
+        static_cast<std::uint32_t>(cell_index) != active_sample_index) {
+      const auto cell_sample = samples[static_cast<std::uint32_t>(cell_index)];
+      const auto d = static_cast<FloatT>(
+          util::SquaredDistance<VecTraitsT>(sample, cell_sample));
       if (d < util::squared(grid.sample_radius())) {
         return true;
       }

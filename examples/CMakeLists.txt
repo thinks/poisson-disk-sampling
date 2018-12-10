@@ -15,3 +15,11 @@ add_executable(thinks_poisson_disk_sampling_examples
 target_include_directories(thinks_poisson_disk_sampling_examples SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(thinks_poisson_disk_sampling_examples PUBLIC thinks_poisson_disk_sampling)
 set_target_properties(thinks_poisson_disk_sampling_examples PROPERTIES CXX_STANDARD 11)
+
+target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
+  # GCC/clang warnings.
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+    -Wall -Wextra -Wconversion -Wsign-conversion -Werror >
+  # MSVC warnings.
+  $<$<CXX_COMPILER_ID:MSVC>:
+    /W4 /WX >)
