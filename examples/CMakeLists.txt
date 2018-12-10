@@ -19,7 +19,7 @@ set_target_properties(thinks_poisson_disk_sampling_examples PROPERTIES CXX_STAND
 target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
   # GCC/clang warnings.
   $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-    -Wall -Wextra -Wconversion -Wsign-conversion -Werror >
+    -Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wno-c++98-compat -Werror >
   # MSVC warnings.
   $<$<CXX_COMPILER_ID:MSVC>:
     /W4 /WX >)

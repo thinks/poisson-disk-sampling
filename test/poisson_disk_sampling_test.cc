@@ -116,6 +116,15 @@ void TestPoissonDiskSampling(const FloatT radius = FloatT{2},
                              const std::uint32_t seed = 0) {
   const auto x_min = FilledArray<N>(x_min_value);
   const auto x_max = FilledArray<N>(x_max_value);
+  TestPoissonDiskSampling(x_min, x_max, radius, max_sample_attempts, seed);
+}
+
+template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
+void TestPoissonDiskSampling(const std::array<FloatT, N>& x_min,
+                             const std::array<FloatT, N>& x_max,
+                             const FloatT radius = FloatT{2},
+                             const std::uint32_t max_sample_attempts = 30,
+                             const std::uint32_t seed = 0) {
   const auto samples = pds::PoissonDiskSampling<FloatT, N, VecT>(
       radius, x_min, x_max, max_sample_attempts, seed);
 
@@ -233,6 +242,17 @@ TEST_CASE("Invalid arguments", "[container]") {
         utils::ExceptionContentMatcher{
             "invalid bounds - max must be greater than min, was min: [10, 10], "
             "max: [-10, -10]"});
+
+    const auto x_min = std::array<float, 2>{{10.f, -10.f}};
+    const auto x_max = std::array<float, 2>{{-10.f, 10.f}};
+
+    // Strange () work-around for catch framework.
+    REQUIRE_THROWS_MATCHES(
+        (TestPoissonDiskSampling<float, 2>(x_min, x_max)),
+        std::invalid_argument,
+        utils::ExceptionContentMatcher{"invalid bounds - max must be greater "
+                                       "than min, was min: [10, -10], "
+                                       "max: [-10, 10]"});
   }
 
   SECTION("Zero sample attempts") {
