@@ -11,32 +11,25 @@
 
 #include <catch2/catch.hpp>
 
-
 namespace utils {
 
-struct ExceptionContentMatcher : Catch::MatcherBase<std::exception> 
-{
-  ExceptionContentMatcher(const std::string& target)
-    : target_(target)
-  {
-  }
+struct ExceptionContentMatcher : Catch::MatcherBase<std::exception> {
+  ExceptionContentMatcher(const std::string& target) : target_(target) {}
 
-  bool match(const std::exception& matchee) const override
-  {
+  bool match(const std::exception& matchee) const override {
     return matchee.what() == target_;
   }
 
-  std::string describe() const override
-  {
+  std::string describe() const override {
     auto oss = std::ostringstream{};
     oss << "exception message is: '" << target_ << "'";
     return oss.str();
   }
 
-private:
+ private:
   std::string target_;
 };
 
-} // namespace utils
+}  // namespace utils
 
-#endif // THINKS_POISSON_DISK_SAMPLING_TEST_UTILS_CATCH_UTILS_H_INCLUDED
+#endif  // THINKS_POISSON_DISK_SAMPLING_TEST_UTILS_CATCH_UTILS_H_INCLUDED

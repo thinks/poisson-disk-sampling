@@ -10,55 +10,47 @@
 
 #include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
 
-
 namespace {
 
-struct Vec3
-{
+struct Vec3 {
   float x;
   float y;
   float z;
 };
 
-} // namespace
-
+}  // namespace
 
 namespace thinks {
 namespace poisson_disk_sampling {
 
-template<>
-struct VecTraits<Vec3>
-{
+template <>
+struct VecTraits<Vec3> {
   typedef float ValueType;
 
   static constexpr auto kSize = 3;
 
-  static ValueType Get(const Vec3& v, const std::size_t i)
-  {
+  static ValueType Get(const Vec3& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
-  {
+  static void Set(Vec3* const v, const std::size_t i, const ValueType val) {
     *(&v->x + i) = val;
   }
 };
 
-} // namespace poisson_disk_sampling
-} // namespace thinks
-
+}  // namespace poisson_disk_sampling
+}  // namespace thinks
 
 namespace examples {
 
-void VecTraitsInNamespaceExample(const std::string& filename)
-{
+void VecTraitsInNamespaceExample(const std::string& filename) {
   namespace pds = thinks::poisson_disk_sampling;
 
   constexpr auto radius = 2.f;
-  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
-  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
-  const auto samples = pds::PoissonDiskSampling<float, 3, Vec3>(
-    radius, x_min, x_max);
+  const auto x_min = std::array<float, 3>{{-10.f, -10.f, -10.f}};
+  const auto x_max = std::array<float, 3>{{10.f, 10.f, 10.f}};
+  const auto samples =
+      pds::PoissonDiskSampling<float, 3, Vec3>(radius, x_min, x_max);
 
   auto ofs = std::ofstream(filename);
   assert(ofs);
@@ -68,4 +60,4 @@ void VecTraitsInNamespaceExample(const std::string& filename)
   ofs.close();
 }
 
-} // namespace examples
+}  // namespace examples

@@ -7,11 +7,10 @@
 
 #include <string>
 
-
 namespace examples {
 
 void VecTraitsPassedInExample(const std::string& filename);
 
-} // namespace examples
+}  // namespace examples
 
-#endif // THINKS_POISSON_DISK_SAMPLING_EXAMPLES_VEC_TRAITS_PASSED_IN_EXAMPLE_H_INCLUDED
+#endif  // THINKS_POISSON_DISK_SAMPLING_EXAMPLES_VEC_TRAITS_PASSED_IN_EXAMPLE_H_INCLUDED

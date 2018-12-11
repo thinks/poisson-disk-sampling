@@ -7,11 +7,10 @@
 
 #include <string>
 
-
 namespace examples {
 
 void JsonExample(const std::string& filename);
 
-} // namespace examples
+}  // namespace examples
 
-#endif // THINKS_POISSON_DISK_SAMPLING_EXAMPLES_JSON_EXAMPLE_H_INCLUDED
+#endif  // THINKS_POISSON_DISK_SAMPLING_EXAMPLES_JSON_EXAMPLE_H_INCLUDED
