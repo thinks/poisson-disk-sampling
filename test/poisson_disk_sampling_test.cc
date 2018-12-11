@@ -69,6 +69,10 @@ sample pair meets the Poisson requirement, i.e. is greater than some radius.
 */
 template <typename VecT, typename FloatT>
 bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
+  if (samples.size() < 1) {
+    return false;
+  }
+
   const auto iend = std::end(samples);
   const auto ibegin = std::begin(samples);
   const auto r_squared = radius * radius;
@@ -244,8 +248,8 @@ TEST_CASE("Invalid arguments", "[container]") {
             "max: [-10, -10]"});
 
     {
-      const auto x_min = std::array<float, 2>{{10.f, -10.f}};
-      const auto x_max = std::array<float, 2>{{-10.f, 10.f}};
+      constexpr auto x_min = std::array<float, 2>{{10.f, -10.f}};
+      constexpr auto x_max = std::array<float, 2>{{-10.f, 10.f}};
 
       // Strange () work-around for catch framework.
       REQUIRE_THROWS_MATCHES(
@@ -256,8 +260,8 @@ TEST_CASE("Invalid arguments", "[container]") {
                                          "max: [-10, 10]"});
     }
     {
-      const auto x_min = std::array<float, 2>{{-10.f, 10.f}};
-      const auto x_max = std::array<float, 2>{{10.f, -10.f}};
+      constexpr auto x_min = std::array<float, 2>{{-10.f, 10.f}};
+      constexpr auto x_max = std::array<float, 2>{{10.f, -10.f}};
 
       // Strange () work-around for catch framework.
       REQUIRE_THROWS_MATCHES(
