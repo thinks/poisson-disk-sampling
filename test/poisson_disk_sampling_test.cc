@@ -75,9 +75,9 @@ bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
 
   for (auto u = ibegin; u != iend; ++u) {
     for (auto v = ibegin; v != iend; ++v) {
-      if (&(*u) != &(*v) &&
-          static_cast<FloatT>(SquaredDistance<pds::VecTraits<VecT>>(*u, *v)) <
-              r_squared) {
+      const auto sqr_dist =
+          static_cast<FloatT>(SquaredDistance<pds::VecTraits<VecT>>(*u, *v));
+      if (&(*u) != &(*v) && sqr_dist < r_squared) {
         return false;
       }
     }
@@ -243,16 +243,30 @@ TEST_CASE("Invalid arguments", "[container]") {
             "invalid bounds - max must be greater than min, was min: [10, 10], "
             "max: [-10, -10]"});
 
-    const auto x_min = std::array<float, 2>{{10.f, -10.f}};
-    const auto x_max = std::array<float, 2>{{-10.f, 10.f}};
+    {
+      const auto x_min = std::array<float, 2>{{10.f, -10.f}};
+      const auto x_max = std::array<float, 2>{{-10.f, 10.f}};
 
-    // Strange () work-around for catch framework.
-    REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(x_min, x_max)),
-        std::invalid_argument,
-        utils::ExceptionContentMatcher{"invalid bounds - max must be greater "
-                                       "than min, was min: [10, -10], "
-                                       "max: [-10, 10]"});
+      // Strange () work-around for catch framework.
+      REQUIRE_THROWS_MATCHES(
+          (TestPoissonDiskSampling<float, 2>(x_min, x_max)),
+          std::invalid_argument,
+          utils::ExceptionContentMatcher{"invalid bounds - max must be greater "
+                                         "than min, was min: [10, -10], "
+                                         "max: [-10, 10]"});
+    }
+    {
+      const auto x_min = std::array<float, 2>{{-10.f, 10.f}};
+      const auto x_max = std::array<float, 2>{{10.f, -10.f}};
+
+      // Strange () work-around for catch framework.
+      REQUIRE_THROWS_MATCHES(
+          (TestPoissonDiskSampling<float, 2>(x_min, x_max)),
+          std::invalid_argument,
+          utils::ExceptionContentMatcher{"invalid bounds - max must be greater "
+                                         "than min, was min: [-10, 10], "
+                                         "max: [10, -10]"});
+    }
   }
 
   SECTION("Zero sample attempts") {

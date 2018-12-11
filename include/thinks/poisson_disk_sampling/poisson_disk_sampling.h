@@ -385,7 +385,7 @@ void ThrowIfInvalidBounds(const std::array<FloatT, N>& x_min,
 
   auto i = std::size_t{0};
   for (; i < kDims; ++i) {
-    if (!(x_max > x_min)) {
+    if (!(x_max[i] > x_min[i])) {
       break;
     }
   }
