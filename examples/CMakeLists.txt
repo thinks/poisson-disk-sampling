@@ -9,11 +9,17 @@ set(examples
 	vec_traits_passed_in_example.cc
 )
 
-add_executable(thinks_poisson_disk_sampling_examples
-	main.cc
-	${examples})
-target_include_directories(thinks_poisson_disk_sampling_examples SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(thinks_poisson_disk_sampling_examples PUBLIC thinks_poisson_disk_sampling)
+add_executable(thinks_poisson_disk_sampling_examples)
+target_sources(thinks_poisson_disk_sampling_examples 
+  PRIVATE 
+    main.cc 
+    ${examples})
+target_include_directories(thinks_poisson_disk_sampling_examples 
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/
+  SYSTEM PRIVATE
+    external/)
 set_target_properties(thinks_poisson_disk_sampling_examples PROPERTIES CXX_STANDARD 11)
 
 target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
