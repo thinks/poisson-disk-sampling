@@ -134,7 +134,7 @@ std::vector<Vec3> Bar()
 
 ## Tests
 
-The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/test/external/Catch2) in this repository. 
+The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/test/external/) in this repository. 
 
 Running the tests using [CTest](https://cmake.org/home/) is simple. In a terminal do the following (and similar for `Debug`):
 ```bash
