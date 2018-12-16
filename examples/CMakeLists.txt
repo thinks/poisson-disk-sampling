@@ -19,7 +19,7 @@ target_include_directories(thinks_poisson_disk_sampling_examples
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/
   SYSTEM PRIVATE
-    external/)
+    external/json/single_include)
 set_target_properties(thinks_poisson_disk_sampling_examples PROPERTIES CXX_STANDARD 11)
 
 target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
