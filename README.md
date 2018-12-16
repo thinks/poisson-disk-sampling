@@ -12,6 +12,14 @@ This repository contributes the following improvements compared to the public do
 * The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) and section below).
 * The code is in a namespace (```thinks::poisson_disk_sampling```)
 
+## Cloning
+
+This repository uses `git submodules`, which means that it needs to be cloned with the `--recursive` flag in order to initialize the submodules.
+
+```
+git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
+```
+
 ## Usage
 
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
@@ -126,7 +134,7 @@ std::vector<Vec3> Bar()
 
 ## Tests
 
-The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. A snapshot of the [single header](https://github.com/thinks/poisson-disk-sampling/blob/master/test/catch2/catch.hpp) version of Catch2 is included in this repository. 
+The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/test/external/Catch2) in this repository. 
 
 Running the tests using [CTest](https://cmake.org/home/) is simple. In a terminal do the following (and similar for `Debug`):
 ```bash
