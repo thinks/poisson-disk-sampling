@@ -371,7 +371,7 @@ Grid<FloatT, N> MakeGrid(const FloatT sample_radius,
 template <typename FloatT>
 void ThrowIfInvalidRadius(const FloatT radius) {
   if (!(radius > FloatT{0})) {
-    auto oss = std::ostringstream{};
+    std::ostringstream oss{};
     oss << "radius must be positive, was " << radius;
     throw std::invalid_argument(oss.str());
   }
@@ -391,8 +391,8 @@ void ThrowIfInvalidBounds(const std::array<FloatT, N>& x_min,
   }
 
   if (i < kDims) {
-    auto oss_min = std::ostringstream{};
-    auto oss_max = std::ostringstream{};
+    std::ostringstream oss_min{};
+    std::ostringstream oss_max{};
     oss_min << "[";
     oss_max << "[";
     for (auto j = std::size_t{0}; j < kDims; ++j) {
@@ -402,7 +402,7 @@ void ThrowIfInvalidBounds(const std::array<FloatT, N>& x_min,
     oss_min << "]";
     oss_max << "]";
 
-    auto oss = std::ostringstream{};
+    std::ostringstream oss{};
     oss << "invalid bounds - max must be greater than min, was "
         << "min: " << oss_min.str() << ", "
         << "max: " << oss_max.str();
@@ -414,7 +414,7 @@ void ThrowIfInvalidBounds(const std::array<FloatT, N>& x_min,
 inline void ThrowIfInvalidMaxSampleAttempts(
     const std::uint32_t max_sample_attempts) {
   if (!(max_sample_attempts > 0)) {
-    auto oss = std::ostringstream{};
+    std::ostringstream oss{};
     oss << "max sample attempts must be greater than zero, was "
         << max_sample_attempts;
     throw std::invalid_argument(oss.str());
