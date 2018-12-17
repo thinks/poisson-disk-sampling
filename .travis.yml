@@ -4,7 +4,7 @@ common_sources: &all_sources
   - ubuntu-toolchain-r-test
   - llvm-toolchain-trusty
   - llvm-toolchain-trusty-6.0
-  - llvm-toolchain-trusty-7.0
+  - llvm-toolchain-trusty-7
 
 matrix:
   include:
