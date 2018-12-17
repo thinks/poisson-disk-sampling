@@ -22,8 +22,8 @@ matrix:
       addons:
           apt:
               sources: *all_sources
-              packages: ['clang-7.0']
-      env: COMPILER='clang++-7.0'
+              packages: ['clang-7']
+      env: COMPILER='clang++-7'
 
 before_script:
   - export CXX=${COMPILER}
