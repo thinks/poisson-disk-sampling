@@ -7,13 +7,22 @@ common_sources: &all_sources
 
 matrix:
   include:
+    #- os: linux
+    #  compiler: gcc
+    #  addons: &gcc8
+    #    apt:
+    #      sources: *all_sources
+    #      packages: ['g++-8']
+    #  env: COMPILER='g++-8'
+
+    # 1/ Linux Clang Builds
     - os: linux
-      compiler: gcc
-      addons: &gcc8
-        apt:
-          sources: *all_sources
-          packages: ['g++-8']
-      env: COMPILER='g++-8'
+      compiler: clang
+      addons:
+          apt:
+              sources: *all_sources
+              packages: ['clang-6.0']
+      env: COMPILER='clang++-6.0'
 
 before_script:
   - export CXX=${COMPILER}
