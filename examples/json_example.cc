@@ -35,7 +35,7 @@ void JsonExample(const std::string& filename) {
   j["radius"] = radius;
   j["samples"] = samples;
 
-  auto ofs = std::ofstream(filename);
+  std::ofstream ofs{filename};
   assert(ofs);
   ofs << std::setw(4) << j;
   ofs.close();
