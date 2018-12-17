@@ -113,17 +113,6 @@ bool VerifyBounds(const std::vector<VecT>& samples,
 }
 
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
-void TestPoissonDiskSampling(const FloatT radius = FloatT{2},
-                             const FloatT x_min_value = FloatT{-10},
-                             const FloatT x_max_value = FloatT{10},
-                             const std::uint32_t max_sample_attempts = 30,
-                             const std::uint32_t seed = 0) {
-  const auto x_min = FilledArray<N>(x_min_value);
-  const auto x_max = FilledArray<N>(x_max_value);
-  TestPoissonDiskSampling(x_min, x_max, radius, max_sample_attempts, seed);
-}
-
-template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
 void TestPoissonDiskSampling(const std::array<FloatT, N>& x_min,
                              const std::array<FloatT, N>& x_max,
                              const FloatT radius = FloatT{2},
@@ -134,6 +123,17 @@ void TestPoissonDiskSampling(const std::array<FloatT, N>& x_min,
 
   REQUIRE(VerifyPoisson(samples, radius));
   REQUIRE(VerifyBounds(samples, x_min, x_max));
+}
+
+template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
+void TestPoissonDiskSampling(const FloatT radius = FloatT{2},
+                             const FloatT x_min_value = FloatT{-10},
+                             const FloatT x_max_value = FloatT{10},
+                             const std::uint32_t max_sample_attempts = 30,
+                             const std::uint32_t seed = 0) {
+  const auto x_min = FilledArray<N>(x_min_value);
+  const auto x_max = FilledArray<N>(x_max_value);
+  TestPoissonDiskSampling(x_min, x_max, radius, max_sample_attempts, seed);
 }
 
 }  // namespace
