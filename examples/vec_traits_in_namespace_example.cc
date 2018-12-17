@@ -52,7 +52,7 @@ void VecTraitsInNamespaceExample(const std::string& filename) {
   const auto samples =
       pds::PoissonDiskSampling<float, 3, Vec3>(radius, x_min, x_max);
 
-  auto ofs = std::ofstream(filename);
+  std::ofstream ofs{filename};
   assert(ofs);
   for (const auto& sample : samples) {
     ofs << sample.x << ", " << sample.y << ", " << sample.z << std::endl;

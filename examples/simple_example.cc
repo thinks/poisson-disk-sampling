@@ -22,7 +22,7 @@ void SimpleExample(const std::string& filename) {
   const auto x_max = std::array<float, 2>{{10.f, 10.f}};
   const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
 
-  auto ofs = std::ofstream(filename);
+  std::ofstream ofs{filename};
   assert(ofs);
   for (const auto& sample : samples) {
     ofs << sample[0] << ", " << sample[1] << std::endl;
