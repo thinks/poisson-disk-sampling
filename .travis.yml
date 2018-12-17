@@ -1,10 +1,22 @@
 language: cpp
 
-compiler:
-  - gcc
-  - clang
+common_sources: &all_sources
+  - ubuntu-toolchain-r-test
+  - llvm-toolchain-trusty
+  - llvm-toolchain-trusty-6.0
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons: &gcc8
+        apt:
+          sources: *all_sources
+          packages: ['g++-8']
+      env: COMPILER='g++-8'
 
 before_script:
+  - export CXX=${COMPILER}
   - mkdir build
   - cd build
   - cmake ..
