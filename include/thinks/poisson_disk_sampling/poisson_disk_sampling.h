@@ -166,7 +166,7 @@ FloatT NormRand(const std::uint32_t seed) {
       FloatT{1} /
       static_cast<FloatT>(std::numeric_limits<std::uint32_t>::max());
 
-  return scale * Hash(seed);
+  return scale * static_cast<FloatT>(Hash(seed));
 }
 
 /*!
