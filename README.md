@@ -4,6 +4,8 @@ This repository contains a [single file](https://github.com/thinks/poisson-disk-
 
 All code in this repository is released under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
+[![Build Status](https://travis-ci.org/thinks/poisson-disk-sampling.svg?branch=master)](https://travis-ci.org/thinks/poisson-disk-sampling)
+
 ## Contributions
 
 This repository contributes the following improvements compared to the public domain code released by the original author:
