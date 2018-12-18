@@ -28,6 +28,7 @@ matrix:
       addons:
         apt:
           sources:
+            - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty
             - llvm-toolchain-trusty-6.0
             - llvm-toolchain-trusty-7
