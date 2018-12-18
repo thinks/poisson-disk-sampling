@@ -3,20 +3,20 @@ language: cpp
 common_sources: &all_sources
   - ubuntu-toolchain-r-test
   - llvm-toolchain-trusty
-  - llvm-toolchain-trusty-6.0
   - llvm-toolchain-trusty-7
 
 matrix:
   include:
-    #- os: linux
-    #  compiler: gcc
-    #  addons: &gcc8
-    #    apt:
-    #      sources: *all_sources
-    #      packages: ['g++-8']
-    #  env: COMPILER='g++-8'
+    # 1/ Linux GCC Builds
+    - os: linux
+      compiler: gcc
+      addons: &gcc8
+        apt:
+          sources: *all_sources
+          packages: ['g++-8']
+      env: COMPILER='g++-8'
 
-    # 1/ Linux Clang Builds
+    # 2/ Linux Clang Builds
     - os: linux
       compiler: clang
       addons:
