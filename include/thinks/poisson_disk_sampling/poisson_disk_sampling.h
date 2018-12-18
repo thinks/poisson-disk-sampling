@@ -228,7 +228,8 @@ Returns a pseudo-random index in the range [0, size - 1].
 inline std::size_t IndexRand(const std::size_t size,
                              std::uint32_t* const seed) {
   return static_cast<std::size_t>(
-      RangeRand(float{0}, size - static_cast<float>(0.0001), (*seed)++));
+      RangeRand(float{0}, static_cast<float>(size) - static_cast<float>(0.0001),
+                (*seed)++));
 }
 
 }  // namespace rand
