@@ -162,7 +162,9 @@ FloatT NormRand(const std::uint32_t seed) {
   static_assert(std::is_floating_point<FloatT>::value,
                 "FloatT must be floating point");
 
-  constexpr auto scale = FloatT{1} / std::numeric_limits<std::uint32_t>::max();
+  constexpr auto scale =
+      FloatT{1} /
+      static_cast<FloatT>(std::numeric_limits<std::uint32_t>::max());
 
   return scale * Hash(seed);
 }
@@ -225,8 +227,8 @@ Returns a pseudo-random index in the range [0, size - 1].
 */
 inline std::size_t IndexRand(const std::size_t size,
                              std::uint32_t* const seed) {
-  return static_cast<std::size_t>(
-      RangeRand(float{0}, size - static_cast<float>(0.0001), (*seed)++));
+  return static_cast<std::size_t>(RangeRand(
+      float{0}, std::floorf(size - static_cast<float>(0.0001)), (*seed)++));
 }
 
 }  // namespace rand
