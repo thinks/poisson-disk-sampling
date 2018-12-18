@@ -25,7 +25,7 @@ target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
     -Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wno-c++98-compat -Werror >
   # GCC warnings.
   $<$<CXX_COMPILER_ID:GNU>:
-    -Wall -Wextra -Wsign-conversion -Wshadow -Werror >
+    -Wall -Wextra -Wshadow -Werror >
   # MSVC warnings.
   $<$<CXX_COMPILER_ID:MSVC>:
     /W4 /WX >)
