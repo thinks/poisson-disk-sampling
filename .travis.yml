@@ -3,6 +3,7 @@ language: cpp
 common_sources: &all_sources
   - ubuntu-toolchain-r-test
   - llvm-toolchain-trusty
+  - llvm-toolchain-trusty-6.0
   - llvm-toolchain-trusty-7
 
 matrix:
@@ -13,8 +14,8 @@ matrix:
       addons: &gcc8
         apt:
           sources: *all_sources
-          packages: ['g++-8']
-      env: COMPILER='g++-8'
+          packages: ['g++-7']
+      env: COMPILER='g++-7'
 
     # 2/ Linux Clang Builds
     - os: linux
