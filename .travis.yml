@@ -1,29 +1,38 @@
 language: cpp
 
-common_sources: &all_sources
-  - ubuntu-toolchain-r-test
-  - llvm-toolchain-trusty
-  - llvm-toolchain-trusty-6.0
-  - llvm-toolchain-trusty-7
-
 matrix:
   include:
     # 1/ Linux GCC Builds
     - os: linux
       compiler: gcc
-      addons: &gcc8
+      addons: 
         apt:
-          sources: *all_sources
-          packages: ['g++-7']
+          sources: 
+            - ubuntu-toolchain-r-test
+          packages: 
+            - g++-7
       env: COMPILER='g++-7'
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env: COMPILER='g++-8'
 
     # 2/ Linux Clang Builds
     - os: linux
       compiler: clang
       addons:
-          apt:
-              sources: *all_sources
-              packages: ['clang-7']
+        apt:
+          sources:
+            - llvm-toolchain-trusty
+            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty-7
+          packages: 
+            - clang-7
       env: COMPILER='clang++-7'
 
 before_script:
