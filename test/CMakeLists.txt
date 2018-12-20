@@ -6,7 +6,7 @@ set(tests
 	poisson_disk_sampling_test.cc
 )
 
-add_executable(thinks_poisson_disk_sampling_test "")
+add_executable(thinks_poisson_disk_sampling_test)
 target_sources(thinks_poisson_disk_sampling_test 
   PRIVATE 
     main.cc 

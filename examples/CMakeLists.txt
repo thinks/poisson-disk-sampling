@@ -9,7 +9,7 @@ set(examples
 	vec_traits_passed_in_example.cc
 )
 
-add_executable(thinks_poisson_disk_sampling_examples "")
+add_executable(thinks_poisson_disk_sampling_examples)
 target_sources(thinks_poisson_disk_sampling_examples 
   PRIVATE 
     main.cc 
