@@ -39,7 +39,7 @@ matrix:
       #      - clang-7
       # env: COMPILER='clang++-7'
       env:
-        - MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
+        - MATRIX_EVAL="CC=clang && CXX=clang++"
 
 before_install:
   - eval "${MATRIX_EVAL}"
