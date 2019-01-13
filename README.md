@@ -22,6 +22,8 @@ This repository uses `git submodules`, which means that it needs to be cloned wi
 git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 ```
 
+Note that the submodules are only used for building tests and examples.
+
 ## Usage
 
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
