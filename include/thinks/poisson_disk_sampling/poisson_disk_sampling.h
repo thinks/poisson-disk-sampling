@@ -329,24 +329,6 @@ namespace thinks {
 						constexpr auto scale = FloatT{ 1 } -eps;
 						return scale * sample_radius / std::sqrt(static_cast<FloatT>(N));
 					}
-					static FloatT GetDx_(const std::vector<FloatT> sample_radius_arr) {
-						//FloatT rad = *std::max_element(std::begin(sample_radius_arr), std::end(sample_radius_arr));
-						FloatT rad = 0.0;
-						for (auto i : sample_radius_arr)
-						{
-							rad += i * i;
-						}
-						rad = sqrt(rad) / sqrt(sample_radius_arr.size());
-						assert(rad > FloatT{ 0 } && "sample_radius > 0");
-
-						// The grid cell size should be such that each cell can only
-						// contain one sample. We apply a scaling factor to avoid
-						// numerical issues.
-						constexpr auto eps = static_cast<FloatT>(0.001);
-						constexpr auto scale = FloatT{ 1 } -eps;
-						return scale * rad / std::sqrt(static_cast<FloatT>(N));
-					}
-
 					static IndexType GetGridSize_(const std::array<FloatT, N>& x_min,
 						const std::array<FloatT, N>& x_max,
 						const FloatT dx_inv) {
