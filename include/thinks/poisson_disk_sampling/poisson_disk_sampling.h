@@ -294,8 +294,7 @@ namespace thinks {
 
 					CellType& Cell(const IndexType& index) { return cells_[LinearIndex(index)]; }
 
-				private:
-					std::vector<FloatT> sample_radius_arr_;
+				private:					
 					FloatT sample_radius_;
 					FloatT dx_;
 					FloatT dx_inv_;
