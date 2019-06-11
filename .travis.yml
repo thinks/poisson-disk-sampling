@@ -36,10 +36,9 @@ before_install:
 before_script:
   #- export CXX=${COMPILER}
   - cd ${TRAVIS_BUILD_DIR}
-  - mkdir build
-  - cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=Debug
+  - mkdir build && cd build
+  - cmake -G "Ninja" .. 
 
 script: 
-  - cmake --build . --target all -v -- -j6 
+  - cmake --build . --config Debug --target all -v -- -j6 
   - ctest .
