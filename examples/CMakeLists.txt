@@ -13,20 +13,29 @@ add_executable(thinks_poisson_disk_sampling_examples)
 target_sources(thinks_poisson_disk_sampling_examples 
   PRIVATE 
     main.cc 
-    ${example_srcs})
+    ${example_srcs}
+)
 target_include_directories(thinks_poisson_disk_sampling_examples 
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/
-  )
+    .
+    ../include/
+)
+#set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-internal-isystem ")    
 target_include_directories(thinks_poisson_disk_sampling_examples SYSTEM 
   PRIVATE 
     external/json/single_include)
 
-target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
+target_compile_options(thinks_poisson_disk_sampling_examples PRIVATE
   # Clang warnings.
   $<$<CXX_COMPILER_ID:Clang>:
-    -Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wno-c++98-compat -Werror >
+    -Wall 
+    -Wextra 
+    -Wconversion 
+    -Wsign-conversion 
+    -Wshadow 
+    -Wno-c++98-compat 
+    -Wno-c++98-compat-pedantic 
+    -Werror >
   # GCC warnings.
   $<$<CXX_COMPILER_ID:GNU>:
     -Wall -Wextra -Wshadow -Werror >
