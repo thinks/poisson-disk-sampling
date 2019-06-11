@@ -40,5 +40,5 @@ before_script:
   - cmake .. 
 
 script: 
-  - cmake --build . --config Debug --target all -- -v -j 6 
+  - cmake --build . --config Debug --target thinks_poisson_disk_sampling_test -- -v -j 6 
   - ctest .
