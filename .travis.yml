@@ -41,5 +41,5 @@ before_script:
   - cmake .. -DCMAKE_BUILD_TYPE=Debug
 
 script: 
-  - cmake --build .  
+  - cmake --build . --target all -v -- -j6 
   - ctest .
