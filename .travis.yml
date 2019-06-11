@@ -37,8 +37,8 @@ before_script:
   #- export CXX=${COMPILER}
   - cd ${TRAVIS_BUILD_DIR}
   - mkdir build && cd build
-  - cmake -G "Ninja" .. 
+  - cmake .. 
 
 script: 
-  - cmake --build . --config Debug --target all -v -- -j6 
+  - cmake --build . --config Debug --target all -- -v -j 6 
   - ctest .
