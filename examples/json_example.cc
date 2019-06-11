@@ -1,8 +1,8 @@
-// Copyright(C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+// Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#include <json_example.h>
+#include "json_example.h"
 
 #include <array>
 #include <cassert>
@@ -10,19 +10,18 @@
 #include <fstream>
 #include <iomanip>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-#include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
-
-namespace examples {
+namespace thinks {
 
 void JsonExample(const std::string& filename) {
-  namespace pds = thinks::poisson_disk_sampling;
+  namespace pds = poisson_disk_sampling;
   using json = nlohmann::json;
 
-  auto radius = 3.f;
-  auto x_min = std::array<float, 2>{-10.f, -10.f};
-  auto x_max = std::array<float, 2>{10.f, 10.f};
+  constexpr auto radius = 3.f;
+  constexpr std::array<float, 2> x_min = {-10.f, -10.f};
+  constexpr std::array<float, 2> x_max = {10.f, 10.f};
   constexpr auto max_sample_attempts = std::uint32_t{30};
   constexpr auto seed = std::uint32_t{0};
 
@@ -41,4 +40,4 @@ void JsonExample(const std::string& filename) {
   ofs.close();
 }
 
-}  // namespace examples
+}  // namespace thinks

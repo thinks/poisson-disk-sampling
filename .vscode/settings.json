@@ -1,0 +1,8 @@
+{
+  "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+  "cmake.configureOnOpen": true,
+  "cmake.buildArgs": [
+    "-v"
+  ],
+  "editor.tabSize": 2
+}

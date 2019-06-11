@@ -1,4 +1,4 @@
-// Copyright(C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+// Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -9,17 +9,17 @@
 #include <cstdint>
 #include <fstream>
 
-#include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-namespace examples {
+namespace thinks {
 
 void SimpleExample(const std::string& filename) {
-  namespace pds = thinks::poisson_disk_sampling;
+  namespace pds = poisson_disk_sampling;
 
   // Minimal amount of information provided to sampling function.
   constexpr auto radius = 2.f;
-  const auto x_min = std::array<float, 2>{{-10.f, -10.f}};
-  const auto x_max = std::array<float, 2>{{10.f, 10.f}};
+  const std::array<float, 2> x_min = {-10.f, -10.f};
+  const std::array<float, 2> x_max = {10.f, 10.f};
   const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
 
   std::ofstream ofs{filename};
@@ -30,4 +30,4 @@ void SimpleExample(const std::string& filename) {
   ofs.close();
 }
 
-}  // namespace examples
+}  // namespace thinks

@@ -1,5 +1,10 @@
 # Poisson Disk Sampling
 
+[ ] - Add .clangformat file.
+[ ] - Update CMake, add cppbestpractices build flags.
+[ ] - Build with MSVC, clang, gcc on travis.
+[ ] - external folder at top-level
+
 This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h), header-only, no-dependencies, C++ library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is based on the public domain [example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
 
 All code in this repository is released under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
@@ -9,7 +14,7 @@ All code in this repository is released under the [MIT license](https://en.wikip
 ## Contributions
 
 This repository contributes the following improvements compared to the public domain code released by the original author:
-* The code is in a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
+* The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
 * The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) and section below).
 * The code is in a namespace (```thinks::poisson_disk_sampling```)

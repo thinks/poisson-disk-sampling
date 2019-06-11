@@ -1,16 +1,13 @@
-// Copyright(C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+// Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef THINKS_POISSON_DISK_SAMPLING_EXAMPLES_JSON_EXAMPLE_H_INCLUDED
-#define THINKS_POISSON_DISK_SAMPLING_EXAMPLES_JSON_EXAMPLE_H_INCLUDED
+#pragma once
 
 #include <string>
 
-namespace examples {
+namespace thinks {
 
 void JsonExample(const std::string& filename);
 
-}  // namespace examples
-
-#endif  // THINKS_POISSON_DISK_SAMPLING_EXAMPLES_JSON_EXAMPLE_H_INCLUDED
+}  // namespace thinks

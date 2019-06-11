@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+# Copyright (C) Tommy Hinks <tommy.hinks@gmail.com>
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
@@ -14,8 +14,9 @@ target_sources(thinks_poisson_disk_sampling_test
 target_include_directories(thinks_poisson_disk_sampling_test 
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/
-  SYSTEM PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/)
+target_include_directories(thinks_poisson_disk_sampling_test SYSTEM 
+  PRIVATE
     external/Catch2/single_include)
 set_target_properties(thinks_poisson_disk_sampling_test PROPERTIES CXX_STANDARD 11) 
 

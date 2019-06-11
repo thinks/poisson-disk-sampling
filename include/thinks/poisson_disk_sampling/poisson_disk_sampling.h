@@ -1,9 +1,8 @@
-// Copyright(C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+// Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef THINKS_POISSON_DISK_SAMPLING_POISSON_DISK_SAMPLING_H_INCLUDED
-#define THINKS_POISSON_DISK_SAMPLING_POISSON_DISK_SAMPLING_H_INCLUDED
+#pragma once 
 
 #include <algorithm>
 #include <array>
@@ -22,43 +21,45 @@ namespace detail {
 
 namespace util {
 
-/*!
-Returns value clamped to the min/max boundaries.
-*/
+#if 0
+// Convenient alias for std::tuple_size for increased readability.
+template <typename ArrayT>
+struct array_size;
+
+template <typename T, std::size_t N>
+struct array_size<std::array<T, N>> {
+  static constexpr std::size_t value = std::tuple_size<std::array<T, N>>::value;
+};
+#endif
+
 template <typename T>
-T clamp(const T min_value, const T max_value, const T value) {
+T clamped(const T min_value, const T max_value, const T value) {
   assert(min_value <= max_value && "min_value <= max_value");
   return value < min_value ? min_value
                            : (value > max_value ? max_value : value);
 }
 
-/*!
-Returns x squared (not checking for overflow).
-*/
+// Returns x squared (not checking for overflow).
 template <typename T>
 T squared(const T x) {
   return x * x;
 }
 
-/*!
-Returns the squared magnitude of a.
-*/
+// Returns the squared magnitude of x (not checking for overflow).
 template <typename FloatT, std::size_t N>
 typename std::array<FloatT, N>::value_type SquaredMagnitude(
-    const std::array<FloatT, N>& a) {
+    const std::array<FloatT, N>& x) {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(kDims >= 1, "dimensions must be >= 1");
 
-  auto m = squared(a[0]);
-  for (auto i = std::size_t{1}; i < kDims; ++i) {
-    m += squared(a[i]);
+  auto m = squared(x[0]);
+  for (std::size_t i = 1; i < kDims; ++i) {
+    m += squared(x[i]);
   }
   return m;
 }
 
-/*!
-Returns the squared distance between the vectors u and v.
-*/
+//Returns the squared distance between the vectors u and v.
 template <typename VecTraitsT, typename VecT>
 typename VecTraitsT::ValueType SquaredDistance(const VecT& u, const VecT& v) {
   static_assert(VecTraitsT::kSize >= 1, "dimensions must be >= 1");
@@ -70,12 +71,10 @@ typename VecTraitsT::ValueType SquaredDistance(const VecT& u, const VecT& v) {
   return d;
 }
 
-/*!
-Returns true if x is element-wise inside x_min and x_max, otherwise false.
-
-Note: The bounds checking is inclusive, such that x == x_min or x == x_max
-return true.
-*/
+// Returns true if x is element-wise inside x_min and x_max, otherwise false.
+//
+// Note: The bounds checking is inclusive, such that x == x_min or x == x_max
+//       return true.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
 bool Inside(const VecT& x, const std::array<FloatT, N>& x_min,
             const std::array<FloatT, N>& x_max) {
@@ -92,12 +91,12 @@ bool Inside(const VecT& x, const std::array<FloatT, N>& x_min,
   return true;
 }
 
-/*!
-Erase the value at index in the vector v. The vector v is
-guaranteed to decrese in size by one. Note that the ordering of elements
-in v may change as a result of calling this function.
-Assumes that v is non-null and not empty.
-*/
+// Erase the value at index in the vector v. The vector v is
+// guaranteed to decrese in size by one. Note that the ordering of elements
+// in v may change as a result of calling this function.
+//
+// Assumes that v is non-null and that the index is valid. Cannot be called 
+// on an empty vector.
 template <typename T>
 void EraseUnordered(std::vector<T>* const v, const std::size_t index) {
   assert(v != nullptr);
@@ -108,10 +107,8 @@ void EraseUnordered(std::vector<T>* const v, const std::size_t index) {
   v->pop_back();  // O(1).
 }
 
-/*!
-Increment index such that repeated calls to this function enumerate
-all iterations between min_index and max_index (inclusive).
-*/
+// Increment index such that repeated calls to this function enumerate
+// all iterations between min_index and max_index (inclusive).
 template <typename IntT, std::size_t N>
 bool Iterate(const std::array<IntT, N>& min_index,
              const std::array<IntT, N>& max_index,
@@ -119,7 +116,7 @@ bool Iterate(const std::array<IntT, N>& min_index,
   constexpr auto kDims = std::tuple_size<std::array<IntT, N>>::value;
   static_assert(kDims >= 1, "dimensions must be >= 1");
 
-  auto i = std::size_t{0};
+  std::size_t i = 0;
   for (; i < kDims; ++i) {
     assert(min_index[i] <= max_index[i] && "min <= max");
     assert(min_index[i] <= (*index)[i] && (*index)[i] <= max_index[i] &&
@@ -138,10 +135,8 @@ bool Iterate(const std::array<IntT, N>& min_index,
 
 namespace rand {
 
-/*!
-Stateless and repeatable function that returns a
-pseduo-random number in the range [0, 0xFFFFFFFF].
-*/
+// Stateless and repeatable function that returns a
+// pseduo-random number in the range [0, 0xFFFFFFFF].
 inline std::uint32_t Hash(const std::uint32_t seed) {
   // So that we can use unsigned int literals, e.g. 42u.
   static_assert(sizeof(unsigned int) == sizeof(std::uint32_t),
@@ -154,45 +149,36 @@ inline std::uint32_t Hash(const std::uint32_t seed) {
   return i;
 }
 
-/*!
-Returns a pseduo-random number in the range [0, 1].
-*/
+// Returns a pseduo-random number in the range [0, 1].
 template <typename FloatT>
 FloatT NormRand(const std::uint32_t seed) {
   static_assert(std::is_floating_point<FloatT>::value,
                 "FloatT must be floating point");
-
-  constexpr auto scale =
-      FloatT{1} /
-      static_cast<FloatT>(std::numeric_limits<std::uint32_t>::max());
-
-  return scale * static_cast<FloatT>(Hash(seed));
+  // TODO(thinks): clamped?
+  return (1 / static_cast<FloatT>(std::numeric_limits<std::uint32_t>::max())) *
+         static_cast<FloatT>(Hash(seed));
 }
 
-/*!
-Returns a pseduo-random number in the range [offset, offset + range].
-*/
+// Returns a pseduo-random number in the range [offset, offset + range].
 template <typename FloatT>
 FloatT RangeRand(const FloatT offset, const FloatT range,
                  const std::uint32_t seed) {
   return offset + range * NormRand<FloatT>(seed);
 }
 
-/*!
-Returns an array where each element has been assigned using RangeRand,
-with bounds taken from the corresponding element in x_min and x_max.
-Note that seed is incremented for each assigned element.
-*/
+// Returns an array where each element has been assigned using RangeRand,
+// with bounds taken from the corresponding element in x_min and x_max.
+// Note that seed is incremented for each assigned element.
 template <typename FloatT, std::size_t N>
 std::array<FloatT, N> ArrayRangeRand(const std::array<FloatT, N>& x_min,
                                      const std::array<FloatT, N>& x_max,
                                      std::uint32_t* const seed) {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
 
-  assert(seed != nullptr);
+  assert(seed != nullptr && "null seed");
 
-  auto a = std::array<FloatT, N>{};
-  for (auto i = std::size_t{0}; i < kDims; ++i) {
+  std::array<FloatT, N> a;
+  for (std::size_t i = 0; i < kDims; ++i) {
     assert(x_min[i] < x_max[i] && "min < max");
 
     const auto offset = x_min[i];
@@ -204,9 +190,7 @@ std::array<FloatT, N> ArrayRangeRand(const std::array<FloatT, N>& x_min,
   return a;
 }
 
-/*!
-See ArrayRangeRand.
-*/
+// See ArrayRangeRand.
 template <typename VecT, typename VecTraitsT, typename FloatT, std::size_t N>
 VecT VecRangeRand(const std::array<FloatT, N>& x_min,
                   const std::array<FloatT, N>& x_max,
@@ -214,17 +198,15 @@ VecT VecRangeRand(const std::array<FloatT, N>& x_min,
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
-  auto v = VecT{};
+  VecT v;
   const auto a = ArrayRangeRand(x_min, x_max, seed);
-  for (auto i = std::size_t{0}; i < kDims; ++i) {
+  for (std::size_t i = 0; i < kDims; ++i) {
     VecTraitsT::Set(&v, i, static_cast<typename VecTraitsT::ValueType>(a[i]));
   }
   return v;
 }
 
-/*!
-Returns a pseudo-random index in the range [0, size - 1].
-*/
+// Returns a pseudo-random index in the range [0, size - 1].
 inline std::size_t IndexRand(const std::size_t size,
                              std::uint32_t* const seed) {
   return static_cast<std::size_t>(
@@ -239,8 +221,8 @@ namespace grid {
 template <typename FloatT, std::size_t N>
 class Grid {
  public:
-  typedef std::int32_t CellType;
-  typedef std::array<std::int32_t, N> IndexType;
+  using CellType = std::int32_t;
+  using IndexType = std::array<std::int32_t, N>;
 
   static constexpr auto kDims = std::tuple_size<IndexType>::value;
 
@@ -275,15 +257,13 @@ class Grid {
                                        dx_inv_);
   }
 
-  /*!
-  Note that the returned index elements may be negative.
-  */
+  // Note that the returned index elements may be negative.
   template <typename VecTraitsT, typename VecT>
   IndexType IndexFromSample(const VecT& sample) const {
     static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
-    auto index = IndexType{};
-    for (auto i = std::size_t{0}; i < kDims; ++i) {
+    IndexType index = {};
+    for (std::size_t i = 0; i < kDims; ++i) {
       index[i] = AxisIndex(i, VecTraitsT::Get(sample, i));
     }
     return index;
@@ -530,8 +510,8 @@ GridIndexRange<typename grid::Grid<FloatT, N>::IndexType> GridNeighborhood(
     const auto xi = static_cast<FloatT>(VecTraitsT::Get(sample, i));
     const auto xi_sub = grid.AxisIndex(i, xi - radius);
     const auto xi_add = grid.AxisIndex(i, xi + radius);
-    min_index[i] = util::clamp(xi_min, xi_max, xi_sub);
-    max_index[i] = util::clamp(xi_min, xi_max, xi_add);
+    min_index[i] = util::clamped(xi_min, xi_max, xi_sub);
+    max_index[i] = util::clamped(xi_min, xi_max, xi_add);
   }
   return GridIndexRange<GridIndexType>{min_index, max_index};
 }
@@ -590,7 +570,7 @@ Specialization of vector traits for std::array.
 */
 template <typename FloatT, std::size_t N>
 struct VecTraits<std::array<FloatT, N>> {
-  typedef typename std::array<FloatT, N>::value_type ValueType;
+  using ValueType = typename std::array<FloatT, N>::value_type; 
 
   static constexpr auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
 
@@ -685,5 +665,3 @@ std::vector<VecT> PoissonDiskSampling(
 
 }  // namespace poisson_disk_sampling
 }  // namespace thinks
-
-#endif  // THINKS_POISSON_DISK_SAMPLING_POISSON_DISK_SAMPLING_H_INCLUDED

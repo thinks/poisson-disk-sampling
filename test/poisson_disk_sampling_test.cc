@@ -1,4 +1,4 @@
-// Copyright(C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+// Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -7,10 +7,10 @@
 #include <cstdint>
 #include <vector>
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
-#include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
-#include <utils/catch_utils.h>
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+#include "utils/catch_utils.h"
 
 namespace pds = thinks::poisson_disk_sampling;
 
@@ -18,14 +18,14 @@ namespace {
 
 template <typename T>
 struct Vec2 {
-  typedef T ValueType;
+  using ValueType = T;
   T x;
   T y;
 };
 
 template <typename T>
 struct Vec3 {
-  typedef T ValueType;
+  using ValueType = T;
   T x;
   T y;
   T z;
@@ -33,7 +33,7 @@ struct Vec3 {
 
 template <typename T>
 struct Vec4 {
-  typedef T ValueType;
+  using ValueType = T;
   T x;
   T y;
   T z;
@@ -41,7 +41,7 @@ struct Vec4 {
 };
 
 template <typename T>
-T squared(const T x) {
+constexpr T squared(const T x) {
   return x * x;
 }
 
@@ -57,19 +57,17 @@ typename VecTraitsT::ValueType SquaredDistance(const VecT& u, const VecT& v) {
   static_assert(VecTraitsT::kSize >= 1, "vec dimensionality must be >= 1");
 
   auto d = squared(VecTraitsT::Get(u, 0) - VecTraitsT::Get(v, 0));
-  for (auto i = std::size_t{1}; i < VecTraitsT::kSize; ++i) {
+  for (std::size_t i = 1; i < VecTraitsT::kSize; ++i) {
     d += squared(VecTraitsT::Get(u, i) - VecTraitsT::Get(v, i));
   }
   return d;
 }
 
-/*!
-O(N^2) verification. Verifies that the distance between each possible
-sample pair meets the Poisson requirement, i.e. is greater than some radius.
-*/
+// O(N^2) verification. Verifies that the distance between each possible
+// sample pair meets the Poisson requirement, i.e. is greater than some radius.
 template <typename VecT, typename FloatT>
 bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
-  if (samples.size() < 1) {
+  if (samples.empty()) {
     return false;
   }
 
@@ -89,9 +87,7 @@ bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
   return true;
 }
 
-/*!
-Returns true if all samples are within the bounds specified by x_min and x_max.
-*/
+// Returns true if all samples are within the bounds specified by x_min and x_max.
 template <typename VecT, typename FloatT, std::size_t N>
 bool VerifyBounds(const std::vector<VecT>& samples,
                   const std::array<FloatT, N>& x_min,
@@ -102,7 +98,7 @@ bool VerifyBounds(const std::vector<VecT>& samples,
   static_assert(kDims == VecTraitsType::kSize, "dimensionality mismatch");
 
   for (auto v = std::begin(samples); v != std::end(samples); ++v) {
-    for (auto i = std::size_t{0}; i < kDims; ++i) {
+    for (std::size_t i = 0; i < kDims; ++i) {
       const auto xi = static_cast<FloatT>(VecTraitsType::Get(*v, i));
       if (x_min[i] > xi || xi > x_max[i]) {
         return false;
@@ -143,45 +139,48 @@ namespace poisson_disk_sampling {
 
 template <typename T>
 struct VecTraits<Vec2<T>> {
-  typedef typename Vec2<T>::ValueType ValueType;
+  using ValueType = typename Vec2<T>::ValueType;
 
   static constexpr auto kSize = 2;
 
-  static ValueType Get(const Vec2<T>& v, const std::size_t i) {
+  static constexpr ValueType Get(const Vec2<T>& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static void Set(Vec2<T>* const v, const std::size_t i, const ValueType val) {
+  static constexpr void Set(Vec2<T>* const v, const std::size_t i,
+                            const ValueType val) {
     *(&v->x + i) = val;
   }
 };
 
 template <typename T>
 struct VecTraits<Vec3<T>> {
-  typedef typename Vec3<T>::ValueType ValueType;
+  using ValueType = typename Vec3<T>::ValueType;
 
   static constexpr auto kSize = 3;
 
-  static ValueType Get(const Vec3<T>& v, const std::size_t i) {
+  static constexpr ValueType Get(const Vec3<T>& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static void Set(Vec3<T>* const v, const std::size_t i, const ValueType val) {
+  static constexpr void Set(Vec3<T>* const v, const std::size_t i,
+                            const ValueType val) {
     *(&v->x + i) = val;
   }
 };
 
 template <typename T>
 struct VecTraits<Vec4<T>> {
-  typedef typename Vec4<T>::ValueType ValueType;
+  using ValueType = typename Vec4<T>::ValueType;
 
   static constexpr auto kSize = 4;
 
-  static ValueType Get(const Vec4<T>& v, const std::size_t i) {
+  static constexpr ValueType Get(const Vec4<T>& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static void Set(Vec4<T>* const v, const std::size_t i, const ValueType val) {
+  static constexpr void Set(Vec4<T>* const v, const std::size_t i,
+                            const ValueType val) {
     *(&v->x + i) = val;
   }
 };
@@ -206,17 +205,17 @@ TEST_CASE("Test samples <std::array>", "[container]") {
 
 TEST_CASE("Test samples <Vec>", "[container]") {
   SECTION("N = 2") {
-    typedef Vec2<float> VecType;
+    using VecType = Vec2<float>;
     TestPoissonDiskSampling<float, 2, VecType>();
     TestPoissonDiskSampling<double, 2, VecType>();
   }
   SECTION("N = 3") {
-    typedef Vec3<float> VecType;
+    using VecType = Vec3<float>;
     TestPoissonDiskSampling<float, 3, VecType>();
     TestPoissonDiskSampling<double, 3, VecType>();
   }
   SECTION("N = 4") {
-    typedef Vec4<float> VecType;
+    using VecType = Vec4<float>;
     TestPoissonDiskSampling<float, 4, VecType>();
     TestPoissonDiskSampling<double, 4, VecType>();
   }
@@ -248,8 +247,8 @@ TEST_CASE("Invalid arguments", "[container]") {
             "max: [-10, -10]"});
 
     {
-      constexpr auto x_min = std::array<float, 2>{{10.f, -10.f}};
-      constexpr auto x_max = std::array<float, 2>{{-10.f, 10.f}};
+      constexpr std::array<float, 2> x_min = {10.f, -10.f};
+      constexpr std::array<float, 2> x_max = {-10.f, 10.f};
 
       // Strange () work-around for catch framework.
       REQUIRE_THROWS_MATCHES(
@@ -260,8 +259,8 @@ TEST_CASE("Invalid arguments", "[container]") {
                                          "max: [-10, 10]"});
     }
     {
-      constexpr auto x_min = std::array<float, 2>{{-10.f, 10.f}};
-      constexpr auto x_max = std::array<float, 2>{{10.f, -10.f}};
+      constexpr std::array<float, 2> x_min = {-10.f, 10.f};
+      constexpr std::array<float, 2> x_max = {10.f, -10.f};
 
       // Strange () work-around for catch framework.
       REQUIRE_THROWS_MATCHES(
