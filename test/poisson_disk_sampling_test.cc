@@ -12,8 +12,6 @@
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 #include "utils/catch_utils.h"
 
-namespace pds = thinks::poisson_disk_sampling;
-
 namespace {
 
 template <typename T>
@@ -78,7 +76,7 @@ bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
   for (auto u = ibegin; u != iend; ++u) {
     for (auto v = ibegin; v != iend; ++v) {
       const auto sqr_dist =
-          static_cast<FloatT>(SquaredDistance<pds::VecTraits<VecT>>(*u, *v));
+          static_cast<FloatT>(SquaredDistance<thinks::VecTraits<VecT>>(*u, *v));
       if (&(*u) != &(*v) && sqr_dist < r_squared) {
         return false;
       }
@@ -92,12 +90,12 @@ template <typename VecT, typename FloatT, std::size_t N>
 bool VerifyBounds(const std::vector<VecT>& samples,
                   const std::array<FloatT, N>& x_min,
                   const std::array<FloatT, N>& x_max) {
-  typedef pds::VecTraits<VecT> VecTraitsType;
+  using VecTraitsType = thinks::VecTraits<VecT>;
 
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(kDims == VecTraitsType::kSize, "dimensionality mismatch");
 
-  for (auto v = std::begin(samples); v != std::end(samples); ++v) {
+  for (auto v = std::cbegin(samples); v != std::cend(samples); ++v) {
     for (std::size_t i = 0; i < kDims; ++i) {
       const auto xi = static_cast<FloatT>(VecTraitsType::Get(*v, i));
       if (x_min[i] > xi || xi > x_max[i]) {
@@ -114,7 +112,7 @@ void TestPoissonDiskSampling(const std::array<FloatT, N>& x_min,
                              const FloatT radius = FloatT{2},
                              const std::uint32_t max_sample_attempts = 30,
                              const std::uint32_t seed = 0) {
-  const auto samples = pds::PoissonDiskSampling<FloatT, N, VecT>(
+  const auto samples = thinks::PoissonDiskSampling<FloatT, N, VecT>(
       radius, x_min, x_max, max_sample_attempts, seed);
 
   REQUIRE(VerifyPoisson(samples, radius));

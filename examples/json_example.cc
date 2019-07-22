@@ -13,10 +13,9 @@
 #include "nlohmann/json.hpp"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-namespace thinks {
+namespace examples {
 
 void JsonExample(const std::string& filename) {
-  namespace pds = poisson_disk_sampling;
   using json = nlohmann::json;
 
   constexpr auto radius = 3.f;
@@ -25,8 +24,8 @@ void JsonExample(const std::string& filename) {
   constexpr auto max_sample_attempts = std::uint32_t{30};
   constexpr auto seed = std::uint32_t{0};
 
-  auto samples =
-      pds::PoissonDiskSampling(radius, x_min, x_max, max_sample_attempts, seed);
+  auto samples = thinks::PoissonDiskSampling(radius, x_min, x_max,
+                                             max_sample_attempts, seed);
 
   json j;
   j["min"] = x_min;
@@ -40,4 +39,4 @@ void JsonExample(const std::string& filename) {
   ofs.close();
 }
 
-}  // namespace thinks
+}  // namespace examples

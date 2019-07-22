@@ -1,4 +1,4 @@
-// Copyright(C) 2018 Tommy Hinks <tommy.hinks@gmail.com>
+// Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -8,11 +8,11 @@
 #include "vec_traits_passed_in_example.h"
 
 int main(int, char*[]) {
-  thinks::JsonExample("./json_example.json");
-  thinks::SimpleExample("./simple_example.txt");
-  thinks::VecTraitsInNamespaceExample(
-      "./vec_traits_in_namespace_example.txt");
-  thinks::VecTraitsPassedInExample("./vec_traits_passed_in_example.txt");
+  examples::JsonExample("./json_example.json");
+  examples::SimpleExample("./simple_example.txt");
+  //thinks::VecTraitsInNamespaceExample(
+  //    "./vec_traits_in_namespace_example.txt");
+  //thinks::VecTraitsPassedInExample("./vec_traits_passed_in_example.txt");
 
   return 0;
 }

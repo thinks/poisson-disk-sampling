@@ -6,8 +6,8 @@
 
 #include <string>
 
-namespace thinks {
+namespace examples {
 
 void SimpleExample(const std::string& filename);
 
-}  // namespace thinks
+}  // namespace examples

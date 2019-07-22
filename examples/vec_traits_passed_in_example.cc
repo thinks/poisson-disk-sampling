@@ -19,7 +19,7 @@ struct Vec3 {
 };
 
 struct Vec3Traits {
-  typedef float ValueType;
+  using ValueType = float;
 
   static constexpr auto kSize = 3;
 

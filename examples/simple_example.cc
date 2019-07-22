@@ -11,23 +11,21 @@
 
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-namespace thinks {
+namespace examples {
 
 void SimpleExample(const std::string& filename) {
-  namespace pds = poisson_disk_sampling;
-
   // Minimal amount of information provided to sampling function.
   constexpr auto radius = 2.f;
   const std::array<float, 2> x_min = {-10.f, -10.f};
   const std::array<float, 2> x_max = {10.f, 10.f};
-  const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
+  const auto samples = thinks::PoissonDiskSampling(radius, x_min, x_max);
 
   std::ofstream ofs{filename};
   assert(ofs);
   for (const auto& sample : samples) {
-    ofs << sample[0] << ", " << sample[1] << std::endl;
+    ofs << sample[0] << ", " << sample[1] << '\n';
   }
   ofs.close();
 }
 
-}  // namespace thinks
+}  // namespace examples

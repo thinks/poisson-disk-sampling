@@ -13,27 +13,17 @@
 #include <limits>
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace thinks {
-namespace poisson_disk_sampling {
 namespace detail {
 
-namespace util {
-
-#if 0
-// Convenient alias for std::tuple_size for increased readability.
-template <typename ArrayT>
-struct array_size;
-
-template <typename T, std::size_t N>
-struct array_size<std::array<T, N>> {
-  static constexpr std::size_t value = std::tuple_size<std::array<T, N>>::value;
-};
-#endif
-
-template <typename T>
-T clamped(const T min_value, const T max_value, const T value) {
+template <typename ArithT>
+ArithT clamped(const ArithT min_value, const ArithT max_value,
+               const ArithT value) {
+  static_assert(std::is_arithmetic<ArithT>::value, "type must be arithmetic");
   assert(min_value <= max_value && "min_value <= max_value");
   return value < min_value ? min_value
                            : (value > max_value ? max_value : value);
@@ -59,7 +49,7 @@ typename std::array<FloatT, N>::value_type SquaredMagnitude(
   return m;
 }
 
-//Returns the squared distance between the vectors u and v.
+// Returns the squared distance between the vectors u and v.
 template <typename VecTraitsT, typename VecT>
 typename VecTraitsT::ValueType SquaredDistance(const VecT& u, const VecT& v) {
   static_assert(VecTraitsT::kSize >= 1, "dimensions must be >= 1");
@@ -91,18 +81,22 @@ bool Inside(const VecT& x, const std::array<FloatT, N>& x_min,
   return true;
 }
 
-// Erase the value at index in the vector v. The vector v is
+// Erase the value at given index in the vector. The vector is
 // guaranteed to decrese in size by one. Note that the ordering of elements
-// in v may change as a result of calling this function.
+// may change as a result of calling this function.
 //
-// Assumes that v is non-null and that the index is valid. Cannot be called 
-// on an empty vector.
+// Assumes that the vector argument is non-null and that the index is valid.
+// (Cannot be called on an empty vector, no valid indices exist)
 template <typename T>
 void EraseUnordered(std::vector<T>* const v, const std::size_t index) {
   assert(v != nullptr);
   assert(!v->empty());
   assert(index < v->size());
 
+  // Element at index gets same value as last element.
+  // Last element is removed, resulting in a vector that
+  // has one fewer elements with the value that was previously 
+  // at index.
   (*v)[index] = v->back();
   v->pop_back();  // O(1).
 }
@@ -113,6 +107,7 @@ template <typename IntT, std::size_t N>
 bool Iterate(const std::array<IntT, N>& min_index,
              const std::array<IntT, N>& max_index,
              std::array<IntT, N>* const index) {
+  static_assert(std::is_integral<IntT>::value, "IntT must be integral");
   constexpr auto kDims = std::tuple_size<std::array<IntT, N>>::value;
   static_assert(kDims >= 1, "dimensions must be >= 1");
 
@@ -130,10 +125,6 @@ bool Iterate(const std::array<IntT, N>& min_index,
   }
   return i == kDims ? false : true;
 }
-
-}  // namespace util
-
-namespace rand {
 
 // Stateless and repeatable function that returns a
 // pseduo-random number in the range [0, 0xFFFFFFFF].
@@ -214,10 +205,6 @@ inline std::size_t IndexRand(const std::size_t size,
                 (*seed)++));
 }
 
-}  // namespace rand
-
-namespace grid {
-
 template <typename FloatT, std::size_t N>
 class Grid {
  public:
@@ -243,15 +230,13 @@ class Grid {
   FloatT sample_radius() const { return sample_radius_; }
 
   IndexType size() const { return size_; }
-
-  /*!
-  Returns the index for a position along the i'th axis.
-  Note that the returned index may be negative.
-  */
+  
+  // Returns the index for a position along the i'th axis.
+  // Note that the returned index may be negative.
   template <typename FloatT2>
   typename IndexType::value_type AxisIndex(const std::size_t i,
                                            const FloatT2 pos) const {
-    typedef typename IndexType::value_type IndexValueType;
+    using IndexValueType = typename IndexType::value_type;
 
     return static_cast<IndexValueType>((static_cast<FloatT>(pos) - x_min_[i]) *
                                        dx_inv_);
@@ -339,9 +324,7 @@ class Grid {
   }
 };
 
-/*!
-Named contructor that helps with type deduction.
-*/
+//Named contructor that helps with type deduction.
 template <typename FloatT, std::size_t N>
 Grid<FloatT, N> MakeGrid(const FloatT sample_radius,
                          const std::array<FloatT, N>& x_min,
@@ -349,24 +332,27 @@ Grid<FloatT, N> MakeGrid(const FloatT sample_radius,
   return Grid<FloatT, N>(sample_radius, x_min, x_max);
 }
 
-}  // namespace grid
+template <typename ArithT>
+void ThrowIfInvalidRadius(const ArithT radius) {
+  static_assert(std::is_arithmetic<ArithT>::value,
+                "type must be arithmetic");
 
-template <typename FloatT>
-void ThrowIfInvalidRadius(const FloatT radius) {
-  if (!(radius > FloatT{0})) {
-    std::ostringstream oss{};
+  if (!(radius > ArithT{0})) {
+    std::ostringstream oss;
     oss << "radius must be positive, was " << radius;
     throw std::invalid_argument(oss.str());
   }
 }
 
-template <typename FloatT, std::size_t N>
-void ThrowIfInvalidBounds(const std::array<FloatT, N>& x_min,
-                          const std::array<FloatT, N>& x_max) {
-  constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
+template <typename ArithT, std::size_t N>
+void ThrowIfInvalidBounds(const std::array<ArithT, N>& x_min,
+                          const std::array<ArithT, N>& x_max) {
+  static_assert(std::is_arithmetic<ArithT>::value,
+                "type must be arithmetic");
+  constexpr auto kDims = std::tuple_size<std::array<ArithT, N>>::value;
   static_assert(kDims >= 1, "bounds dimensionality must be >= 1");
 
-  auto i = std::size_t{0};
+  std::size_t i = 0;
   for (; i < kDims; ++i) {
     if (!(x_max[i] > x_min[i])) {
       break;
@@ -374,18 +360,18 @@ void ThrowIfInvalidBounds(const std::array<FloatT, N>& x_min,
   }
 
   if (i < kDims) {
-    std::ostringstream oss_min{};
-    std::ostringstream oss_max{};
+    std::ostringstream oss_min;
+    std::ostringstream oss_max;
     oss_min << "[";
     oss_max << "[";
-    for (auto j = std::size_t{0}; j < kDims; ++j) {
+    for (std::size_t j = 0; j < kDims; ++j) {
       oss_min << x_min[j] << (j != kDims - 1 ? ", " : "");
       oss_max << x_max[j] << (j != kDims - 1 ? ", " : "");
     }
     oss_min << "]";
     oss_max << "]";
 
-    std::ostringstream oss{};
+    std::ostringstream oss;
     oss << "invalid bounds - max must be greater than min, was "
         << "min: " << oss_min.str() << ", "
         << "max: " << oss_max.str();
@@ -411,28 +397,24 @@ struct ActiveSample {
   std::uint32_t sample_index;
 };
 
-/*!
-Returns a pseudo-randomly selected active sample from the active indices.
-*/
+// Returns a pseudo-randomly selected active sample from the active indices.
 template <typename VecT>
 ActiveSample<VecT> RandActiveSample(
     const std::vector<std::uint32_t>& active_indices,
     const std::vector<VecT>& samples, std::uint32_t* const seed) {
-  auto active_sample = ActiveSample<VecT>{};
-  active_sample.active_index = rand::IndexRand(active_indices.size(), seed);
+  ActiveSample<VecT> active_sample = {};
+  active_sample.active_index = IndexRand(active_indices.size(), seed);
   active_sample.sample_index = active_indices[active_sample.active_index];
   active_sample.position = samples[active_sample.sample_index];
   return active_sample;
 }
 
-/*!
-Returns a pseudo-random coordinate that is guaranteed be at a
-distance [@a radius, 2 * @a radius] from @a center.
-*/
+// Returns a pseudo-random coordinate that is guaranteed be at a
+// distance [radius, 2 * radius] from center.
 template <typename VecTraitsT, typename VecT, typename FloatT>
 VecT RandAnnulusSample(const VecT& center, const FloatT radius,
                        std::uint32_t* const seed) {
-  typedef typename VecTraitsT::ValueType VecValueType;
+  using VecValueType = typename VecTraitsT::ValueType;
 
   assert(seed != nullptr && "seed is null");
 
@@ -445,13 +427,13 @@ VecT RandAnnulusSample(const VecT& center, const FloatT radius,
   auto p = VecT{};
   for (;;) {
     // Generate a random component in the range [-2, 2] for each dimension.
-    const auto offset = rand::ArrayRangeRand(rand_min, rand_max, seed);
+    const auto offset = ArrayRangeRand(rand_min, rand_max, seed);
 
     // The randomized offset is not guaranteed to be within the radial
     // distance that we need to guarantee. If we found an offset with
     // magnitude in the range (1, 2] we are done, otherwise generate a new
     // offset. Continue until a valid offset is found.
-    const auto r2 = util::SquaredMagnitude(offset);
+    const auto r2 = SquaredMagnitude(offset);
     if (FloatT{1} < r2 && r2 <= FloatT{4}) {
       // Found a valid offset.
       // Add the offset scaled by radius to the center coordinate to
@@ -467,13 +449,11 @@ VecT RandAnnulusSample(const VecT& center, const FloatT radius,
   return p;
 }
 
-/*!
-Add a new sample and update data structures.
-*/
+// Add a new sample and update data structures.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
 void AddSample(const VecT& sample, std::vector<VecT>* const samples,
                std::vector<std::uint32_t>* const active_indices,
-               grid::Grid<FloatT, N>* const grid) {
+               Grid<FloatT, N>* const grid) {
   const auto sample_index = samples->size();  // New sample index.
   samples->push_back(sample);
   active_indices->push_back(static_cast<std::uint32_t>(sample_index));
@@ -488,14 +468,12 @@ struct GridIndexRange {
   IndexT max_index;
 };
 
-/*!
-Returns the grid neighborhood of the sample using the radius of the grid.
-*/
+// Returns the grid neighborhood of the sample using the radius of the grid.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
-GridIndexRange<typename grid::Grid<FloatT, N>::IndexType> GridNeighborhood(
-    const VecT& sample, const grid::Grid<FloatT, N>& grid) {
-  typedef typename std::decay<decltype(grid)>::type::IndexType GridIndexType;
-  typedef typename GridIndexType::value_type GridIndexValueType;
+GridIndexRange<typename Grid<FloatT, N>::IndexType> GridNeighborhood(
+    const VecT& sample, const Grid<FloatT, N>& grid) {
+  using GridIndexType = typename std::decay<decltype(grid)>::type::IndexType;
+  using GridIndexValueType = typename GridIndexType::value_type;
 
   constexpr auto kDims = std::tuple_size<GridIndexType>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
@@ -510,22 +488,20 @@ GridIndexRange<typename grid::Grid<FloatT, N>::IndexType> GridNeighborhood(
     const auto xi = static_cast<FloatT>(VecTraitsT::Get(sample, i));
     const auto xi_sub = grid.AxisIndex(i, xi - radius);
     const auto xi_add = grid.AxisIndex(i, xi + radius);
-    min_index[i] = util::clamped(xi_min, xi_max, xi_sub);
-    max_index[i] = util::clamped(xi_min, xi_max, xi_add);
+    min_index[i] = clamped(xi_min, xi_max, xi_sub);
+    max_index[i] = clamped(xi_min, xi_max, xi_add);
   }
   return GridIndexRange<GridIndexType>{min_index, max_index};
 }
 
-/*!
-Returns true if there exists another sample within the radius used to
-construct the grid, otherwise false.
-*/
+// Returns true if there exists another sample within the radius used to
+// construct the grid, otherwise false.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
 bool ExistingSampleWithinRadius(
     const VecT& sample, const std::uint32_t active_sample_index,
-    const std::vector<VecT>& samples, const grid::Grid<FloatT, N>& grid,
-    const typename grid::Grid<FloatT, N>::IndexType& min_index,
-    const typename grid::Grid<FloatT, N>::IndexType& max_index) {
+    const std::vector<VecT>& samples, const Grid<FloatT, N>& grid,
+    const typename Grid<FloatT, N>::IndexType& min_index,
+    const typename Grid<FloatT, N>::IndexType& max_index) {
   auto index = min_index;
   do {
     const auto cell_index = grid.Cell(index);
@@ -533,44 +509,42 @@ bool ExistingSampleWithinRadius(
         static_cast<std::uint32_t>(cell_index) != active_sample_index) {
       const auto cell_sample = samples[static_cast<std::uint32_t>(cell_index)];
       const auto d = static_cast<FloatT>(
-          util::SquaredDistance<VecTraitsT>(sample, cell_sample));
-      if (d < util::squared(grid.sample_radius())) {
+          SquaredDistance<VecTraitsT>(sample, cell_sample));
+      if (d < squared(grid.sample_radius())) {
         return true;
       }
     }
-  } while (util::Iterate(min_index, max_index, &index));
+  } while (Iterate(min_index, max_index, &index));
 
   return false;
 }
 
 }  // namespace detail
 
-/*!
-Generic template for vector traits. Users may specialize this template
-for their own classes.
-
-Specializations must have the following static interface.
-
-struct MyVecTraits<MyVec>
-{
-  typedef ... ValueType
-  static constexpr std::size_t kSize = ...
-
-  static ValueType Get(const MyVec&, std::size_t)
-  static void Get(MyVec* const, std::size_t, ValueType)
-}
-
-See specialization for std::array below as an example.
-*/
+// Generic template for vector traits. Users may specialize this template
+// for their own classes.
+// 
+// Specializations must have the following static interface.
+// 
+// struct MyVecTraits<MyVec>
+// {
+//   using ValueType =  ...
+//   static constexpr std::size_t kSize = ...
+// 
+//   static ValueType Get(const MyVec&, std::size_t)
+//   static void Get(MyVec* const, std::size_t, ValueType)
+// }
+// 
+// See specialization for std::array below as an example.
 template <typename VecT>
 struct VecTraits;
 
-/*!
-Specialization of vector traits for std::array.
-*/
+// Specialization of vector traits for std::array.
 template <typename FloatT, std::size_t N>
 struct VecTraits<std::array<FloatT, N>> {
-  using ValueType = typename std::array<FloatT, N>::value_type; 
+  using ValueType = typename std::array<FloatT, N>::value_type;
+
+  static_assert(std::is_floating_point<FloatT>::value, "type must be floating point");
 
   static constexpr auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
 
@@ -586,11 +560,9 @@ struct VecTraits<std::array<FloatT, N>> {
   }
 };
 
-/*!
-Returns a list of samples that are guaranteed to:
-  * No two samples are closer to each other than radius.
-  * No sample is outside the region [x_min, x_max].
-*/
+// Returns a list of samples that with the guarantees:
+// * No two samples are closer to each other than radius.
+// * No sample is outside the region [x_min, x_max].
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>,
           typename VecTraitsT = VecTraits<VecT>>
 std::vector<VecT> PoissonDiskSampling(
@@ -606,7 +578,7 @@ std::vector<VecT> PoissonDiskSampling(
   ThrowIfInvalidMaxSampleAttempts(max_sample_attempts);
 
   // Acceleration grid.
-  auto grid = grid::MakeGrid(radius, x_min, x_max);
+  auto grid = MakeGrid(radius, x_min, x_max);
 
   auto samples = std::vector<VecT>{};
   auto active_indices = std::vector<std::uint32_t>{};
@@ -615,7 +587,7 @@ std::vector<VecT> PoissonDiskSampling(
   // Add first sample randomly within bounds.
   // No need to check (non-existing) neighbors.
   AddSample<VecTraitsT>(
-      rand::VecRangeRand<VecT, VecTraitsT>(x_min, x_max, &local_seed), &samples,
+      VecRangeRand<VecT, VecTraitsT>(x_min, x_max, &local_seed), &samples,
       &active_indices, &grid);
 
   while (!active_indices.empty()) {
@@ -632,7 +604,7 @@ std::vector<VecT> PoissonDiskSampling(
           active_sample.position, grid.sample_radius(), &local_seed);
 
       // Check if candidate sample is within bounds.
-      if (util::Inside<VecTraitsT>(cand_sample, x_min, x_max)) {
+      if (Inside<VecTraitsT>(cand_sample, x_min, x_max)) {
         // Check candidate sample proximity to nearby samples.
         const auto grid_neighbors =
             GridNeighborhood<VecTraitsT>(cand_sample, grid);
@@ -656,12 +628,11 @@ std::vector<VecT> PoissonDiskSampling(
     if (attempt_count == max_sample_attempts) {
       // No valid sample was found on the disk of the active sample,
       // remove it from the active list.
-      util::EraseUnordered(&active_indices, active_sample.active_index);
+      EraseUnordered(&active_indices, active_sample.active_index);
     }
   }
 
   return samples;
 }
 
-}  // namespace poisson_disk_sampling
 }  // namespace thinks

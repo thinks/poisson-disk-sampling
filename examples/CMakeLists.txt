@@ -5,8 +5,8 @@
 set(example_srcs
 	json_example.cc
 	simple_example.cc
-	vec_traits_in_namespace_example.cc
-	vec_traits_passed_in_example.cc
+	#vec_traits_in_namespace_example.cc
+	#vec_traits_passed_in_example.cc
 )
 
 add_executable(thinks_poisson_disk_sampling_examples)
@@ -20,10 +20,13 @@ target_include_directories(thinks_poisson_disk_sampling_examples
     .
     ../include/
 )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /experimental:external /external:W0 ")
+set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "/external:I ")
 #set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-internal-isystem ")    
 target_include_directories(thinks_poisson_disk_sampling_examples SYSTEM 
   PRIVATE 
-    external/json/single_include)
+    external/json/single_include
+)
 
 target_compile_options(thinks_poisson_disk_sampling_examples PRIVATE
   # Clang warnings.
@@ -35,12 +38,19 @@ target_compile_options(thinks_poisson_disk_sampling_examples PRIVATE
     -Wshadow 
     -Wno-c++98-compat 
     -Wno-c++98-compat-pedantic 
-    -Werror >
+    -Werror 
+  >
   # GCC warnings.
   $<$<CXX_COMPILER_ID:GNU>:
-    -Wall -Wextra -Wshadow -Werror >
+    -Wall 
+    -Wextra 
+    -Wshadow 
+    -Werror 
+  >
   # MSVC warnings.
   $<$<CXX_COMPILER_ID:MSVC>:
-    /W4 /WX >)
+    /W4 
+    /WX 
+  >)
 
 set_target_properties(thinks_poisson_disk_sampling_examples PROPERTIES CXX_STANDARD 11)
