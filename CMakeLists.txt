@@ -3,19 +3,39 @@
 # found in the top-level directory of this distribution.
 
 cmake_minimum_required(VERSION 3.5)
-project(poisson_disk_sampling)
+project(poisson_disk_sampling CXX)
 
-set(header_files
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h
+# if command can use IN_LIST
+cmake_policy(SET CMP0057 NEW)
+
+list(APPEND CMAKE_MODULE_PATH
+  ${CMAKE_CURRENT_LIST_DIR}/CMake
 )
-add_library(thinks_poisson_disk_sampling INTERFACE)
-add_library(thinks::poisson_disk_sampling ALIAS thinks_poisson_disk_sampling)
-target_sources(thinks_poisson_disk_sampling INTERFACE ${header_files})
-target_include_directories(thinks_poisson_disk_sampling SYSTEM INTERFACE include/)
+
+include(ThinksHelpers)
+
+# include current path
+list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Build tests and examples only when _not_ included as subproject.
 if("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
+  # Enable CTest.  
+  # This will set BUILD_TESTING to ON unless otherwise specified
+  # on the command line
+  include(CTest)
   enable_testing()
-  add_subdirectory(test)
-  add_subdirectory(examples)
+
+  set(JSON_BuildTests OFF CACHE INTERNAL "")
+  set(JSON_Install OFF CACHE INTERNAL "")
+  add_subdirectory(external/json)
+  check_target(nlohmann_json::nlohmann_json)
+ 
+  add_subdirectory(external/Catch2)
+  check_target(Catch2::Catch2)
+
+  # NOTE(thinks): Used?
+  list(APPEND THINKS_TEST_COMMON_LIBRARIES
+    Catch2::Catch2)
 endif()
+
+add_subdirectory(thinks)

@@ -5,8 +5,8 @@
 set(example_srcs
 	json_example.cc
 	simple_example.cc
-	#vec_traits_in_namespace_example.cc
-	#vec_traits_passed_in_example.cc
+	vec_traits_in_namespace_example.cc
+	vec_traits_passed_in_example.cc
 )
 
 add_executable(thinks_poisson_disk_sampling_examples)

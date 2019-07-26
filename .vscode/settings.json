@@ -4,5 +4,13 @@
   "cmake.buildArgs": [
     "--verbose"
   ],
-  "editor.tabSize": 2
+  "cmake.ctestArgs": ["--verbose"],
+  "editor.tabSize": 2,
+  "files.associations": {
+    "exception": "cpp",
+    "functional": "cpp",
+    "memory": "cpp",
+    "optional": "cpp",
+    "variant": "cpp"
+  }
 }

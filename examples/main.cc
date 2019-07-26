@@ -10,9 +10,9 @@
 int main(int, char*[]) {
   examples::JsonExample("./json_example.json");
   examples::SimpleExample("./simple_example.txt");
-  //thinks::VecTraitsInNamespaceExample(
-  //    "./vec_traits_in_namespace_example.txt");
-  //thinks::VecTraitsPassedInExample("./vec_traits_passed_in_example.txt");
+  examples::VecTraitsInNamespaceExample(
+      "./vec_traits_in_namespace_example.txt");
+  // thinks::VecTraitsPassedInExample("./vec_traits_passed_in_example.txt");
 
   return 0;
 }
