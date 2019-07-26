@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(poisson_disk_sampling CXX)
 
+message(STATUS "CMake version: ${CMAKE_VERSION}")
+
 # if command can use IN_LIST
 cmake_policy(SET CMP0057 NEW)
 
