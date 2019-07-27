@@ -43,4 +43,5 @@ script:
   - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
   - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
   #- ctest -j 6 -C Release -T test --output-on-failure --verbose 
+  - cd test
   - ctest . -j 6 --output-on-failure --verbose
