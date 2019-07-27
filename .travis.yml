@@ -37,7 +37,7 @@ before_script:
   #- export CXX=${COMPILER}
   - cd ${TRAVIS_BUILD_DIR}
   - mkdir build && cd build
-  - cmake .. --warn-unused-vars
+  - cmake ..
 
 script: 
   - cmake --build . --config Release --target thinks_poisson_disk_sampling_examples -- -j 6 -v
