@@ -40,9 +40,8 @@ before_script:
   - cmake -DCMAKE_BUILD_TYPE=Release ..
 
 script: 
-  #- cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
-  #- cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
-  - cmake --build . 
+  - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 
+  - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 
   #- ctest -j 6 -C Release -T test --output-on-failure --verbose 
   #- find . -name "thinks_poisson_disk_sampling_test"
   - ctest . -j 6 --output-on-failure --verbose
