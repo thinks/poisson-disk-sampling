@@ -46,4 +46,6 @@ script:
   - pwd
   - ls
   - cd thinks && ls
+  - cd poisson_disk_sampling
+  - cd test
   - ctest . -j 6 --output-on-failure --verbose
