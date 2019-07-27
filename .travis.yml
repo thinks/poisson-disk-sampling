@@ -45,5 +45,5 @@ script:
   #- ctest -j 6 -C Release -T test --output-on-failure --verbose 
   - pwd
   - ls
-  - cd test
+  - cd thinks && cd test
   - ctest . -j 6 --output-on-failure --verbose
