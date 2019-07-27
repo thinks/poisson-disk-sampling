@@ -95,7 +95,7 @@ bool VerifyBounds(const std::vector<VecT>& samples,
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(kDims == VecTraitsType::kSize, "dimensionality mismatch");
 
-  for (auto v = std::cbegin(samples); v != std::cend(samples); ++v) {
+  for (auto v = std::begin(samples); v != std::end(samples); ++v) {
     for (std::size_t i = 0; i < kDims; ++i) {
       const auto xi = static_cast<FloatT>(VecTraitsType::Get(*v, i));
       if (x_min[i] > xi || xi > x_max[i]) {
@@ -133,7 +133,6 @@ void TestPoissonDiskSampling(const FloatT radius = FloatT{2},
 }  // namespace
 
 namespace thinks {
-namespace poisson_disk_sampling {
 
 template <typename T>
 struct VecTraits<Vec2<T>> {
@@ -183,7 +182,6 @@ struct VecTraits<Vec4<T>> {
   }
 };
 
-}  // namespace poisson_disk_sampling
 }  // namespace thinks
 
 TEST_CASE("Test samples <std::array>", "[container]") {
