@@ -4,17 +4,17 @@ matrix:
   include:
     # 1/ Linux GCC Builds
     - os: linux
-      dist: xenial
+      #dist: xenial
       #compiler: gcc
       addons: 
         apt:
           sources: 
-            - ubuntu-toolchain-r-test
+            - [ 'ubuntu-toolchain-r-test', 'kalakris-cmake' ]
           packages: 
-            - g++-7
+            - [ 'g++-7', 'ninja-build', 'cmake' ]
       env: MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     - os: linux
-      dist: xenial
+      #dist: xenial
       #compiler: gcc
       addons:
         apt:
@@ -26,7 +26,7 @@ matrix:
 
     # 2/ Linux Clang Builds
     - os: linux
-      dist: xenial
+      #dist: xenial
       env:
         - MATRIX_EVAL="CC=clang && CXX=clang++"
 
@@ -35,6 +35,7 @@ before_install:
 
 before_script:
   #- export CXX=${COMPILER}
+  - cmake --version
   - cd ${TRAVIS_BUILD_DIR}
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
