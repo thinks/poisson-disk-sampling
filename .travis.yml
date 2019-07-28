@@ -4,8 +4,7 @@ matrix:
   include:
     # 1/ Linux GCC Builds
     - os: linux
-      #dist: xenial
-      #compiler: gcc
+      compiler: gcc
       addons: 
         apt:
           sources: 
@@ -14,8 +13,7 @@ matrix:
             - [ 'g++-7', 'ninja-build', 'cmake' ]
       env: MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     - os: linux
-      #dist: xenial
-      #compiler: gcc
+      compiler: gcc
       addons:
         apt:
           sources:
@@ -26,7 +24,7 @@ matrix:
 
     # 2/ Linux Clang Builds
     - os: linux
-      #dist: xenial
+      compiler: clang
       addons:
         apt:
           sources:
@@ -41,6 +39,7 @@ before_install:
 
 before_script:
   #- export CXX=${COMPILER}
+  - $CXX --version
   - cmake --version
   - cd ${TRAVIS_BUILD_DIR}
   - mkdir build && cd build
@@ -49,6 +48,4 @@ before_script:
 script: 
   - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
   - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
-  #- ctest -j 6 -C Release -T test --output-on-failure --verbose 
-  #- find . -name "thinks_poisson_disk_sampling_test"
   - ctest . -j 6 --output-on-failure --verbose
