@@ -1,12 +1,9 @@
 {
   "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
   "cmake.configureOnOpen": true,
-  "cmake.buildToolArgs": [
-    "-v"
+  "cmake.buildArgs": [
+    "--verbose"
   ],  
-  "cmake.configureArgs": [
-    "--warn-unused-vars"
-  ],
   "cmake.ctestArgs": ["--verbose"],
   "editor.tabSize": 2,
   "files.associations": {

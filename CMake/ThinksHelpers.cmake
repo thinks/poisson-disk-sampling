@@ -148,7 +148,7 @@ function(thinks_cc_executable)
     ${ARGN}
   )
 
-  set(_NAME "${THINKS_CC_EXE_NAME}")
+  set(_NAME "thinks_${THINKS_CC_EXE_NAME}")
 
   add_executable(${_NAME} "")
   target_sources(${_NAME} 

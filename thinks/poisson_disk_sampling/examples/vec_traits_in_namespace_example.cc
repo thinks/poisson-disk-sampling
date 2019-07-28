@@ -2,7 +2,7 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#include "vec_traits_passed_in_example.h"
+#include "thinks/poisson_disk_sampling/examples/vec_traits_in_namespace_example.h"
 
 #include <cassert>
 #include <cstdint>
