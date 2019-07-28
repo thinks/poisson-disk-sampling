@@ -140,12 +140,12 @@ struct VecTraits<Vec2<T>> {
 
   static constexpr auto kSize = 2;
 
-  static constexpr ValueType Get(const Vec2<T>& v, const std::size_t i) {
+  static /*constexpr*/ ValueType Get(const Vec2<T>& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static constexpr void Set(Vec2<T>* const v, const std::size_t i,
-                            const ValueType val) {
+  static /*constexpr*/ void Set(Vec2<T>* const v, const std::size_t i,
+                                const ValueType val) {
     *(&v->x + i) = val;
   }
 };
@@ -156,12 +156,12 @@ struct VecTraits<Vec3<T>> {
 
   static constexpr auto kSize = 3;
 
-  static constexpr ValueType Get(const Vec3<T>& v, const std::size_t i) {
+  static /*constexpr*/ ValueType Get(const Vec3<T>& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static constexpr void Set(Vec3<T>* const v, const std::size_t i,
-                            const ValueType val) {
+  static /*constexpr*/ void Set(Vec3<T>* const v, const std::size_t i,
+                                const ValueType val) {
     *(&v->x + i) = val;
   }
 };
@@ -172,12 +172,12 @@ struct VecTraits<Vec4<T>> {
 
   static constexpr auto kSize = 4;
 
-  static constexpr ValueType Get(const Vec4<T>& v, const std::size_t i) {
+  static /*constexpr*/ ValueType Get(const Vec4<T>& v, const std::size_t i) {
     return *(&v.x + i);
   }
 
-  static constexpr void Set(Vec4<T>* const v, const std::size_t i,
-                            const ValueType val) {
+  static /*constexpr*/ void Set(Vec4<T>* const v, const std::size_t i,
+                                const ValueType val) {
     *(&v->x + i) = val;
   }
 };
