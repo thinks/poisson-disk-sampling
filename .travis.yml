@@ -19,14 +19,20 @@ matrix:
       addons:
         apt:
           sources:
-            - ubuntu-toolchain-r-test
+            - [ 'ubuntu-toolchain-r-test', 'kalakris-cmake' ]
           packages:
-            - g++-8
+            - [ 'g++-8', 'ninja-build', 'cmake' ]
       env: MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
 
     # 2/ Linux Clang Builds
     - os: linux
       #dist: xenial
+      addons:
+        apt:
+          sources:
+            - [ 'kalakris-cmake' ]
+          packages:
+            - [ 'ninja-build', 'cmake' ]
       env:
         - MATRIX_EVAL="CC=clang && CXX=clang++"
 
@@ -41,8 +47,8 @@ before_script:
   - cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
 
 script: 
-  - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 
-  - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 
+  - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
+  - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
   #- ctest -j 6 -C Release -T test --output-on-failure --verbose 
   #- find . -name "thinks_poisson_disk_sampling_test"
   - ctest . -j 6 --output-on-failure --verbose
