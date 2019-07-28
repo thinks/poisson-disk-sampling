@@ -133,6 +133,7 @@ void TestPoissonDiskSampling(const FloatT radius = FloatT{2},
 }  // namespace
 
 namespace thinks {
+// Specialization of VecTraits in namespace.
 
 template <typename T>
 struct VecTraits<Vec2<T>> {
