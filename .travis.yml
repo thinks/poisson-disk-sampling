@@ -15,7 +15,24 @@ matrix:
             - g++-8
             - ninja-build
             - cmake
-      env: MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+      env: 
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+        - CMAKE_BUILD_TYPE=RELEASE
+    # Linux + G++
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - kalakris-cmake
+          packages:
+            - g++-8
+            - ninja-build
+            - cmake
+      env: 
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+        - CMAKE_BUILD_TYPE=DEBUG
     # Linux + clang
     - os: linux
       compiler: clang
@@ -37,7 +54,7 @@ before_script:
   - cmake --version
   - cd ${TRAVIS_BUILD_DIR}
   - mkdir build && cd build
-  - cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
+  - cmake -G Ninja ..
 
 script: 
   - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
