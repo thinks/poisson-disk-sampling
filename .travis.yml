@@ -5,38 +5,31 @@ matrix:
   include:
     # Linux + G++
     - os: linux
-      compiler: g++
-      addons: 
-        apt:
-          sources: 
-            - [ 'ubuntu-toolchain-r-test', 'kalakris-cmake' ]
-          packages: 
-            - [ 'g++-7', 'ninja-build', 'cmake' ]
-      #env: MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-    - os: linux
-      compiler: g++
+      compiler: gcc
       addons:
         apt:
           sources:
-            - [ 'ubuntu-toolchain-r-test', 'kalakris-cmake' ]
+            - ubuntu-toolchain-r-test
+            - kalakris-cmake
           packages:
-            - [ 'g++-8', 'ninja-build', 'cmake' ]
-      #env: MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
-
+            - g++-8
+            - ninja-build
+            - cmake
+      env: MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
     # Linux + clang
     - os: linux
       compiler: clang
       addons:
         apt:
           sources:
-            - [ 'kalakris-cmake' ]
+            - kalakris-cmake
           packages:
-            - [ 'ninja-build', 'cmake' ]
-      #env:
-      #  - MATRIX_EVAL="CC=clang && CXX=clang++"
+            - ninja-build
+            - cmake
+      env: MATRIX_EVAL="CC=clang && CXX=clang++"
 
 before_install:
-  #- eval "${MATRIX_EVAL}"
+  - eval "${MATRIX_EVAL}"
 
 before_script:
   #- export CXX=${COMPILER}
