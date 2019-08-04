@@ -7,8 +7,8 @@
 include(CMakeParseArguments)
 include(ThinksConfigureCopts)
 
-# The IDE folder for Thinks that will be used if Thinks is included in a CMake
-# project that sets
+# The IDE folder for 'thinks' that will be used if 'thinks' is 
+# included in a CMake project that sets
 #    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # For example, Visual Studio supports folders.
 set(THINKS_IDE_FOLDER thinks)
@@ -25,13 +25,15 @@ set(THINKS_IDE_FOLDER thinks)
 # COPTS: List of private compile options
 # DEFINES: List of public defines
 # LINKOPTS: List of link options
-# PUBLIC: Add this so that this library will be exported under absl::
-# Also in IDE, target will appear in Abseil folder while non PUBLIC will be in thinks/internal.
+# PUBLIC: Add this so that this library will be exported under thinks::
+# Also in IDE, target will appear in 'thinks' folder while non-PUBLIC 
+# will be in thinks/internal.
 #
 # Note:
-# By default, thinks_cc_library will always create a library named thinks_${NAME},
-# and alias target thinks::${NAME}. The thinks:: form should always be used.
-# This is to reduce namespace pollution.
+# By default, thinks_cc_library will always create a library 
+# named thinks_${NAME}, and alias target thinks::${NAME}. The 
+# thinks:: form should always be used. This is to reduce 
+# namespace pollution.
 #
 # thinks_cc_library(
 #   NAME
@@ -65,78 +67,91 @@ set(THINKS_IDE_FOLDER thinks)
 # )
 function(thinks_cc_library)
   cmake_parse_arguments(THINKS_CC_LIB
-    "PUBLIC"
+    "PUBLIC;TESTONLY"
     "NAME"
     "HDRS;SRCS;COPTS;DEFINES;LINKOPTS;DEPS"
     ${ARGN}
   )
 
-  set(_NAME "thinks_${THINKS_CC_LIB_NAME}")
+  if(NOT THINKS_CC_LIB_TESTONLY OR BUILD_TESTING)
+    set(_NAME "thinks_${THINKS_CC_LIB_NAME}")
 
-  # Check if this is a header-only library.
-  set(THINKS_CC_SRCS "${THINKS_CC_LIB_SRCS}")
-  foreach(src_file IN LISTS THINKS_CC_SRCS)
-    if(${src_file} MATCHES ".*\\.(h|inc)")
-      list(REMOVE_ITEM THINKS_CC_SRCS "${src_file}")
-    endif()
-  endforeach()
-  if("${THINKS_CC_SRCS}" STREQUAL "")
-    set(THINKS_CC_LIB_IS_INTERFACE 1)
-  else()
-    set(THINKS_CC_LIB_IS_INTERFACE 0)
-  endif()
-
-  if(NOT THINKS_CC_LIB_IS_INTERFACE)
-    add_library(${_NAME} STATIC "")
-    target_sources(${_NAME} 
-      PRIVATE 
-        ${THINKS_CC_LIB_SRCS} 
-        ${THINKS_CC_LIB_HDRS})
-    target_include_directories(${_NAME}
-      PUBLIC
-        ${THINKS_COMMON_INCLUDE_DIRS})
-    target_compile_options(${_NAME}
-      PRIVATE 
-        ${THINKS_CC_LIB_COPTS})
-    target_link_libraries(${_NAME}
-      PUBLIC 
-        ${THINKS_CC_LIB_DEPS}
-      PRIVATE
-        ${THINKS_CC_LIB_LINKOPTS}
-        ${THINKS_DEFAULT_LINKOPTS}
-    )
-    target_compile_definitions(${_NAME} 
-      PUBLIC 
-        ${THINKS_CC_LIB_DEFINES})
-
-    # Add all Thinks targets to a a folder in the IDE for organization.
-    if(THINKS_CC_LIB_PUBLIC)
-      set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER})
+    # Check if this is a header-only library.
+    set(THINKS_CC_SRCS "${THINKS_CC_LIB_SRCS}")
+    foreach(src_file IN LISTS THINKS_CC_SRCS)
+      if(${src_file} MATCHES ".*\\.(h|inc)")
+        list(REMOVE_ITEM THINKS_CC_SRCS "${src_file}")
+      endif()
+    endforeach()
+    if("${THINKS_CC_SRCS}" STREQUAL "")
+      set(THINKS_CC_LIB_IS_INTERFACE 1)
     else()
-      set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER}/internal)
+      set(THINKS_CC_LIB_IS_INTERFACE 0)
     endif()
 
-    # INTERFACE libraries can't have the CXX_STANDARD property set.
-    set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
-    set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
-  else()
-    # Generating header-only library.
-    add_library(${_NAME} INTERFACE)
-    target_include_directories(${_NAME}
-      INTERFACE
-        ${THINKS_COMMON_INCLUDE_DIRS})
-    target_link_libraries(${_NAME}
-      INTERFACE
-        ${THINKS_CC_LIB_DEPS}
-        ${THINKS_CC_LIB_LINKOPTS}
-        ${THINKS_DEFAULT_LINKOPTS})
-    target_compile_definitions(${_NAME} 
-      INTERFACE 
-        ${THINKS_CC_LIB_DEFINES})
-  endif()
+    if(NOT THINKS_CC_LIB_IS_INTERFACE)
+      # Library with at least one non-header file.
+      add_library(${_NAME} STATIC "")
+      target_sources(${_NAME} 
+        PRIVATE 
+          ${THINKS_CC_LIB_SRCS} 
+          ${THINKS_CC_LIB_HDRS}
+      )
+      target_include_directories(${_NAME}
+        PUBLIC
+          ${THINKS_COMMON_INCLUDE_DIRS}
+      )
+      target_compile_options(${_NAME}
+        PRIVATE 
+          ${THINKS_CC_LIB_COPTS}
+      )
+      target_link_libraries(${_NAME}
+        PUBLIC 
+          ${THINKS_CC_LIB_DEPS}
+        PRIVATE
+          ${THINKS_CC_LIB_LINKOPTS}
+          ${THINKS_DEFAULT_LINKOPTS}
+      )
+      target_compile_definitions(${_NAME} 
+        PUBLIC 
+          ${THINKS_CC_LIB_DEFINES}
+      )
 
-  add_library(thinks::${THINKS_CC_LIB_NAME} ALIAS ${_NAME})
+      # Add all 'thinks' targets to a a folder in the IDE for organization.
+      if(THINKS_CC_LIB_PUBLIC)
+        set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER})
+      elseif(THINKS_CC_LIB_TESTONLY)
+        set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER}/test)  
+      else()
+        set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER}/internal)
+      endif()
+
+      # Only non-INTERFACE libraries have the CXX_STANDARD property set.
+      set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
+      set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+    else()
+      # Generating header-only library.
+      add_library(${_NAME} INTERFACE)
+      target_include_directories(${_NAME}
+        INTERFACE
+          ${THINKS_COMMON_INCLUDE_DIRS}
+      )
+      target_link_libraries(${_NAME}
+        INTERFACE
+          ${THINKS_CC_LIB_DEPS}
+          ${THINKS_CC_LIB_LINKOPTS}
+          ${THINKS_DEFAULT_LINKOPTS}
+      )
+      target_compile_definitions(${_NAME} 
+        INTERFACE 
+          ${THINKS_CC_LIB_DEFINES}
+      )
+    endif()
+
+    add_library(thinks::${THINKS_CC_LIB_NAME} ALIAS ${_NAME})
+  endif()
 endfunction()
+
 
 # thinks_cc_executable
 #
@@ -154,13 +169,18 @@ function(thinks_cc_executable)
   target_sources(${_NAME} 
     PRIVATE 
       ${THINKS_CC_EXE_SRCS} 
-      ${THINKS_CC_EXE_HDRS})
-  #target_include_directories(${_NAME}
-  #  PUBLIC
-  #    ${THINKS_COMMON_INCLUDE_DIRS})
+      ${THINKS_CC_EXE_HDRS}
+  )
+
+  # NOTE(thinks): 
+  #   Include directories for an executable should be set using 
+  #   library dependencies. Those dependencies should set up
+  #   the include paths to their headers correctly.
+
   target_compile_options(${_NAME}
     PRIVATE 
-      ${THINKS_CC_EXE_COPTS})
+      ${THINKS_CC_EXE_COPTS}
+  )
   target_link_libraries(${_NAME}
     PUBLIC 
       ${THINKS_CC_EXE_DEPS}
@@ -170,14 +190,16 @@ function(thinks_cc_executable)
   )
   target_compile_definitions(${_NAME} 
     PUBLIC 
-      ${THINKS_CC_LIB_DEFINES})
+      ${THINKS_CC_LIB_DEFINES}
+  )
 
+  # Add all 'thinks' targets to a a folder in the IDE for organization.
   set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER})
 
   set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
   set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
-  add_executable(thinks::${THINKS_CC_LIB_NAME} ALIAS ${_NAME})
+  add_executable(thinks::${THINKS_CC_EXE_NAME} ALIAS ${_NAME})
 endfunction()
 
 
@@ -215,7 +237,7 @@ endfunction()
 #     "awesome_test.cc"
 #   DEPS
 #     thinks::awesome
-#     Catch2::Catch2
+#     Catch2::Catch2  # Or some other nice testing framework!
 # )
 function(THINKS_CC_TEST)
   if(NOT BUILD_TESTING)
@@ -237,18 +259,23 @@ function(THINKS_CC_TEST)
   target_include_directories(${_NAME}
     PUBLIC 
       ${THINKS_COMMON_INCLUDE_DIRS}
-    PRIVATE 
-      ${GMOCK_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS} # catch!?
   )
   target_compile_definitions(${_NAME}
-    PUBLIC ${THINKS_CC_TEST_DEFINES})
-  target_compile_options(${_NAME}
-    PRIVATE ${THINKS_CC_TEST_COPTS})
-  target_link_libraries(${_NAME}
-    PUBLIC ${THINKS_CC_TEST_DEPS}
-    PRIVATE ${THINKS_CC_TEST_LINKOPTS}
+    PUBLIC 
+      ${THINKS_CC_TEST_DEFINES}
   )
-  # Add all Thinks targets to a a folder in the IDE for organization.
+  target_compile_options(${_NAME}
+    PRIVATE 
+      ${THINKS_CC_TEST_COPTS}
+  )
+  target_link_libraries(${_NAME}
+    PUBLIC 
+      ${THINKS_CC_TEST_DEPS}
+    PRIVATE 
+      ${THINKS_CC_TEST_LINKOPTS}
+  )
+
+  # Add all Thinks targets to a folder in the IDE for organization.
   set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER}/test)
 
   set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
@@ -259,6 +286,6 @@ endfunction()
 
 function(check_target my_target)
   if(NOT TARGET ${my_target})
-    message(FATAL_ERROR " Thinks: compilation requires a ${my_target} CMake target in your project.")
-  endif(NOT TARGET ${my_target})
+    message(FATAL_ERROR " thinks: compilation requires a ${my_target} CMake target in your project.")
+  endif()
 endfunction()

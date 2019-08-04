@@ -1,6 +1,5 @@
 # Poisson Disk Sampling
 
-[ ] - Add .clangformat file.
 [ ] - Update CMake, add cppbestpractices build flags.
 [ ] - Build with MSVC, clang, gcc on travis.
 [ ] - external folder at top-level

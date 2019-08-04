@@ -14,6 +14,7 @@ thinks_cc_library(
     ${THINKS_DEFAULT_COPTS}
   DEPS
     Catch2::Catch2
+  TESTONLY
 )
 
 thinks_cc_test(

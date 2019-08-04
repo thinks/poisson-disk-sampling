@@ -10,6 +10,10 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 # if command can use IN_LIST
 cmake_policy(SET CMP0057 NEW)
 
+# For cmake > 3.15 don't add warning levels by default.
+# Probably a little early to enable this for now.
+# cmake_policy(SET CMP0092 NEW)
+
 list(APPEND CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}/CMake
 )
@@ -23,7 +27,7 @@ list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 if("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
   # Enable CTest.  
   # This will set BUILD_TESTING to ON unless otherwise specified
-  # on the command line
+  # on the command line.
   include(CTest)
   enable_testing()
 
@@ -34,10 +38,6 @@ if("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
  
   add_subdirectory(external/Catch2)
   check_target(Catch2::Catch2)
-
-  # NOTE(thinks): Used?
-  list(APPEND THINKS_TEST_COMMON_LIBRARIES
-    Catch2::Catch2)
 endif()
 
 add_subdirectory(thinks)
