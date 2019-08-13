@@ -3,7 +3,7 @@ language: cpp
 
 matrix:
   include:
-    # Linux + G++
+    # Linux, G++
     - os: linux
       compiler: gcc
       addons:
@@ -17,7 +17,7 @@ matrix:
             - cmake
       env: 
         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
-    # Linux + clang
+    # Linux, clang
     - os: linux
       compiler: clang
       addons:
