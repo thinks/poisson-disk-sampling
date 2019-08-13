@@ -2,7 +2,7 @@
   "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
   "cmake.configureOnOpen": true,
   "cmake.buildArgs": [
-    "--verbose"
+    //"--verbose"
   ],  
   "cmake.ctestArgs": ["--verbose"],
   "editor.tabSize": 2,

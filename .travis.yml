@@ -17,21 +17,6 @@ matrix:
             - cmake
       env: 
         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
-        - BUILD_TYPE=RELEASE
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - kalakris-cmake
-          packages:
-            - g++-8
-            - ninja-build
-            - cmake
-      env: 
-        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
-        - BUILD_TYPE=DEBUG
     # Linux + clang
     - os: linux
       compiler: clang
@@ -44,32 +29,22 @@ matrix:
             - cmake
       env: 
         - MATRIX_EVAL="CC=clang && CXX=clang++"
-        - BUILD_TYPE=RELEASE
-    - os: linux
-      compiler: clang
-      addons:
-        apt:
-          sources:
-            - kalakris-cmake
-          packages:
-            - ninja-build
-            - cmake
-      env: 
-        - MATRIX_EVAL="CC=clang && CXX=clang++"
-        - BUILD_TYPE=DEBUG
 
 before_install:
   - eval "${MATRIX_EVAL}"
 
-before_script:
+script: 
   - $CXX --version
   - cmake --version
-  - echo $BUILD_TYPE
   - cd ${TRAVIS_BUILD_DIR}
-  - mkdir build && cd build
-  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G Ninja ..
-
-script: 
+  - mkdir build_dbg && cd build_dbg
+  - cmake -DCMAKE_BUILD_TYPE=DEBUG -G Ninja ..
+  - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
+  - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
+  - ctest . -j 6 --output-on-failure --verbose
+  - cd ${TRAVIS_BUILD_DIR} 
+  - mkdir build_rel && cd build_rel
+  - cmake -DCMAKE_BUILD_TYPE=RELEASE -G Ninja ..
   - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
   - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
   - ctest . -j 6 --output-on-failure --verbose
