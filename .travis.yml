@@ -36,15 +36,15 @@ before_install:
 script: 
   - $CXX --version
   - cmake --version
-  - cd ${TRAVIS_BUILD_DIR}
-  - mkdir build_dbg && cd build_dbg
-  - cmake -DCMAKE_BUILD_TYPE=DEBUG -G Ninja ..
-  - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
-  - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
-  - ctest . -j 6 --output-on-failure --verbose
   - cd ${TRAVIS_BUILD_DIR} 
   - mkdir build_rel && cd build_rel
   - cmake -DCMAKE_BUILD_TYPE=RELEASE -G Ninja ..
+  - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
+  - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
+  - ctest . -j 6 --output-on-failure --verbose
+  - cd ${TRAVIS_BUILD_DIR}
+  - mkdir build_dbg && cd build_dbg
+  - cmake -DCMAKE_BUILD_TYPE=DEBUG -G Ninja ..
   - cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
   - cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
   - ctest . -j 6 --output-on-failure --verbose
