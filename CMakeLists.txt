@@ -23,19 +23,29 @@ include(ThinksHelpers)
 # include current path
 list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
+# This approach is not good with VS Code... seems flaky.
+# Works better in CMake 3.14 and up
+#message(STATUS "^${CMAKE_SOURCE_DIR}$")
+#message(STATUS "^${PROJECT_SOURCE_DIR}$")
+#if("^${CMAKE_SOURCE_DIR}" STREQUAL "^${PROJECT_SOURCE_DIR}")
+
 # Build tests and examples only when _not_ included as subproject.
-if("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
-  # Enable CTest.  
+get_directory_property(HAS_PARENT PARENT_DIRECTORY)
+if (NOT HAS_PARENT)
+  # Enable CTest.
   # This will set BUILD_TESTING to ON unless otherwise specified
   # on the command line.
   include(CTest)
   enable_testing()
+  message(STATUS "BUILD_TESTING = ${BUILD_TESTING}")
 
+  # JSON
   set(JSON_BuildTests OFF CACHE INTERNAL "")
   set(JSON_Install OFF CACHE INTERNAL "")
   add_subdirectory(external/json)
   check_target(nlohmann_json::nlohmann_json)
  
+  # Catch
   add_subdirectory(external/Catch2)
   check_target(Catch2::Catch2)
 endif()
