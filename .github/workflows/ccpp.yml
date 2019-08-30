@@ -9,7 +9,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: Info
+    - name: g++
       run: g++ --version
+    - name: cmake
+      run: cmake --version
     - name: pwd
       run: pwd
