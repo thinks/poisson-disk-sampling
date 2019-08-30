@@ -9,6 +9,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: submodules
+      run: git submodule update --init --recursive
     - name: g++ version
       run: g++ --version
     - name: cmake version
