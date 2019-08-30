@@ -11,6 +11,5 @@ jobs:
     - uses: actions/checkout@v1
     - name: Info
       run: g++ --version
-           cmake --version
     - name: pwd
       run: pwd
