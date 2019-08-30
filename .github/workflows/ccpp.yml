@@ -10,8 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Info
-      g++ --version
-      cmake --version
+      run: g++ --version
+      run: cmake --version
     - name: pwd
       run: pwd
     - name: configure
