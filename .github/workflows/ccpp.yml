@@ -16,7 +16,11 @@ jobs:
     - name: build dir
       run: mkdir build && cd build
     - name: cmake
-      run: cmake -DCMAKE_BUILD_TYPE=RELEASE
+      run: cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+    - name: build examples
+      run: cmake --build . --target thinks_poisson_disk_sampling_examples -- -j 6 -v
+    - name: build test
+      run: cmake --build . --target thinks_poisson_disk_sampling_test -- -j 6 -v
     - name: pwd
       run: pwd
     
