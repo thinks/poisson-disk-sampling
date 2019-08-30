@@ -14,11 +14,3 @@ jobs:
       run: cmake --version
     - name: pwd
       run: pwd
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
