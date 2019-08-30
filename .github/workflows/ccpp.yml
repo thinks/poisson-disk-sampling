@@ -23,6 +23,6 @@ jobs:
       run: cd build && cmake --build . --target thinks_poisson_disk_sampling_examples
     - name: build test
       run: cd build && cmake --build . --target thinks_poisson_disk_sampling_test
-    - name: pwd
-      run: pwd
+    - name: ctest
+      run: cd build && ctest . -j 6 --output-on-failure --verbose
     
