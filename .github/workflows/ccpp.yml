@@ -11,18 +11,23 @@ jobs:
     - uses: actions/checkout@v1
     - name: submodules
       run: git submodule update --init --recursive
-    - name: g++ version
-      run: g++ --version
-    - name: cmake version
-      run: cmake --version
-    - name: build dir
-      run: mkdir build
-    - name: cmake
-      run: cd build && cmake -DCMAKE_BUILD_TYPE=RELEASE ..
-    - name: build examples
-      run: cmake --build ./build --target thinks_poisson_disk_sampling_examples
-    - name: build test
-      run: cmake --build ./build --target thinks_poisson_disk_sampling_test
-    - name: ctest
-      run: cd build && ctest -j 6 --output-on-failure --verbose
-    
+    - name: versions
+    - run: |
+        g++ version
+        cmake --version
+    - name: build and test release
+      run: | 
+        mkdir build_rel
+        cd build_rel
+        cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+        cmake --build . --target thinks_poisson_disk_sampling_examples
+        cmake --build . --target thinks_poisson_disk_sampling_test
+        ctest -j 6 --output-on-failure --verbose
+    - name: build and test debug
+      run: | 
+        mkdir build_dbg
+        cd build_dbg
+        cmake -DCMAKE_BUILD_TYPE=DEBUG ..
+        cmake --build . --target thinks_poisson_disk_sampling_examples
+        cmake --build . --target thinks_poisson_disk_sampling_test
+        ctest -j 6 --output-on-failure --verbose
