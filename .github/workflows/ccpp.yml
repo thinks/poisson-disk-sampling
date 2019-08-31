@@ -9,13 +9,13 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: submodules
+    - name: Submodules
       run: git submodule update --init --recursive
-    - name: versions
+    - name: Versions
       run: |
         g++ --version
         cmake --version
-    - name: build and test release
+    - name: Build and test release
       run: | 
         mkdir build_rel
         cd build_rel
@@ -23,7 +23,7 @@ jobs:
         cmake --build . --target thinks_poisson_disk_sampling_examples
         cmake --build . --target thinks_poisson_disk_sampling_test
         ctest -j 6 --output-on-failure --verbose
-    - name: build and test debug
+    - name: Build and test debug
       run: | 
         mkdir build_dbg
         cd build_dbg
