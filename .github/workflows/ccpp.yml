@@ -13,7 +13,7 @@ jobs:
       run: git submodule update --init --recursive
     - name: versions
       run: |
-        g++ version
+        g++ --version
         cmake --version
     - name: build and test release
       run: | 
