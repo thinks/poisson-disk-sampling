@@ -18,11 +18,11 @@ jobs:
     - name: build dir
       run: mkdir build
     - name: cmake
-      run: cd build && cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+      run: cmake -DCMAKE_BUILD_TYPE=RELEASE ./build
     - name: build examples
-      run: cd build && cmake --build . --target thinks_poisson_disk_sampling_examples
+      run: cmake --build ./build --target thinks_poisson_disk_sampling_examples
     - name: build test
-      run: cd build && cmake --build . --target thinks_poisson_disk_sampling_test
+      run: cmake --build ./build --target thinks_poisson_disk_sampling_test
     - name: ctest
-      run: cd build && ctest . -j 6 --output-on-failure --verbose
+      run: ctest ./build -j 6 --output-on-failure --verbose
     
