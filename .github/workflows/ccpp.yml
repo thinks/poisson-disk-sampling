@@ -24,5 +24,5 @@ jobs:
     - name: build test
       run: cmake --build ./build --target thinks_poisson_disk_sampling_test
     - name: ctest
-      run: ctest ./build -j 6 --output-on-failure --verbose
+      run: cd build && ctest -j 6 --output-on-failure --verbose
     
