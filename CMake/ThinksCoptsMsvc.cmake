@@ -3,15 +3,16 @@
 # found in the top-level directory of this distribution.
 
 # Flags inspired by:
-# - Abseil [abseil] (https://github.com/abseil/abseil-cpp/blob/master/absl/copts/GENERATED_AbseilCopts.cmake)
-# - Cpp Best Practices [cpp-bp] (https://github.com/lefticus/cppbestpractices/blob/master/02-Use_the_Tools_Available.md)
+# - [abseil] (https://github.com/abseil/abseil-cpp/blob/master/absl/copts/GENERATED_AbseilCopts.cmake)
+# - [cpp-bp] (https://github.com/lefticus/cppbestpractices/blob/master/02-Use_the_Tools_Available.md)
 # 
 # Each flag is tagged with the source from which it is taken.
 
 list(APPEND THINKS_MSVC_EXCEPTION_FLAGS
-  "/U_HAS_EXCEPTIONS"  # [abseil]
-  "/D_HAS_EXCEPTIONS=1"  # [abseil]
-  "/EHsc"  # [abseil] catches C++ exceptions only and tells the compiler to assume 
+  # [abseil]
+  "/U_HAS_EXCEPTIONS"  
+  "/D_HAS_EXCEPTIONS=1" 
+  "/EHsc"  # catches C++ exceptions only and tells the compiler to assume 
            # that functions declared as extern "C" never throw a C++ exception
 )
 
