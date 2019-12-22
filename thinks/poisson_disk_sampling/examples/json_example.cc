@@ -15,8 +15,6 @@
 
 namespace examples {
 
-void bla() {}
-
 void JsonExample(const std::string& filename) {
   using json = nlohmann::json;
 
