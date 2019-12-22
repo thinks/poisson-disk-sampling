@@ -15,7 +15,8 @@ jobs:
       run: |
         g++ --version
         cmake --version
-        #clang-tidy --version
+        sudo apt-get install clang-tidy
+        clang-tidy --version
     - name: Build and test release
       run: | 
         mkdir build_rel
