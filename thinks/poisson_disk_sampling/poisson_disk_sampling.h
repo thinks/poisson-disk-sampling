@@ -22,9 +22,9 @@ namespace detail {
 
 template <typename ArithT>
 constexpr auto clamped(const ArithT min_value, const ArithT max_value,
-                         const ArithT value) -> ArithT {
+                       const ArithT value) -> ArithT {
   static_assert(std::is_arithmetic<ArithT>::value, "type must be arithmetic");
-  assert(min_value <= max_value && "min_value <= max_value");
+  //assert(min_value <= max_value && "min_value <= max_value");
   return value < min_value ? min_value
                            : (value > max_value ? max_value : value);
 }
@@ -37,8 +37,8 @@ constexpr auto squared(const ArithT x) -> ArithT {
 
 // Returns the squared magnitude of x (not checking for overflow).
 template <typename FloatT, std::size_t N>
-auto SquaredMagnitude(
-    const std::array<FloatT, N>& x) -> typename std::array<FloatT, N>::value_type {
+auto SquaredMagnitude(const std::array<FloatT, N>& x) ->
+    typename std::array<FloatT, N>::value_type {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(kDims >= 1, "dimensions must be >= 1");
 
@@ -133,10 +133,10 @@ inline std::uint32_t Hash(const std::uint32_t seed) {
   static_assert(sizeof(unsigned int) == sizeof(std::uint32_t),
                 "integer size mismatch");
 
-  auto i = std::uint32_t{(seed ^ 12345391u) * 2654435769u}; // NOLINT
-  i ^= (i << 6u) ^ (i >> 26u); // NOLINT
-  i *= 2654435769u; // NOLINT
-  i += (i << 5u) ^ (i >> 12u); // NOLINT
+  auto i = std::uint32_t{(seed ^ 12345391u) * 2654435769u};  // NOLINT
+  i ^= (i << 6u) ^ (i >> 26u);                               // NOLINT
+  i *= 2654435769u;                                          // NOLINT
+  i += (i << 5u) ^ (i >> 12u);                               // NOLINT
   return i;
 }
 
@@ -199,12 +199,11 @@ VecT VecRangeRand(const std::array<FloatT, N>& x_min,
 }
 
 // Returns a pseudo-random index in the range [0, size - 1].
-inline auto IndexRand(const std::size_t size,
-                             std::uint32_t* const seed) -> std::size_t {
+inline auto IndexRand(const std::size_t size, std::uint32_t* const seed)
+    -> std::size_t {
   constexpr auto kEps = 0.0001F;
   return static_cast<std::size_t>(
-      RangeRand(float{0}, static_cast<float>(size) - kEps,
-                (*seed)++));
+      RangeRand(float{0}, static_cast<float>(size) - kEps, (*seed)++));
 }
 
 template <typename FloatT, std::size_t N>
