@@ -29,7 +29,7 @@ list(APPEND THINKS_GCC_FLAGS
   "-Wnon-virtual-dtor"  # warn the user if a class with virtual functions has a non-virtual destructor. This helps catch hard to track down memory errors
   "-Wold-style-cast"  # warn for c-style casts
   "-Wcast-align"  # warn for potential performance problem casts
-  "-Wunused-warn"  # on anything being unused
+  "-Wunused"  # on anything being unused
   "-Woverloaded-virtual"  # warn if you overload (not override) a virtual function
   "-Wpedantic"  # (all versions of GCC, Clang >= 3.2) warn if non-standard C++ is used
   "-Wconversion"  # warn on type conversions that may lose data
