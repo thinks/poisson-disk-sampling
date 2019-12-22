@@ -12,10 +12,10 @@
 namespace thinks {
 
 struct ExceptionContentMatcher : Catch::MatcherBase<std::exception> {
-  ExceptionContentMatcher(const std::string& target);
+  explicit ExceptionContentMatcher(std::string target);
 
-  bool match(const std::exception& matchee) const override;
-  std::string describe() const override;
+  bool match(const std::exception& matchee) const override; // NOLINT
+  std::string describe() const override; // NOLINT
 
  private:
   std::string target_;

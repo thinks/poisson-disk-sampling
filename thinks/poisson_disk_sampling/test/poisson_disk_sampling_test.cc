@@ -39,19 +39,19 @@ struct Vec4 {
 };
 
 template <typename T>
-constexpr T squared(const T x) {
+constexpr auto squared(const T x) -> T {
   return x * x;
 }
 
 template <std::size_t N, typename T>
-std::array<T, N> FilledArray(const T value) {
+auto FilledArray(const T value) -> std::array<T, N> {
   auto a = std::array<T, N>{};
   std::fill(std::begin(a), std::end(a), value);
   return a;
 }
 
 template <typename VecTraitsT, typename VecT>
-typename VecTraitsT::ValueType SquaredDistance(const VecT& u, const VecT& v) {
+auto SquaredDistance(const VecT& u, const VecT& v) -> typename VecTraitsT::ValueType {
   static_assert(VecTraitsT::kSize >= 1, "vec dimensionality must be >= 1");
 
   auto d = squared(VecTraitsT::Get(u, 0) - VecTraitsT::Get(v, 0));
@@ -64,7 +64,7 @@ typename VecTraitsT::ValueType SquaredDistance(const VecT& u, const VecT& v) {
 // O(N^2) verification. Verifies that the distance between each possible
 // sample pair meets the Poisson requirement, i.e. is greater than some radius.
 template <typename VecT, typename FloatT>
-bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
+auto VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) -> bool {
   if (samples.empty()) {
     return false;
   }
@@ -87,9 +87,9 @@ bool VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) {
 
 // Returns true if all samples are within the bounds specified by x_min and x_max.
 template <typename VecT, typename FloatT, std::size_t N>
-bool VerifyBounds(const std::vector<VecT>& samples,
+auto VerifyBounds(const std::vector<VecT>& samples,
                   const std::array<FloatT, N>& x_min,
-                  const std::array<FloatT, N>& x_max) {
+                  const std::array<FloatT, N>& x_max) -> bool {
   using VecTraitsType = thinks::VecTraits<VecT>;
 
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
@@ -141,7 +141,7 @@ struct VecTraits<Vec2<T>> {
 
   static constexpr auto kSize = 2;
 
-  static /*constexpr*/ ValueType Get(const Vec2<T>& v, const std::size_t i) {
+  static /*constexpr*/ auto Get(const Vec2<T>& v, const std::size_t i) -> ValueType {
     return *(&v.x + i);
   }
 
@@ -157,7 +157,7 @@ struct VecTraits<Vec3<T>> {
 
   static constexpr auto kSize = 3;
 
-  static /*constexpr*/ ValueType Get(const Vec3<T>& v, const std::size_t i) {
+  static /*constexpr*/ auto Get(const Vec3<T>& v, const std::size_t i) -> ValueType {
     return *(&v.x + i);
   }
 
@@ -173,7 +173,7 @@ struct VecTraits<Vec4<T>> {
 
   static constexpr auto kSize = 4;
 
-  static /*constexpr*/ ValueType Get(const Vec4<T>& v, const std::size_t i) {
+  static /*constexpr*/ auto Get(const Vec4<T>& v, const std::size_t i) -> ValueType {
     return *(&v.x + i);
   }
 
@@ -220,7 +220,7 @@ TEST_CASE("Test samples <Vec>", "[container]") {
 
 TEST_CASE("Invalid arguments", "[container]") {
   SECTION("Negative radius") {
-    constexpr auto radius = -1.f;
+    constexpr auto radius = -1.F;
 
     // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
@@ -230,10 +230,10 @@ TEST_CASE("Invalid arguments", "[container]") {
 
   SECTION("Min >= max") {
     // Not relevant here.
-    constexpr auto radius = 1.f;
+    constexpr auto radius = 1.F;
 
-    constexpr auto x_min_value = 10.f;
-    constexpr auto x_max_value = -10.f;
+    constexpr auto x_min_value = 10.F;
+    constexpr auto x_max_value = -10.F;
 
     // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
@@ -244,8 +244,8 @@ TEST_CASE("Invalid arguments", "[container]") {
             "max: [-10, -10]"});
 
     {
-      constexpr std::array<float, 2> x_min = {10.f, -10.f};
-      constexpr std::array<float, 2> x_max = {-10.f, 10.f};
+      constexpr std::array<float, 2> x_min = {10.F, -10.F};
+      constexpr std::array<float, 2> x_max = {-10.F, 10.F};
 
       // Strange () work-around for catch framework.
       REQUIRE_THROWS_MATCHES(
@@ -256,8 +256,8 @@ TEST_CASE("Invalid arguments", "[container]") {
                                          "max: [-10, 10]"});
     }
     {
-      constexpr std::array<float, 2> x_min = {-10.f, 10.f};
-      constexpr std::array<float, 2> x_max = {10.f, -10.f};
+      constexpr std::array<float, 2> x_min = {-10.F, 10.F};
+      constexpr std::array<float, 2> x_max = {10.F, -10.F};
 
       // Strange () work-around for catch framework.
       REQUIRE_THROWS_MATCHES(
@@ -271,9 +271,9 @@ TEST_CASE("Invalid arguments", "[container]") {
 
   SECTION("Zero sample attempts") {
     // Not relevant here.
-    constexpr auto radius = 1.f;
-    constexpr auto x_min_value = -10.f;
-    constexpr auto x_max_value = 10.f;
+    constexpr auto radius = 1.F;
+    constexpr auto x_min_value = -10.F;
+    constexpr auto x_max_value = 10.F;
 
     constexpr auto max_sample_attempts = std::uint32_t{0};
 

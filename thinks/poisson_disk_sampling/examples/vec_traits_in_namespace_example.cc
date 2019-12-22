@@ -13,9 +13,7 @@
 namespace {
 
 struct Vec3 {
-  float x;
-  float y;
-  float z;
+  float v[3]; // NOLINT
 };
 
 }  // namespace
@@ -28,12 +26,12 @@ struct VecTraits<Vec3> {
 
   static constexpr auto kSize = 3;
 
-  static ValueType Get(const Vec3& v, const std::size_t i) {
-    return *(&v.x + i);
+  static auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+    return v.v[i];
   }
 
   static void Set(Vec3* const v, const std::size_t i, const ValueType val) {
-    *(&v->x + i) = val;
+    v->v[i] = val;
   }
 };
 
@@ -42,16 +40,16 @@ struct VecTraits<Vec3> {
 namespace examples {
 
 void VecTraitsInNamespaceExample(const std::string& filename) {
-  constexpr auto radius = 2.f;
-  const std::array<float, 3> x_min = {-10.f, -10.f, -10.f};
-  const std::array<float, 3> x_max = {10.f, 10.f, 10.f};
+  constexpr auto radius = 2.F;
+  const std::array<float, 3> x_min = {-10.F, -10.F, -10.F};
+  const std::array<float, 3> x_max = {10.F, 10.F, 10.F};
   const auto samples =
       thinks::PoissonDiskSampling<float, 3, Vec3>(radius, x_min, x_max);
 
   std::ofstream ofs{filename};
   assert(ofs);
   for (const auto& sample : samples) {
-    ofs << sample.x << ", " << sample.y << ", " << sample.z << '\n';
+    ofs << sample.v[0] << ", " << sample.v[1] << ", " << sample.v[2] << '\n';
   }
   ofs.close();
 }

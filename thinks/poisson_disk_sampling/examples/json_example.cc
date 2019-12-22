@@ -15,12 +15,14 @@
 
 namespace examples {
 
+void bla() {}
+
 void JsonExample(const std::string& filename) {
   using json = nlohmann::json;
 
-  constexpr auto radius = 3.f;
-  constexpr std::array<float, 2> x_min = {-10.f, -10.f};
-  constexpr std::array<float, 2> x_max = {10.f, 10.f};
+  constexpr auto radius = 3.F;
+  constexpr std::array<float, 2> x_min = {-10.F, -10.F};
+  constexpr std::array<float, 2> x_max = {10.F, 10.F};
   constexpr auto max_sample_attempts = std::uint32_t{30};
   constexpr auto seed = std::uint32_t{0};
 

@@ -15,9 +15,9 @@ namespace examples {
 
 void SimpleExample(const std::string& filename) {
   // Minimal amount of information provided to sampling function.
-  constexpr auto radius = 2.f;
-  const std::array<float, 2> x_min = {-10.f, -10.f};
-  const std::array<float, 2> x_max = {10.f, 10.f};
+  constexpr auto radius = 2.F;
+  const std::array<float, 2> x_min = {-10.F, -10.F};
+  const std::array<float, 2> x_max = {10.F, 10.F};
   const auto samples = thinks::PoissonDiskSampling(radius, x_min, x_max);
 
   std::ofstream ofs{filename};

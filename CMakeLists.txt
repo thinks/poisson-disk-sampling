@@ -28,6 +28,13 @@ list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 #message(STATUS "^${CMAKE_SOURCE_DIR}$")
 #message(STATUS "^${PROJECT_SOURCE_DIR}$")
 #if("^${CMAKE_SOURCE_DIR}" STREQUAL "^${PROJECT_SOURCE_DIR}")
+find_program(CLANG_TIDY NAMES clang-tidy)
+if (NOT CLANG_TIDY)
+  message(STATUS "clang-tidy not found")
+else()
+  message(STATUS "clang-tidy = ${CLANG_TIDY}")
+  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+endif()
 
 # Build tests and examples only when _not_ included as subproject.
 get_directory_property(HAS_PARENT PARENT_DIRECTORY)

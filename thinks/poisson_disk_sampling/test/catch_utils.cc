@@ -8,13 +8,13 @@
 
 namespace thinks {
 
-ExceptionContentMatcher::ExceptionContentMatcher(const std::string& target) : target_(target) {}
+ExceptionContentMatcher::ExceptionContentMatcher(std::string target) : target_(std::move(target)) {}
 
-bool ExceptionContentMatcher::match(const std::exception& matchee) const {
+auto ExceptionContentMatcher::match(const std::exception& matchee) const -> bool {
   return matchee.what() == target_;
 }
 
-std::string ExceptionContentMatcher::describe() const {
+auto ExceptionContentMatcher::describe() const -> std::string {
   std::ostringstream oss;
   oss << "exception message is: '" << target_ << "'";
   return oss.str();

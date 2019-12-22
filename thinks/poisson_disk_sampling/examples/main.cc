@@ -7,7 +7,7 @@
 #include "thinks/poisson_disk_sampling/examples/vec_traits_in_namespace_example.h"
 #include "thinks/poisson_disk_sampling/examples/vec_traits_passed_in_example.h"
 
-int main(int, char*[]) {
+int main(int /*argc*/, char* /*argv*/[]) { // NOLINT
   examples::JsonExample("./json_example.json");
   examples::SimpleExample("./simple_example.txt");
   examples::VecTraitsInNamespaceExample(

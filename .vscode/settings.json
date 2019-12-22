@@ -1,7 +1,7 @@
 {
   "cmake.configureOnOpen": true,
   "cmake.buildArgs": [
-    //"--verbose"
+    "--verbose"
   ],  
   "cmake.ctestArgs": ["--verbose"],
   "editor.tabSize": 2,
