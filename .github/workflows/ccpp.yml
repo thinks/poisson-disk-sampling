@@ -1,0 +1,33 @@
+name: C/C++ CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: Submodules
+      run: git submodule update --init --recursive
+    - name: Versions
+      run: |
+        g++ --version
+        cmake --version
+    - name: Build and test release
+      run: | 
+        mkdir build_rel
+        cd build_rel
+        cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+        cmake --build . --target thinks_poisson_disk_sampling_examples
+        cmake --build . --target thinks_poisson_disk_sampling_test
+        ctest -j 6 --output-on-failure --verbose
+    - name: Build and test debug
+      run: | 
+        mkdir build_dbg
+        cd build_dbg
+        cmake -DCMAKE_BUILD_TYPE=DEBUG ..
+        cmake --build . --target thinks_poisson_disk_sampling_examples
+        cmake --build . --target thinks_poisson_disk_sampling_test
+        ctest -j 6 --output-on-failure --verbose
