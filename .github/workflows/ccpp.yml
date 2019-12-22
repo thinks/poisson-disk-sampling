@@ -15,7 +15,7 @@ jobs:
       run: |
         g++ --version
         cmake --version
-        clang-tidy --version
+        #clang-tidy --version
     - name: Build and test release
       run: | 
         mkdir build_rel
