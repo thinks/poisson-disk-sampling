@@ -13,7 +13,7 @@ jobs:
       run: git submodule update --init --recursive
     - name: Versions
       run: |
-        $CXX --version
+        g++ --version
         cmake --version
         #sudo apt-get install clang-tidy-9.0
         #clang-tidy --version
