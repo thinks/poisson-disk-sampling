@@ -17,7 +17,7 @@ jobs:
         cmake --version
         sudo apt update
         sudo apt install clang
-        #clang-tidy --version
+        clang-tidy --version
     - name: Build and test release
       run: | 
         mkdir build_rel
