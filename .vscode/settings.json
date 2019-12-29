@@ -1,16 +1,10 @@
 {
   "cmake.configureOnOpen": true,
-  "cmake.buildArgs": [
-    "--verbose"
-  ],  
+  "cmake.buildArgs": [],  
   "cmake.ctestArgs": ["--verbose"],
   "editor.tabSize": 2,
-  "files.associations": {
-    "exception": "cpp",
-    "functional": "cpp",
-    "memory": "cpp",
-    "optional": "cpp",
-    "variant": "cpp"
-  },
-  "clang-format.fallbackStyle": "Google"
+  "clang-format.fallbackStyle": "Google",
+  "cmake.configureArgs": [
+    "-DCMAKE_VERBOSE_MAKEFILE=ON"
+  ]
 }
