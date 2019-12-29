@@ -33,7 +33,7 @@ if (NOT CLANG_TIDY)
   message(STATUS "clang-tidy not found")
 else()
   message(STATUS "clang-tidy = ${CLANG_TIDY}")
-  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+  #set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
 
 # Build tests and examples only when _not_ included as subproject.
