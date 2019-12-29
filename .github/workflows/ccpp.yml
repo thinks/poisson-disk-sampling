@@ -23,14 +23,12 @@ jobs:
         mkdir build_rel
         cd build_rel
         cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON ..
-        cmake --build . --target thinks_poisson_disk_sampling_examples
-        cmake --build . --target thinks_poisson_disk_sampling_test
+        cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
     - name: Build and test debug
       run: | 
         mkdir build_dbg
         cd build_dbg
         cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON ..
-        cmake --build . --target thinks_poisson_disk_sampling_examples
-        cmake --build . --target thinks_poisson_disk_sampling_test
+        cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
