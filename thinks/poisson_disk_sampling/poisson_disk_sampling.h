@@ -555,13 +555,13 @@ struct VecTraits<std::array<FloatT, N>> {
   static constexpr auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
 
   static constexpr auto Get(const std::array<FloatT, N>& vec, const std::size_t i) -> ValueType {
-    assert(i < kSize && "index out of bounds");
+    //assert(i < kSize && "index out of bounds");
     return vec[i];
   }
 
   static constexpr void Set(std::array<FloatT, N>* const vec, const std::size_t i,
                   const ValueType value) {
-    assert(i < kSize && "index out of bounds");
+    //assert(i < kSize && "index out of bounds");
     (*vec)[i] = value;
   }
 };
