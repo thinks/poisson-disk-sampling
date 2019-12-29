@@ -11,5 +11,6 @@
     "memory": "cpp",
     "optional": "cpp",
     "variant": "cpp"
-  }
+  },
+  "clang-format.fallbackStyle": "Google"
 }

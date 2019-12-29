@@ -96,7 +96,7 @@ else()
 endif()
 
 if("${CMAKE_CXX_STANDARD}" EQUAL 98)
-  message(FATAL_ERROR "thinks requires at least C++11")
+  message(FATAL_ERROR "thinks: requires at least C++11")
 elseif(NOT "${CMAKE_CXX_STANDARD}")
   message(STATUS "thinks: No CMAKE_CXX_STANDARD set, assuming 11")
   set(THINKS_CXX_STANDARD 11)

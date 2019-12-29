@@ -2,14 +2,14 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <vector>
 
 #include "catch2/catch.hpp"
-
-#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 #include "thinks/poisson_disk_sampling/test/catch_utils.h"
 
 namespace {
@@ -39,7 +39,7 @@ struct Vec4 {
 };
 
 template <typename T>
-constexpr auto squared(const T x) -> T {
+constexpr auto squared(const T x) -> T {  // NOLINT
   return x * x;
 }
 
@@ -51,7 +51,8 @@ auto FilledArray(const T value) -> std::array<T, N> {
 }
 
 template <typename VecTraitsT, typename VecT>
-auto SquaredDistance(const VecT& u, const VecT& v) -> typename VecTraitsT::ValueType {
+auto SquaredDistance(const VecT& u, const VecT& v) ->
+    typename VecTraitsT::ValueType {
   static_assert(VecTraitsT::kSize >= 1, "vec dimensionality must be >= 1");
 
   auto d = squared(VecTraitsT::Get(u, 0) - VecTraitsT::Get(v, 0));
@@ -62,16 +63,17 @@ auto SquaredDistance(const VecT& u, const VecT& v) -> typename VecTraitsT::Value
 }
 
 // O(N^2) verification. Verifies that the distance between each possible
-// sample pair meets the Poisson requirement, i.e. is greater than some radius.
+// sample pair meets the Poisson requirement, i.e. is greater than some kRadius.
 template <typename VecT, typename FloatT>
-auto VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) -> bool {
+auto VerifyPoisson(const std::vector<VecT>& samples, const FloatT kRadius)
+    -> bool {
   if (samples.empty()) {
     return false;
   }
 
   const auto iend = std::end(samples);
   const auto ibegin = std::begin(samples);
-  const auto r_squared = radius * radius;
+  const auto r_squared = kRadius * kRadius;
 
   for (auto u = ibegin; u != iend; ++u) {
     for (auto v = ibegin; v != iend; ++v) {
@@ -85,11 +87,12 @@ auto VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius) -> boo
   return true;
 }
 
-// Returns true if all samples are within the bounds specified by x_min and x_max.
+// Returns true if all samples are within the bounds specified by kXMin and
+// kXMax.
 template <typename VecT, typename FloatT, std::size_t N>
 auto VerifyBounds(const std::vector<VecT>& samples,
-                  const std::array<FloatT, N>& x_min,
-                  const std::array<FloatT, N>& x_max) -> bool {
+                  const std::array<FloatT, N>& kXMin,
+                  const std::array<FloatT, N>& kXMax) -> bool {
   using VecTraitsType = thinks::VecTraits<VecT>;
 
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
@@ -98,7 +101,7 @@ auto VerifyBounds(const std::vector<VecT>& samples,
   for (auto v = std::begin(samples); v != std::end(samples); ++v) {
     for (std::size_t i = 0; i < kDims; ++i) {
       const auto xi = static_cast<FloatT>(VecTraitsType::Get(*v, i));
-      if (x_min[i] > xi || xi > x_max[i]) {
+      if (kXMin[i] > xi || xi > kXMax[i]) {
         return false;
       }
     }
@@ -107,27 +110,27 @@ auto VerifyBounds(const std::vector<VecT>& samples,
 }
 
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
-void TestPoissonDiskSampling(const std::array<FloatT, N>& x_min,
-                             const std::array<FloatT, N>& x_max,
-                             const FloatT radius = FloatT{2},
-                             const std::uint32_t max_sample_attempts = 30,
+void TestPoissonDiskSampling(const std::array<FloatT, N>& kXMin,
+                             const std::array<FloatT, N>& kXMax,
+                             const FloatT kRadius = FloatT{2},
+                             const std::uint32_t kMaxSampleAttempts = 30,
                              const std::uint32_t seed = 0) {
   const auto samples = thinks::PoissonDiskSampling<FloatT, N, VecT>(
-      radius, x_min, x_max, max_sample_attempts, seed);
+      kRadius, kXMin, kXMax, kMaxSampleAttempts, seed);
 
-  REQUIRE(VerifyPoisson(samples, radius));
-  REQUIRE(VerifyBounds(samples, x_min, x_max));
+  REQUIRE(VerifyPoisson(samples, kRadius));
+  REQUIRE(VerifyBounds(samples, kXMin, kXMax));
 }
 
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
-void TestPoissonDiskSampling(const FloatT radius = FloatT{2},
-                             const FloatT x_min_value = FloatT{-10},
-                             const FloatT x_max_value = FloatT{10},
-                             const std::uint32_t max_sample_attempts = 30,
+void TestPoissonDiskSampling(const FloatT kRadius = FloatT{2},
+                             const FloatT kXMinValue = FloatT{-10},
+                             const FloatT kXMaxValue = FloatT{10},
+                             const std::uint32_t kMaxSampleAttempts = 30,
                              const std::uint32_t seed = 0) {
-  const auto x_min = FilledArray<N>(x_min_value);
-  const auto x_max = FilledArray<N>(x_max_value);
-  TestPoissonDiskSampling(x_min, x_max, radius, max_sample_attempts, seed);
+  const auto kXMin = FilledArray<N>(kXMinValue);
+  const auto kXMax = FilledArray<N>(kXMaxValue);
+  TestPoissonDiskSampling(kXMin, kXMax, kRadius, kMaxSampleAttempts, seed);
 }
 
 }  // namespace
@@ -141,12 +144,13 @@ struct VecTraits<Vec2<T>> {
 
   static constexpr auto kSize = 2;
 
-  static /*constexpr*/ auto Get(const Vec2<T>& v, const std::size_t i) -> ValueType {
+  static constexpr auto Get(const Vec2<T>& v, const std::size_t i)
+      -> ValueType {
     return *(&v.x + i);
   }
 
-  static /*constexpr*/ void Set(Vec2<T>* const v, const std::size_t i,
-                                const ValueType val) {
+  static constexpr void Set(Vec2<T>* const v, const std::size_t i,
+                            const ValueType val) {
     *(&v->x + i) = val;
   }
 };
@@ -157,7 +161,8 @@ struct VecTraits<Vec3<T>> {
 
   static constexpr auto kSize = 3;
 
-  static /*constexpr*/ auto Get(const Vec3<T>& v, const std::size_t i) -> ValueType {
+  static /*constexpr*/ auto Get(const Vec3<T>& v, const std::size_t i)
+      -> ValueType {
     return *(&v.x + i);
   }
 
@@ -173,7 +178,8 @@ struct VecTraits<Vec4<T>> {
 
   static constexpr auto kSize = 4;
 
-  static /*constexpr*/ auto Get(const Vec4<T>& v, const std::size_t i) -> ValueType {
+  static /*constexpr*/ auto Get(const Vec4<T>& v, const std::size_t i)
+      -> ValueType {
     return *(&v.x + i);
   }
 
@@ -219,68 +225,68 @@ TEST_CASE("Test samples <Vec>", "[container]") {
 }
 
 TEST_CASE("Invalid arguments", "[container]") {
-  SECTION("Negative radius") {
-    constexpr auto radius = -1.F;
+  SECTION("Negative kRadius") {
+    constexpr auto kRadius = -1.F;
 
     // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(radius)), std::invalid_argument,
-        thinks::ExceptionContentMatcher{"radius must be positive, was -1"});
+        (TestPoissonDiskSampling<float, 2>(kRadius)), std::invalid_argument,
+        thinks::ExceptionContentMatcher{"kRadius must be positive, was -1"});
   }
 
   SECTION("Min >= max") {
     // Not relevant here.
-    constexpr auto radius = 1.F;
+    constexpr auto kRadius = 1.F;
 
-    constexpr auto x_min_value = 10.F;
-    constexpr auto x_max_value = -10.F;
+    constexpr auto kXMinValue = 10.F;
+    constexpr auto kXMaxValue = -10.F;
 
     // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(radius, x_min_value, x_max_value)),
+        (TestPoissonDiskSampling<float, 2>(kRadius, kXMinValue, kXMaxValue)),
         std::invalid_argument,
         thinks::ExceptionContentMatcher{
             "invalid bounds - max must be greater than min, was min: [10, 10], "
             "max: [-10, -10]"});
 
     {
-      constexpr std::array<float, 2> x_min = {10.F, -10.F};
-      constexpr std::array<float, 2> x_max = {-10.F, 10.F};
+      constexpr std::array<float, 2> kXMin = {10.F, -10.F};
+      constexpr std::array<float, 2> kXMax = {-10.F, 10.F};
 
       // Strange () work-around for catch framework.
-      REQUIRE_THROWS_MATCHES(
-          (TestPoissonDiskSampling<float, 2>(x_min, x_max)),
-          std::invalid_argument,
-          thinks::ExceptionContentMatcher{"invalid bounds - max must be greater "
-                                         "than min, was min: [10, -10], "
-                                         "max: [-10, 10]"});
+      REQUIRE_THROWS_MATCHES((TestPoissonDiskSampling<float, 2>(kXMin, kXMax)),
+                             std::invalid_argument,
+                             thinks::ExceptionContentMatcher{
+                                 "invalid bounds - max must be greater "
+                                 "than min, was min: [10, -10], "
+                                 "max: [-10, 10]"});
     }
     {
-      constexpr std::array<float, 2> x_min = {-10.F, 10.F};
-      constexpr std::array<float, 2> x_max = {10.F, -10.F};
+      constexpr std::array<float, 2> kXMin = {-10.F, 10.F};
+      constexpr std::array<float, 2> kXMax = {10.F, -10.F};
 
       // Strange () work-around for catch framework.
-      REQUIRE_THROWS_MATCHES(
-          (TestPoissonDiskSampling<float, 2>(x_min, x_max)),
-          std::invalid_argument,
-          thinks::ExceptionContentMatcher{"invalid bounds - max must be greater "
-                                         "than min, was min: [-10, 10], "
-                                         "max: [10, -10]"});
+      REQUIRE_THROWS_MATCHES((TestPoissonDiskSampling<float, 2>(kXMin, kXMax)),
+                             std::invalid_argument,
+                             thinks::ExceptionContentMatcher{
+                                 "invalid bounds - max must be greater "
+                                 "than min, was min: [-10, 10], "
+                                 "max: [10, -10]"});
     }
   }
 
   SECTION("Zero sample attempts") {
     // Not relevant here.
-    constexpr auto radius = 1.F;
-    constexpr auto x_min_value = -10.F;
-    constexpr auto x_max_value = 10.F;
+    constexpr auto kRadius = 1.F;
+    constexpr auto kXMinValue = -10.F;
+    constexpr auto kXMaxValue = 10.F;
 
-    constexpr auto max_sample_attempts = std::uint32_t{0};
+    constexpr auto kMaxSampleAttempts = std::uint32_t{0};
 
     // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(radius, x_min_value, x_max_value,
-                                           max_sample_attempts)),
+        (TestPoissonDiskSampling<float, 2>(kRadius, kXMinValue, kXMaxValue,
+                                           kMaxSampleAttempts)),
         std::invalid_argument,
         thinks::ExceptionContentMatcher{
             "max sample attempts must be greater than zero, was 0"});

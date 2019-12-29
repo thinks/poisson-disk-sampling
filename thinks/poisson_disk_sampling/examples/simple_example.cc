@@ -2,30 +2,25 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#include "simple_example.h"
-
 #include <array>
 #include <cassert>
-#include <cstdint>
 #include <fstream>
 
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-namespace examples {
-
-void SimpleExample(const std::string& filename) {
+int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   // Minimal amount of information provided to sampling function.
-  constexpr auto radius = 2.F;
-  const std::array<float, 2> x_min = {-10.F, -10.F};
-  const std::array<float, 2> x_max = {10.F, 10.F};
-  const auto samples = thinks::PoissonDiskSampling(radius, x_min, x_max);
+  constexpr auto kRadius = 2.F;
+  constexpr std::array<float, 2> kXMin = {-10.F, -10.F};
+  constexpr std::array<float, 2> kXMax = {10.F, 10.F};
+  const auto samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax);
 
-  std::ofstream ofs{filename};
+  std::ofstream ofs{"./simple_example.txt"};
   assert(ofs);
   for (const auto& sample : samples) {
     ofs << sample[0] << ", " << sample[1] << '\n';
   }
   ofs.close();
-}
 
-}  // namespace examples
+  return 0;
+}
