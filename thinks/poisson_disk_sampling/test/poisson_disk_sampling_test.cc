@@ -231,7 +231,7 @@ TEST_CASE("Invalid arguments", "[container]") {
     // Strange () work-around for catch framework.
     REQUIRE_THROWS_MATCHES(
         (TestPoissonDiskSampling<float, 2>(kRadius)), std::invalid_argument,
-        thinks::ExceptionContentMatcher{"kRadius must be positive, was -1"});
+        thinks::ExceptionContentMatcher{"radius must be positive, was -1"});
   }
 
   SECTION("Min >= max") {
