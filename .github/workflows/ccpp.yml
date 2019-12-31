@@ -8,7 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        cxx_standard: [11, 14, 17]
+        #cxx_standard: [11, 14, 17]
+        cxx_standard: [14, 17]
     steps:
     - uses: actions/checkout@v1
     - name: Submodules
