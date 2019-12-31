@@ -23,11 +23,6 @@ include(ThinksHelpers)
 # include current path
 list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
-# This approach is not good with VS Code... seems flaky.
-# Works better in CMake 3.14 and up
-#message(STATUS "^${CMAKE_SOURCE_DIR}$")
-#message(STATUS "^${PROJECT_SOURCE_DIR}$")
-#if("^${CMAKE_SOURCE_DIR}" STREQUAL "^${PROJECT_SOURCE_DIR}")
 find_program(CLANG_TIDY NAMES clang-tidy)
 if (NOT CLANG_TIDY)
   message(STATUS "clang-tidy not found")
@@ -36,9 +31,8 @@ else()
   #set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
 
-# Build tests and examples only when _not_ included as subproject.
-get_directory_property(HAS_PARENT PARENT_DIRECTORY)
-if (NOT HAS_PARENT)
+# Build tests and examples only when NOT included as subproject.
+if ("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
   # Enable CTest.
   # This will set BUILD_TESTING to ON unless otherwise specified
   # on the command line.

@@ -18,14 +18,14 @@
 #include <vector>
 
 namespace thinks {
-namespace detail {
+namespace poisson_disk_sampling_internal {
 
+// Assumes min_value <= max_value.
 template <typename ArithT>
 // NOLINTNEXTLINE
 constexpr auto clamped(const ArithT min_value, const ArithT max_value,
                        const ArithT value) -> ArithT {
   static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
-  // assert(min_value <= max_value && "min_value <= max_value");
   return value < min_value ? min_value
                            : (value > max_value ? max_value : value);
 }
@@ -76,7 +76,7 @@ auto Inside(const VecT& x, const std::array<FloatT, N>& x_min,
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
-  for (auto i = std::size_t{0}; i < VecTraitsT::kSize; ++i) {
+  for (std::size_t i = 0; i < VecTraitsT::kSize; ++i) {
     const auto xi = static_cast<FloatT>(VecTraitsT::Get(x, i));
     assert(x_min[i] < x_max[i] && "min < max");
     if (x_min[i] > xi || xi > x_max[i]) {
@@ -87,7 +87,7 @@ auto Inside(const VecT& x, const std::array<FloatT, N>& x_min,
 }
 
 // Erase the value at given index in the vector. The vector is
-// guaranteed to decrese in size by one. Note that the ordering of elements
+// guaranteed to decrease in size by one. Note that the ordering of elements
 // may change as a result of calling this function.
 //
 // Assumes that the vector argument is non-null and that the index is valid.
@@ -156,33 +156,46 @@ auto NormRand(const std::uint32_t seed) -> FloatT {
 }
 
 // Returns a pseduo-random number in the range [offset, offset + range].
+// Assumes range > 0.
 template <typename FloatT>
 auto RangeRand(const FloatT offset, const FloatT range,
                const std::uint32_t seed) -> FloatT {
-  // TODO(thinks): check range > 0?
   return offset + range * NormRand<FloatT>(seed);
 }
 
 // Returns an array where each element has been assigned using RangeRand,
 // with bounds taken from the corresponding element in x_min and x_max.
 // Note that seed is incremented for each assigned element.
+// Assumes that x_min[i] < x_max[i].
 template <typename FloatT, std::size_t N>
 auto ArrayRangeRand(const std::array<FloatT, N>& x_min,
                     const std::array<FloatT, N>& x_max,
                     std::uint32_t* const seed) -> std::array<FloatT, N> {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
 
-  assert(seed != nullptr && "null seed");
-
   std::array<FloatT, N> a = {};
   for (std::size_t i = 0; i < kDims; ++i) {
-    assert(x_min[i] < x_max[i] && "min < max");
-
-    const auto offset = x_min[i];
-    const auto range = x_max[i] - x_min[i];
-
     // Not worrying about seed "overflow" since it is unsigned.
-    a[i] = RangeRand(offset, range, (*seed)++);
+    a[i] = RangeRand(/* offset */ x_min[i], /* range */ x_max[i] - x_min[i],
+                     (*seed)++);
+  }
+  return a;
+}
+
+// Returns an array where each element has been assigned using RangeRand,
+// with bounds taken from x_min and x_max.
+// Note that seed is incremented for each assigned element.
+// Assumes that x_min < x_max.
+template <std::size_t N, typename FloatT>
+auto ArrayRangeRand(const FloatT x_min, const FloatT x_max,
+                    std::uint32_t* const seed) -> std::array<FloatT, N> {
+  constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
+
+  const auto range = x_max - x_min;
+  std::array<FloatT, N> a = {};
+  for (std::size_t i = 0; i < kDims; ++i) {
+    // Not worrying about seed "overflow" since it is unsigned.
+    a[i] = RangeRand(/* offset */ x_min, range, (*seed)++);
   }
   return a;
 }
@@ -332,7 +345,7 @@ class Grid {
   }
 };
 
-// Named contructor that helps with type deduction.
+// Named contructor to help with type deduction.
 template <typename FloatT, std::size_t N>
 auto MakeGrid(const FloatT sample_radius, const std::array<FloatT, N>& x_min,
               const std::array<FloatT, N>& x_max) -> Grid<FloatT, N> {
@@ -404,9 +417,9 @@ struct ActiveSample {
 
 // Returns a pseudo-randomly selected active sample from the active indices.
 template <typename VecT>
-auto RandActiveSample(
-    const std::vector<std::uint32_t>& active_indices,
-    const std::vector<VecT>& samples, std::uint32_t* const seed) -> ActiveSample<VecT> {
+auto RandActiveSample(const std::vector<std::uint32_t>& active_indices,
+                      const std::vector<VecT>& samples,
+                      std::uint32_t* const seed) -> ActiveSample<VecT> {
   ActiveSample<VecT> active_sample = {};
   active_sample.active_index = IndexRand(active_indices.size(), seed);
   active_sample.sample_index = active_indices[active_sample.active_index];
@@ -419,20 +432,11 @@ auto RandActiveSample(
 template <typename VecTraitsT, typename VecT, typename FloatT>
 auto RandAnnulusSample(const VecT& center, const FloatT radius,
                        std::uint32_t* const seed) -> VecT {
-  using VecValueType = typename VecTraitsT::ValueType;
-
-  assert(seed != nullptr && "seed is null");
-
-  // Initialize bounds.
-  auto rand_min = std::array<FloatT, VecTraitsT::kSize>{};
-  auto rand_max = std::array<FloatT, VecTraitsT::kSize>{};
-  std::fill(std::begin(rand_min), std::end(rand_min), FloatT{-2});
-  std::fill(std::begin(rand_max), std::end(rand_max), FloatT{2});
-
-  auto p = VecT{};
+  VecT p = {};
   for (;;) {
     // Generate a random component in the range [-2, 2] for each dimension.
-    const auto offset = ArrayRangeRand(rand_min, rand_max, seed);
+    const auto offset =
+        ArrayRangeRand<VecTraitsT::kSize>(FloatT{-2}, FloatT{2}, seed);
 
     // The randomized offset is not guaranteed to be within the radial
     // distance that we need to guarantee. If we found an offset with
@@ -443,10 +447,11 @@ auto RandAnnulusSample(const VecT& center, const FloatT radius,
       // Found a valid offset.
       // Add the offset scaled by radius to the center coordinate to
       // produce the final sample.
-      for (auto i = std::size_t{0}; i < VecTraitsT::kSize; ++i) {
-        const auto pi = static_cast<FloatT>(VecTraitsT::Get(center, i)) +
-                        radius * offset[i];
-        VecTraitsT::Set(&p, i, static_cast<VecValueType>(pi));
+      for (std::size_t i = 0; i < VecTraitsT::kSize; ++i) {
+        VecTraitsT::Set(&p, i,
+                        static_cast<typename VecTraitsT::ValueType>(
+                            VecTraitsT::Get(center, i)) +
+                            radius * offset[i]);
       }
       break;
     }
@@ -475,8 +480,8 @@ struct GridIndexRange {
 
 // Returns the grid neighborhood of the sample using the radius of the grid.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
-auto GridNeighborhood(
-    const VecT& sample, const Grid<FloatT, N>& grid) -> GridIndexRange<typename Grid<FloatT, N>::IndexType> {
+auto GridNeighborhood(const VecT& sample, const Grid<FloatT, N>& grid)
+    -> GridIndexRange<typename Grid<FloatT, N>::IndexType> {
   using GridIndexType = typename std::decay<decltype(grid)>::type::IndexType;
   using GridIndexValueType = typename GridIndexType::value_type;
 
@@ -524,12 +529,13 @@ auto ExistingSampleWithinRadius(
   return false;
 }
 
-}  // namespace detail
+}  // namespace poisson_disk_sampling_internal
 
 // Generic template for vector traits. Users may specialize this template
 // for their own classes.
 //
-// Specializations must have the following static interface.
+// Specializations must have the following static interface, here using
+// an example type 'MyVec'.
 //
 // struct MyVecTraits<MyVec>
 // {
@@ -554,19 +560,20 @@ struct VecTraits<std::array<FloatT, N>> {
 
   static constexpr auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
 
-  static constexpr auto Get(const std::array<FloatT, N>& vec, const std::size_t i) -> ValueType {
-    //assert(i < kSize && "index out of bounds");
+  // No bounds checking.
+  static constexpr auto Get(const std::array<FloatT, N>& vec,
+                            const std::size_t i) -> ValueType {
     return vec[i];
   }
 
-  static constexpr void Set(std::array<FloatT, N>* const vec, const std::size_t i,
-                  const ValueType value) {
-    //assert(i < kSize && "index out of bounds");
+  // No bounds checking.
+  static constexpr void Set(std::array<FloatT, N>* const vec,
+                            const std::size_t i, const ValueType value) {
     (*vec)[i] = value;
   }
 };
 
-// Returns a list of samples that with the guarantees:
+// Returns a list of samples with the guarantees:
 // * No two samples are closer to each other than radius.
 // * No sample is outside the region [x_min, x_max].
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>,
@@ -576,13 +583,15 @@ auto PoissonDiskSampling(const FloatT radius,
                          const std::array<FloatT, N>& x_max,
                          const std::uint32_t max_sample_attempts = 30,
                          const std::uint32_t seed = 0) -> std::vector<VecT> {
+  namespace pds = poisson_disk_sampling_internal;
+
   // Validate input.
-  detail::ThrowIfInvalidRadius(radius);
-  detail::ThrowIfInvalidBounds(x_min, x_max);
-  detail::ThrowIfInvalidMaxSampleAttempts(max_sample_attempts);
+  pds::ThrowIfInvalidRadius(radius);
+  pds::ThrowIfInvalidBounds(x_min, x_max);
+  pds::ThrowIfInvalidMaxSampleAttempts(max_sample_attempts);
 
   // Acceleration grid.
-  auto grid = detail::MakeGrid(radius, x_min, x_max);
+  auto grid = pds::MakeGrid(radius, x_min, x_max);
 
   auto samples = std::vector<VecT>{};
   auto active_indices = std::vector<std::uint32_t>{};
@@ -590,37 +599,37 @@ auto PoissonDiskSampling(const FloatT radius,
 
   // Add first sample randomly within bounds.
   // No need to check (non-existing) neighbors.
-  detail::AddSample<VecTraitsT>(
-      detail::VecRangeRand<VecT, VecTraitsT>(x_min, x_max, &local_seed),
-      &samples, &active_indices, &grid);
+  pds::AddSample<VecTraitsT>(
+      pds::VecRangeRand<VecT, VecTraitsT>(x_min, x_max, &local_seed), &samples,
+      &active_indices, &grid);
 
   while (!active_indices.empty()) {
     // Randomly choose an active sample. A sample is considered active
     // until failed attempts have been made to generate a new sample within
     // its annulus.
     const auto active_sample =
-        detail::RandActiveSample(active_indices, samples, &local_seed);
+        pds::RandActiveSample(active_indices, samples, &local_seed);
 
     auto attempt_count = decltype(max_sample_attempts){0};
     while (attempt_count < max_sample_attempts) {
       // Randomly create a candidate sample inside the active sample's annulus.
-      const auto cand_sample = detail::RandAnnulusSample<VecTraitsT>(
+      const auto cand_sample = pds::RandAnnulusSample<VecTraitsT>(
           active_sample.position, grid.sample_radius(), &local_seed);
 
       // Check if candidate sample is within bounds.
-      if (detail::Inside<VecTraitsT>(cand_sample, x_min, x_max)) {
+      if (pds::Inside<VecTraitsT>(cand_sample, x_min, x_max)) {
         // Check candidate sample proximity to nearby samples.
         const auto grid_neighbors =
-            detail::GridNeighborhood<VecTraitsT>(cand_sample, grid);
+            pds::GridNeighborhood<VecTraitsT>(cand_sample, grid);
         const auto existing_sample =
-            detail::ExistingSampleWithinRadius<VecTraitsT>(
+            pds::ExistingSampleWithinRadius<VecTraitsT>(
                 cand_sample, active_sample.sample_index, samples, grid,
                 grid_neighbors.min_index, grid_neighbors.max_index);
         if (!existing_sample) {
           // No existing samples where found to be too close to the
           // candidate sample, no further attempts necessary.
-          detail::AddSample<VecTraitsT>(cand_sample, &samples, &active_indices,
-                                        &grid);
+          pds::AddSample<VecTraitsT>(cand_sample, &samples, &active_indices,
+                                     &grid);
           break;
         }
         // Else: The candidate sample is too close to an existing sample,
@@ -634,7 +643,7 @@ auto PoissonDiskSampling(const FloatT radius,
     if (attempt_count == max_sample_attempts) {
       // No valid sample was found on the disk of the active sample,
       // remove it from the active list.
-      detail::EraseUnordered(&active_indices, active_sample.active_index);
+      pds::EraseUnordered(&active_indices, active_sample.active_index);
     }
   }
 

@@ -5,6 +5,10 @@
   "editor.tabSize": 2,
   "clang-format.fallbackStyle": "Google",
   "cmake.configureArgs": [
-    "-DCMAKE_VERBOSE_MAKEFILE=ON"
-  ]
+    "-DCMAKE_VERBOSE_MAKEFILE=ON",
+    "-DCMAKE_CXX_STANDARD=17"
+  ],
+  "files.associations": {
+    "array": "cpp"
+  }
 }

@@ -2,6 +2,10 @@ name: C/C++ CI
 
 on: [push, pull_request]
 
+strategy:
+  matrix:
+    cxx_standard: [11, 14, 17]
+
 jobs:
   build:
 
@@ -22,13 +26,13 @@ jobs:
       run: | 
         mkdir build_rel
         cd build_rel
-        cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON ..
+        cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
     - name: Build and test debug
       run: | 
         mkdir build_dbg
         cd build_dbg
-        cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON ..
+        cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
