@@ -2,15 +2,13 @@ name: C/C++ CI
 
 on: [push, pull_request]
 
-strategy:
-  matrix:
-    cxx_standard: [11, 14, 17]
 
 jobs:
+  strategy:
+    matrix:
+      cxx_standard: [11, 14, 17]
   build:
-
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v1
     - name: Submodules
