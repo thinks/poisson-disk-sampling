@@ -3,8 +3,8 @@
 // found in the top-level directory of this distribution.
 
 #include <array>
-#include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 
@@ -30,9 +30,11 @@ int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   j["samples"] = samples;
 
   std::ofstream ofs{"./json_example.json"};
-  assert(ofs);
+  if (!ofs) {
+    return EXIT_FAILURE;
+  }
   ofs << std::setw(4) << j;
   ofs.close();
 
-  return 0;
+  return EXIT_SUCCESS;
 }

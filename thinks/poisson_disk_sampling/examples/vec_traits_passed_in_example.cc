@@ -2,8 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
 
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
@@ -14,16 +14,18 @@ struct Vec3 {
   float v[3];  // NOLINT
 };
 
+// Traits specialized in namespace other than thinks::
 struct Vec3Traits {
   using ValueType = float;
 
   static constexpr auto kSize = 3;
 
-  static auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+  static constexpr auto Get(const Vec3& v, const std::size_t i) -> ValueType {
     return v.v[i];
   }
 
-  static void Set(Vec3* const v, const std::size_t i, const ValueType val) {
+  static constexpr void Set(Vec3* const v, const std::size_t i,
+                            const ValueType val) {
     v->v[i] = val;
   }
 };
@@ -34,15 +36,20 @@ int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   constexpr auto kRadius = 2.F;
   constexpr std::array<float, 3> kXMin = {-10.F, -10.F, -10.F};
   constexpr std::array<float, 3> kXMax = {10.F, 10.F, 10.F};
+
+  // Traits explicitly provided here.
   const auto samples = thinks::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
       kRadius, kXMin, kXMax);
 
   std::ofstream ofs{"./vec_traits_passed_in_example.txt"};
-  assert(ofs);
+  if (!ofs) {
+    return EXIT_FAILURE;
+  }
+
   for (const auto& sample : samples) {
     ofs << sample.v[0] << ", " << sample.v[1] << ", " << sample.v[2] << '\n';
   }
   ofs.close();
 
-  return 0;
+  return EXIT_SUCCESS;
 }
