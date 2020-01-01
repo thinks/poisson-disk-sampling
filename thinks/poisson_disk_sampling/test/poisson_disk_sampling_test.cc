@@ -7,6 +7,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <future>
+#include <iostream>
+#include <thread>
 #include <vector>
 
 #include "catch2/catch.hpp"
@@ -14,40 +17,39 @@
 
 namespace {
 
-template <typename T>
-struct Vec2 {
-  using ValueType = T;
-  T x;
-  T y;
+template <typename T, std::size_t N>
+struct Vec {
+  T m[N];
 };
 
-template <typename T>
-struct Vec3 {
-  using ValueType = T;
-  T x;
-  T y;
-  T z;
+}  // namespace
+
+namespace thinks {
+
+// Specializations of VecTraits in thinks:: namespace.
+template <typename T, std::size_t N>
+struct VecTraits<Vec<T, N>> {
+  using ValueType = std::decay_t<decltype(*Vec<T, N>::m)>;
+
+  static_assert(sizeof(Vec<T, N>) == N * sizeof(T));
+  static constexpr auto kSize = sizeof(Vec<T, N>) / sizeof(ValueType);
+
+  static constexpr auto Get(const Vec<T, N>& v, const std::size_t i)
+      -> ValueType {
+    return v.m[i];
+  }
+
+  static constexpr void Set(Vec<T, N>* const v, const std::size_t i,
+                            const ValueType val) {
+    v->m[i] = val;
+  }
 };
 
-template <typename T>
-struct Vec4 {
-  using ValueType = T;
-  T x;
-  T y;
-  T z;
-  T w;
-};
+namespace {
 
 template <typename T>
 constexpr auto squared(const T x) -> T {  // NOLINT
   return x * x;
-}
-
-template <std::size_t N, typename T>
-auto FilledArray(const T value) -> std::array<T, N> {
-  auto a = std::array<T, N>{};
-  std::fill(std::begin(a), std::end(a), value);
-  return a;
 }
 
 template <typename VecTraitsT, typename VecT>
@@ -63,169 +65,201 @@ auto SquaredDistance(const VecT& u, const VecT& v) ->
 }
 
 // O(N^2) verification. Verifies that the distance between each possible
-// sample pair meets the Poisson requirement, i.e. is greater than some kRadius.
+// sample pair meets the Poisson requirement, i.e. is greater than some radius.
+// Returns true if Poisson criteria is met for all samples, otherwise false.
 template <typename VecT, typename FloatT>
-auto VerifyPoisson(const std::vector<VecT>& samples, const FloatT kRadius)
+auto VerifyPoisson(const std::vector<VecT>& samples, const FloatT radius)
     -> bool {
   if (samples.empty()) {
     return false;
   }
-
-  const auto iend = std::end(samples);
-  const auto ibegin = std::begin(samples);
-  const auto r_squared = kRadius * kRadius;
-
-  for (auto u = ibegin; u != iend; ++u) {
-    for (auto v = ibegin; v != iend; ++v) {
-      const auto sqr_dist =
-          static_cast<FloatT>(SquaredDistance<thinks::VecTraits<VecT>>(*u, *v));
-      if (&(*u) != &(*v) && sqr_dist < r_squared) {
-        return false;
-      }
-    }
+  if (samples.size() == 1) {
+    return true;
   }
-  return true;
+
+  // Setup threading.
+  const auto thread_count = std::thread::hardware_concurrency() > 0
+                                ? std::thread::hardware_concurrency()
+                                : 1;
+  const auto sample_count = samples.size();
+  const auto chunk_size = sample_count / thread_count + (sample_count % thread_count != 0);
+
+  // Launch threads.
+  const auto r_squared = radius * radius;
+  std::vector<std::future<bool>> futures;
+  for (std::size_t i = 0; i < thread_count; ++i) {
+    futures.push_back(std::async(std::launch::async, [&]() {
+      const std::size_t begin = i * chunk_size;
+      const std::size_t end = std::min((i + 1) * chunk_size, sample_count);
+      for (std::size_t j = begin; j < end; ++j) {
+        for (const auto& s : samples) {
+          if (std::addressof(samples[j]) != std::addressof(s)) {
+            const auto sqr_dist = static_cast<FloatT>(
+                SquaredDistance<thinks::VecTraits<VecT>>(samples[j], s));
+
+            // Fail for NaN.
+            if (!(sqr_dist >= r_squared)) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }));
+  }
+
+  // Check results.
+  return std::all_of(std::begin(futures), std::end(futures),
+                     [](std::future<bool>& f) { return f.get(); });  
 }
 
-// Returns true if all samples are within the bounds specified by kXMin and
-// kXMax.
 template <typename VecT, typename FloatT, std::size_t N>
-auto VerifyBounds(const std::vector<VecT>& samples,
-                  const std::array<FloatT, N>& kXMin,
-                  const std::array<FloatT, N>& kXMax) -> bool {
+constexpr auto SampleInsideBounds(const VecT& sample,
+                                  const std::array<FloatT, N>& x_min,
+                                  const std::array<FloatT, N>& x_max) -> bool {
   using VecTraitsType = thinks::VecTraits<VecT>;
 
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
-  static_assert(kDims == VecTraitsType::kSize, "dimensionality mismatch");
+  static_assert(kDims == VecTraitsType::kSize,
+                "bounds/samples dimensionality mismatch");
 
-  for (auto v = std::begin(samples); v != std::end(samples); ++v) {
-    for (std::size_t i = 0; i < kDims; ++i) {
-      const auto xi = static_cast<FloatT>(VecTraitsType::Get(*v, i));
-      if (kXMin[i] > xi || xi > kXMax[i]) {
-        return false;
-      }
+  for (std::size_t i = 0; i < kDims; ++i) {
+    const auto xi = static_cast<FloatT>(VecTraitsType::Get(sample, i));
+
+    // Fail if x_min > x_max.
+    if (!(x_min[i] <= xi && xi <= x_max[i])) {
+      return false;
     }
   }
   return true;
 }
 
+// Returns true if all samples are within the bounds specified by x_min and
+// x_max, otherwise false.
+template <typename VecT, typename FloatT, std::size_t N>
+auto VerifyBounds(const std::vector<VecT>& samples,
+                  const std::array<FloatT, N>& x_min,
+                  const std::array<FloatT, N>& x_max) -> bool {
+  using VecTraitsType = thinks::VecTraits<VecT>;
+
+  constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
+  static_assert(kDims == VecTraitsType::kSize,
+                "bounds/samples dimensionality mismatch");
+
+  if (samples.empty()) {
+    return false;
+  }
+
+  // Setup threading.
+  const auto thread_count = std::thread::hardware_concurrency() > 0
+                                ? std::thread::hardware_concurrency()
+                                : 1;
+  const auto sample_count = samples.size();
+  const auto chunk_size = sample_count / thread_count + (sample_count % thread_count != 0);
+
+  // Launch threads.
+  std::vector<std::future<bool>> futures;
+  for (std::size_t i = 0; i < thread_count; ++i) {
+    futures.push_back(std::async(std::launch::async, [&]() {
+      const std::size_t begin = i * chunk_size;
+      const std::size_t end = std::min((i + 1) * chunk_size, sample_count);
+      for (std::size_t j = begin; j < end; ++j) {
+        if (!SampleInsideBounds(samples[j], x_min, x_max)) {
+          return false;
+        }
+      }
+      return true;
+    }));
+  }
+
+  // Check results.
+  return std::all_of(std::begin(futures), std::end(futures),
+                     [](std::future<bool>& f) { return f.get(); });
+}
+
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
-void TestPoissonDiskSampling(const std::array<FloatT, N>& kXMin,
-                             const std::array<FloatT, N>& kXMax,
-                             const FloatT kRadius = FloatT{2},
-                             const std::uint32_t kMaxSampleAttempts = 30,
-                             const std::uint32_t seed = 0) {
+auto VerifyPoissonDiskSampling(const FloatT radius,
+                               const std::array<FloatT, N>& x_min,
+                               const std::array<FloatT, N>& x_max,
+                               const std::uint32_t max_sample_attempts = 30,
+                               const std::uint32_t seed = 0) -> bool {
   const auto samples = thinks::PoissonDiskSampling<FloatT, N, VecT>(
-      kRadius, kXMin, kXMax, kMaxSampleAttempts, seed);
-
-  REQUIRE(VerifyPoisson(samples, kRadius));
-  REQUIRE(VerifyBounds(samples, kXMin, kXMax));
+      radius, x_min, x_max, max_sample_attempts, seed);
+  return VerifyBounds(samples, x_min, x_max) && VerifyPoisson(samples, radius);
 }
-
-template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
-void TestPoissonDiskSampling(const FloatT kRadius = FloatT{2},
-                             const FloatT kXMinValue = FloatT{-10},
-                             const FloatT kXMaxValue = FloatT{10},
-                             const std::uint32_t kMaxSampleAttempts = 30,
-                             const std::uint32_t seed = 0) {
-  const auto kXMin = FilledArray<N>(kXMinValue);
-  const auto kXMax = FilledArray<N>(kXMaxValue);
-  TestPoissonDiskSampling(kXMin, kXMax, kRadius, kMaxSampleAttempts, seed);
-}
-
-}  // namespace
-
-namespace thinks {
-// Specialization of VecTraits in namespace.
-
-template <typename T>
-struct VecTraits<Vec2<T>> {
-  using ValueType = typename Vec2<T>::ValueType;
-
-  static constexpr auto kSize = 2;
-
-  static constexpr auto Get(const Vec2<T>& v, const std::size_t i)
-      -> ValueType {
-    return *(&v.x + i);
-  }
-
-  static constexpr void Set(Vec2<T>* const v, const std::size_t i,
-                            const ValueType val) {
-    *(&v->x + i) = val;
-  }
-};
-
-template <typename T>
-struct VecTraits<Vec3<T>> {
-  using ValueType = typename Vec3<T>::ValueType;
-
-  static constexpr auto kSize = 3;
-
-  static /*constexpr*/ auto Get(const Vec3<T>& v, const std::size_t i)
-      -> ValueType {
-    return *(&v.x + i);
-  }
-
-  static /*constexpr*/ void Set(Vec3<T>* const v, const std::size_t i,
-                                const ValueType val) {
-    *(&v->x + i) = val;
-  }
-};
-
-template <typename T>
-struct VecTraits<Vec4<T>> {
-  using ValueType = typename Vec4<T>::ValueType;
-
-  static constexpr auto kSize = 4;
-
-  static /*constexpr*/ auto Get(const Vec4<T>& v, const std::size_t i)
-      -> ValueType {
-    return *(&v.x + i);
-  }
-
-  static /*constexpr*/ void Set(Vec4<T>* const v, const std::size_t i,
-                                const ValueType val) {
-    *(&v->x + i) = val;
-  }
-};
-
-}  // namespace thinks
 
 TEST_CASE("Test samples <std::array>", "[container]") {
   SECTION("N = 2") {
-    TestPoissonDiskSampling<float, 2>();
-    TestPoissonDiskSampling<double, 2>();
+    REQUIRE(VerifyPoissonDiskSampling(
+        /* radius */ 2.F,
+        /* x_min */ std::array<float, 2>{{-10.F, -10.F}},
+        /* x_max */ std::array<float, 2>{{10.F, 10.F}}));
+    REQUIRE(VerifyPoissonDiskSampling(
+        /* radius */ 2.0,
+        /* x_min */ std::array<double, 2>{{-10.0, -10.0}},
+        /* x_max */ std::array<double, 2>{{10.0, 10.0}}));
   }
   SECTION("N = 3") {
-    TestPoissonDiskSampling<float, 3>();
-    TestPoissonDiskSampling<double, 3>();
+    REQUIRE(VerifyPoissonDiskSampling(
+        /* radius */ 2.F,
+        /* x_min */ std::array<float, 3>{{-10.F, -10.F, -10.F}},
+        /* x_max */ std::array<float, 3>{{10.F, 10.F, 10.F}}));
+    REQUIRE(VerifyPoissonDiskSampling(
+        /* radius */ 2.0,
+        /* x_min */ std::array<double, 3>{{-10.0, -10.0, -10.0}},
+        /* x_max */ std::array<double, 3>{{10.0, 10.0, 10.0}}));
   }
   SECTION("N = 4") {
-    TestPoissonDiskSampling<float, 4>();
-    TestPoissonDiskSampling<double, 4>();
+    REQUIRE(VerifyPoissonDiskSampling(
+        /* radius */ 2.F,
+        /* x_min */ std::array<float, 4>{{-10.F, -10.F, -10.F, -10.F}},
+        /* x_max */ std::array<float, 4>{{10.F, 10.F, 10.F, 10.F}}));
+    REQUIRE(VerifyPoissonDiskSampling(
+        /* radius */ 2.0,
+        /* x_min */ std::array<double, 4>{{-10.0, -10.0, -10.0, -10.0}},
+        /* x_max */ std::array<double, 4>{{10.0, 10.0, 10.0, 10.0}}));
   }
 }
 
 TEST_CASE("Test samples <Vec>", "[container]") {
   SECTION("N = 2") {
-    using VecType = Vec2<float>;
-    TestPoissonDiskSampling<float, 2, VecType>();
-    TestPoissonDiskSampling<double, 2, VecType>();
+    using VecType = Vec<float, 2>;
+    REQUIRE(VerifyPoissonDiskSampling<float, 2, VecType>(
+        /* radius */ 2.F,
+        /* x_min */ std::array<float, 2>{{-10.F, -10.F}},
+        /* x_max */ std::array<float, 2>{{10.F, 10.F}}));
+    REQUIRE(VerifyPoissonDiskSampling<double, 2, VecType>(
+        /* radius */ 2.0,
+        /* x_min */ std::array<double, 2>{{-10.0, -10.0}},
+        /* x_max */ std::array<double, 2>{{10.0, 10.0}}));
   }
   SECTION("N = 3") {
-    using VecType = Vec3<float>;
-    TestPoissonDiskSampling<float, 3, VecType>();
-    TestPoissonDiskSampling<double, 3, VecType>();
+    using VecType = Vec<float, 3>;
+    REQUIRE(VerifyPoissonDiskSampling<float, 3, VecType>(
+        /* radius */ 2.F,
+        /* x_min */ std::array<float, 3>{{-10.F, -10.F, -10.F}},
+        /* x_max */ std::array<float, 3>{{10.F, 10.F, 10.F}}));
+    REQUIRE(VerifyPoissonDiskSampling<double, 3, VecType>(
+        /* radius */ 2.0,
+        /* x_min */ std::array<double, 3>{{-10.0, -10.0, -10.0}},
+        /* x_max */ std::array<double, 3>{{10.0, 10.0, 10.0}}));
   }
   SECTION("N = 4") {
-    using VecType = Vec4<float>;
-    TestPoissonDiskSampling<float, 4, VecType>();
-    TestPoissonDiskSampling<double, 4, VecType>();
+    using VecType = Vec<float, 4>;
+    REQUIRE(VerifyPoissonDiskSampling<float, 4, VecType>(
+        /* radius */ 2.F,
+        /* x_min */ std::array<float, 4>{{-10.F, -10.F, -10.F, -10.F}},
+        /* x_max */ std::array<float, 4>{{10.F, 10.F, 10.F, 10.F}}));
+    REQUIRE(VerifyPoissonDiskSampling<double, 4, VecType>(
+        /* radius */ 2.0,
+        /* x_min */ std::array<double, 4>{{-10.0, -10.0, -10.0, -10.0}},
+        /* x_max */ std::array<double, 4>{{10.0, 10.0, 10.0, 10.0}}));
   }
 }
 
+#if 0
 TEST_CASE("Invalid arguments", "[container]") {
-  SECTION("Negative kRadius") {
+  SECTION("Negative radius") {
     constexpr auto kRadius = -1.F;
 
     // Strange () work-around for catch framework.
@@ -292,3 +326,6 @@ TEST_CASE("Invalid arguments", "[container]") {
             "max sample attempts must be greater than zero, was 0"});
   }
 }
+#endif
+}  // namespace
+}  // namespace thinks

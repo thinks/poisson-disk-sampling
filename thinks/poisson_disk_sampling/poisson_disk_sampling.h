@@ -450,8 +450,8 @@ auto RandAnnulusSample(const VecT& center, const FloatT radius,
       for (std::size_t i = 0; i < VecTraitsT::kSize; ++i) {
         VecTraitsT::Set(&p, i,
                         static_cast<typename VecTraitsT::ValueType>(
-                            VecTraitsT::Get(center, i)) +
-                            radius * offset[i]);
+                            static_cast<FloatT>(VecTraitsT::Get(center, i)) +
+                            radius * offset[i]));
       }
       break;
     }
@@ -513,6 +513,7 @@ auto ExistingSampleWithinRadius(
     const typename Grid<FloatT, N>::IndexType& min_index,
     const typename Grid<FloatT, N>::IndexType& max_index) -> bool {
   auto index = min_index;
+  const auto r_squared = squared(grid.sample_radius());
   do {
     const auto cell_index = grid.Cell(index);
     if (cell_index >= 0 &&
@@ -520,7 +521,7 @@ auto ExistingSampleWithinRadius(
       const auto cell_sample = samples[static_cast<std::uint32_t>(cell_index)];
       const auto d =
           static_cast<FloatT>(SquaredDistance<VecTraitsT>(sample, cell_sample));
-      if (d < squared(grid.sample_radius())) {
+      if (d < r_squared) {
         return true;
       }
     }
