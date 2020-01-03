@@ -33,7 +33,8 @@ template <typename T, std::size_t N>
 struct VecTraits<Vec<T, N>> {
   using ValueType = std::decay_t<decltype(*Vec<T, N>::m)>;
 
-  static_assert(sizeof(Vec<T, N>) == N * sizeof(T));
+  static_assert(sizeof(Vec<T, N>) == N * sizeof(T),
+                "Vec type must be tightly packed");
   static constexpr auto kSize = sizeof(Vec<T, N>) / sizeof(ValueType);
 
   static constexpr auto Get(const Vec<T, N>& v, const std::size_t i) noexcept
