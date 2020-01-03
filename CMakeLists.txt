@@ -20,7 +20,7 @@ list(APPEND CMAKE_MODULE_PATH
 
 include(ThinksHelpers)
 
-# include current path
+# Include current path
 list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_program(CLANG_TIDY NAMES clang-tidy)
@@ -30,6 +30,10 @@ else()
   message(STATUS "clang-tidy = ${CLANG_TIDY}")
   #set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
+
+# Find dependencies
+## pthread
+find_package(Threads REQUIRED)
 
 # Build tests and examples only when NOT included as subproject.
 if ("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")

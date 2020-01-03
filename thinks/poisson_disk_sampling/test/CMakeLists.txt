@@ -27,4 +27,5 @@ thinks_cc_test(
   DEPS
     thinks::catch_utils
     Catch2::Catch2
+    ${CMAKE_THREAD_LIBS_INIT}
 )
