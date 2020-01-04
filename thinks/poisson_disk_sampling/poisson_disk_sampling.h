@@ -37,7 +37,7 @@ constexpr auto squared(const ArithT x) noexcept -> ArithT {
 
 // Returns the squared magnitude of x (not checking for overflow).
 template <typename ArithT, std::size_t N>
-auto SquaredMagnitude(const std::array<ArithT, N>& x) noexcept ->
+constexpr auto SquaredMagnitude(const std::array<ArithT, N>& x) noexcept ->
     typename std::array<ArithT, N>::value_type {
   static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
   constexpr auto kDims = std::tuple_size<std::array<ArithT, N>>::value;
@@ -52,7 +52,7 @@ auto SquaredMagnitude(const std::array<ArithT, N>& x) noexcept ->
 
 // Returns the squared distance between the vectors u and v.
 template <typename VecTraitsT, typename VecT>
-auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
+constexpr auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
     typename VecTraitsT::ValueType {
   static_assert(VecTraitsT::kSize >= 1, "dimensions must be >= 1");
 
@@ -66,8 +66,8 @@ auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
 // Returns true if x is element-wise inclusively inside x_min and x_max,
 // otherwise false. Assumes that x_min is element-wise less than x_max.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
-auto Inside(const VecT& sample, const std::array<FloatT, N>& x_min,
-            const std::array<FloatT, N>& x_max) noexcept -> bool {
+constexpr auto Inside(const VecT& sample, const std::array<FloatT, N>& x_min,
+                      const std::array<FloatT, N>& x_max) noexcept -> bool {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
@@ -98,11 +98,11 @@ void EraseUnordered(std::vector<T>* const v, const std::size_t index) noexcept {
 
 // Increment index such that repeated calls to this function enumerate
 // all iterations between min_index and max_index (inclusive).
-// Assumes that min_index is element-wise less than or equal to max_index. 
+// Assumes that min_index is element-wise less than or equal to max_index.
 template <typename IntT, std::size_t N>
-auto Iterate(const std::array<IntT, N>& min_index,
-             const std::array<IntT, N>& max_index,
-             std::array<IntT, N>* const index) noexcept -> bool {
+constexpr auto Iterate(const std::array<IntT, N>& min_index,
+                       const std::array<IntT, N>& max_index,
+                       std::array<IntT, N>* const index) noexcept -> bool {
   static_assert(std::is_integral<IntT>::value, "IntT must be integral");
   constexpr auto kDims = std::tuple_size<std::array<IntT, N>>::value;
   static_assert(kDims >= 1, "dimensions must be >= 1");
@@ -153,7 +153,7 @@ constexpr auto NormRand(std::uint32_t* const seed) noexcept -> FloatT {
 // Assumes range > 0.
 template <typename FloatT>
 constexpr auto RangeRand(const FloatT offset, const FloatT range,
-               std::uint32_t* const seed) noexcept -> FloatT {
+                         std::uint32_t* const seed) noexcept -> FloatT {
   return offset + range * NormRand<FloatT>(seed);
 }
 
@@ -162,15 +162,15 @@ constexpr auto RangeRand(const FloatT offset, const FloatT range,
 // Assumes that x_min[i] < x_max[i].
 template <typename FloatT, std::size_t N>
 constexpr auto ArrayRangeRand(const std::array<FloatT, N>& x_min,
-                    const std::array<FloatT, N>& x_max,
-                    std::uint32_t* const seed) noexcept
+                              const std::array<FloatT, N>& x_max,
+                              std::uint32_t* const seed) noexcept
     -> std::array<FloatT, N> {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
 
   std::array<FloatT, N> a = {};
   for (std::size_t i = 0; i < kDims; ++i) {
-    a[i] = RangeRand(/* offset */ x_min[i], /* range */ x_max[i] - x_min[i],
-                     seed);
+    a[i] =
+        RangeRand(/* offset */ x_min[i], /* range */ x_max[i] - x_min[i], seed);
   }
   return a;
 }
@@ -180,7 +180,7 @@ constexpr auto ArrayRangeRand(const std::array<FloatT, N>& x_min,
 // Assumes that x_min < x_max.
 template <std::size_t N, typename FloatT>
 constexpr auto ArrayRangeRand(const FloatT x_min, const FloatT x_max,
-                    std::uint32_t* const seed) noexcept
+                              std::uint32_t* const seed) noexcept
     -> std::array<FloatT, N> {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
 
@@ -195,8 +195,8 @@ constexpr auto ArrayRangeRand(const FloatT x_min, const FloatT x_max,
 // See ArrayRangeRand.
 template <typename VecT, typename VecTraitsT, typename FloatT, std::size_t N>
 constexpr auto VecRangeRand(const std::array<FloatT, N>& x_min,
-                  const std::array<FloatT, N>& x_max,
-                  std::uint32_t* const seed) noexcept -> VecT {
+                            const std::array<FloatT, N>& x_max,
+                            std::uint32_t* const seed) noexcept -> VecT {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
@@ -210,7 +210,7 @@ constexpr auto VecRangeRand(const std::array<FloatT, N>& x_min,
 
 // Returns a pseudo-random index in the range [0, size - 1].
 constexpr auto IndexRand(const std::size_t size,
-                      std::uint32_t* const seed) noexcept -> std::size_t {
+                         std::uint32_t* const seed) noexcept -> std::size_t {
   constexpr auto kEps = 0.0001F;
   return static_cast<std::size_t>(
       RangeRand(float{0}, static_cast<float>(size) - kEps, seed));
@@ -311,7 +311,6 @@ class Grid {
   static auto GetGridSize_(const std::array<FloatT, N>& x_min,
                            const std::array<FloatT, N>& x_max,
                            const FloatT dx_inv) noexcept -> IndexType {
-
     // Compute size in each dimension using grid cell size (dx).
     auto grid_size = IndexType{};
     for (auto i = std::size_t{0}; i < kDims; ++i) {
