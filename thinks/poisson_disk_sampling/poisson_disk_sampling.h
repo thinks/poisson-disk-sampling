@@ -502,7 +502,7 @@ struct VecTraits;
 template <typename FloatT, std::size_t N>
 struct VecTraits<std::array<FloatT, N>> {
   using ValueType = typename std::array<FloatT, N>::value_type;
-  static_assert(std::is_floating_point_v<ValueType>,
+  static_assert(std::is_floating_point<ValueType>::value,
                 "ValueType must be floating point");
 
   static constexpr auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
