@@ -25,6 +25,7 @@ jobs:
       run: | 
         mkdir build_rel
         cd build_rel
+        pwd
         cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
@@ -32,6 +33,7 @@ jobs:
       run: | 
         mkdir build_dbg
         cd build_dbg
+        pwd
         cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
