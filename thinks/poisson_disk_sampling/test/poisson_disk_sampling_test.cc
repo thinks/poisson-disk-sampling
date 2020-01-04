@@ -8,13 +8,12 @@
 #include <cmath>
 #include <cstdint>
 #include <future>
-#include <iomanip>
-#include <iostream>
+//#include <iomanip>
+//#include <iostream>
 #include <thread>
 #include <vector>
 
 #include "catch2/catch.hpp"
-#include "thinks/poisson_disk_sampling/test/catch_utils.h"
 
 namespace {
 
@@ -327,7 +326,7 @@ TEST_CASE("Invalid arguments", "[container]") {
     REQUIRE(samples.empty());
   }
 
-  SECTION("x_min >= x_max") {
+  SECTION("x_min > x_max") {
     {
       const auto samples = thinks::PoissonDiskSampling(
           /* radius */ 1.F,
