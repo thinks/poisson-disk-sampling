@@ -46,11 +46,11 @@ list(APPEND THINKS_GCC_FLAGS
 )
 
 list(APPEND THINKS_GCC_TEST_FLAGS
-    "-Wno-conversion-null"
-    "-Wno-deprecated-declarations"
-    "-Wno-missing-declarations"
-    "-Wno-sign-compare"
-    "-Wno-unused-function"
-    "-Wno-unused-parameter"
-    "-Wno-unused-private-field"
+  "-Wno-conversion-null"
+  "-Wno-deprecated-declarations"
+  "-Wno-missing-declarations"
+  "-Wno-sign-compare"
+  "-Wno-unused-function"
+  "-Wno-unused-parameter"
+  "-Wno-unused-private-field"
 )

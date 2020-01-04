@@ -352,60 +352,20 @@ auto MakeGrid(const FloatT sample_radius, const std::array<FloatT, N>& x_min,
   return Grid<FloatT, N>(sample_radius, x_min, x_max);
 }
 
-template <typename ArithT>
-void ThrowIfInvalidRadius(const ArithT radius) {
-  static_assert(std::is_arithmetic<ArithT>::value, "type must be arithmetic");
-
-  if (!(radius > ArithT{0})) {
-    std::ostringstream oss;
-    oss << "radius must be positive, was " << radius;
-    throw std::invalid_argument(oss.str());
-  }
-}
-
 template <typename ArithT, std::size_t N>
-void ThrowIfInvalidBounds(const std::array<ArithT, N>& x_min,
-                          const std::array<ArithT, N>& x_max) {
+constexpr auto ValidBounds(const std::array<ArithT, N>& x_min,
+                           const std::array<ArithT, N>& x_max) noexcept
+    -> bool {
   static_assert(std::is_arithmetic<ArithT>::value, "type must be arithmetic");
   constexpr auto kDims = std::tuple_size<std::array<ArithT, N>>::value;
   static_assert(kDims >= 1, "bounds dimensionality must be >= 1");
 
-  std::size_t i = 0;
-  for (; i < kDims; ++i) {
+  for (std::size_t i = 0; i < kDims; ++i) {
     if (!(x_max[i] > x_min[i])) {
-      break;
+      return false;
     }
   }
-
-  if (i < kDims) {
-    std::ostringstream oss_min;
-    std::ostringstream oss_max;
-    oss_min << "[";
-    oss_max << "[";
-    for (std::size_t j = 0; j < kDims; ++j) {
-      oss_min << x_min[j] << (j != kDims - 1 ? ", " : "");
-      oss_max << x_max[j] << (j != kDims - 1 ? ", " : "");
-    }
-    oss_min << "]";
-    oss_max << "]";
-
-    std::ostringstream oss;
-    oss << "invalid bounds - max must be greater than min, was "
-        << "min: " << oss_min.str() << ", "
-        << "max: " << oss_max.str();
-
-    throw std::invalid_argument(oss.str());
-  }
-}
-
-inline void ThrowIfInvalidMaxSampleAttempts(
-    const std::uint32_t max_sample_attempts) {
-  if (!(max_sample_attempts > 0)) {
-    std::ostringstream oss{};
-    oss << "max sample attempts must be greater than zero, was "
-        << max_sample_attempts;
-    throw std::invalid_argument(oss.str());
-  }
+  return true;
 }
 
 template <typename VecT>
@@ -583,13 +543,17 @@ auto PoissonDiskSampling(const FloatT radius,
                          const std::array<FloatT, N>& x_min,
                          const std::array<FloatT, N>& x_max,
                          const std::uint32_t max_sample_attempts = 30,
-                         const std::uint32_t seed = 0) -> std::vector<VecT> {
+                         const std::uint32_t seed = 0) noexcept -> std::vector<VecT> {
   namespace pds = poisson_disk_sampling_internal;
 
   // Validate input.
-  pds::ThrowIfInvalidRadius(radius);
-  pds::ThrowIfInvalidBounds(x_min, x_max);
-  pds::ThrowIfInvalidMaxSampleAttempts(max_sample_attempts);
+  if (!(radius > FloatT{0}) ||
+      !(max_sample_attempts > 0) ||
+      !pds::ValidBounds(x_min, x_max)) {
+    // Returning an empty list of samples indicates an error,
+    // since for any valid input there is always at least one sample.
+    return std::vector<VecT>{};
+  }
 
   // Acceleration grid.
   auto grid = pds::MakeGrid(radius, x_min, x_max);

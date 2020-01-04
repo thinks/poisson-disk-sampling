@@ -220,7 +220,7 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
                                const std::uint32_t seed = 0) noexcept -> bool {
   FloatT scaled_radius = radius;
 
-  // clang-format off
+// clang-format off
   #ifndef NDEBUG
     // Reduce the number of samples for debug builds to decrease 
     // verification times.
@@ -302,75 +302,64 @@ TEST_CASE("Test samples <Vec>", "[container]") {
   }
 }
 
-#if 0
 TEST_CASE("Invalid arguments", "[container]") {
-  SECTION("Negative radius") {
-    constexpr auto kRadius = -1.F;
-
-    // Strange () work-around for catch framework.
-    REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(kRadius)), std::invalid_argument,
-        thinks::ExceptionContentMatcher{"radius must be positive, was -1"});
+  SECTION("radius == 0") {
+    const auto samples = thinks::PoissonDiskSampling(
+        /* radius */ 0.F,
+        /* x_min */ std::array<float, 2>{{-1.F, -1.F}},
+        /* x_max */ std::array<float, 2>{{1.F, 1.F}});
+    REQUIRE(samples.empty());
   }
 
-  SECTION("Min >= max") {
-    // Not relevant here.
-    constexpr auto kRadius = 1.F;
+  SECTION("radius < 0") {
+    const auto samples = thinks::PoissonDiskSampling(
+        /* radius */ -1.F,
+        /* x_min */ std::array<float, 2>{{-1.F, -1.F}},
+        /* x_max */ std::array<float, 2>{{1.F, 1.F}});
+    REQUIRE(samples.empty());
+  }
 
-    constexpr auto kXMinValue = 10.F;
-    constexpr auto kXMaxValue = -10.F;
+  SECTION("x_min == x_max") {
+    const auto samples = thinks::PoissonDiskSampling(
+        /* radius */ 1.F,
+        /* x_min */ std::array<float, 2>{{1.F, 1.F}},
+        /* x_max */ std::array<float, 2>{{1.F, 1.F}});
+    REQUIRE(samples.empty());
+  }
 
-    // Strange () work-around for catch framework.
-    REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(kRadius, kXMinValue, kXMaxValue)),
-        std::invalid_argument,
-        thinks::ExceptionContentMatcher{
-            "invalid bounds - max must be greater than min, was min: [10, 10], "
-            "max: [-10, -10]"});
-
+  SECTION("x_min >= x_max") {
     {
-      constexpr std::array<float, 2> kXMin = {10.F, -10.F};
-      constexpr std::array<float, 2> kXMax = {-10.F, 10.F};
-
-      // Strange () work-around for catch framework.
-      REQUIRE_THROWS_MATCHES((TestPoissonDiskSampling<float, 2>(kXMin, kXMax)),
-                             std::invalid_argument,
-                             thinks::ExceptionContentMatcher{
-                                 "invalid bounds - max must be greater "
-                                 "than min, was min: [10, -10], "
-                                 "max: [-10, 10]"});
+      const auto samples = thinks::PoissonDiskSampling(
+          /* radius */ 1.F,
+          /* x_min */ std::array<float, 2>{{1.F, 1.F}},
+          /* x_max */ std::array<float, 2>{{-1.F, -1.F}});
+      REQUIRE(samples.empty());
     }
     {
-      constexpr std::array<float, 2> kXMin = {-10.F, 10.F};
-      constexpr std::array<float, 2> kXMax = {10.F, -10.F};
-
-      // Strange () work-around for catch framework.
-      REQUIRE_THROWS_MATCHES((TestPoissonDiskSampling<float, 2>(kXMin, kXMax)),
-                             std::invalid_argument,
-                             thinks::ExceptionContentMatcher{
-                                 "invalid bounds - max must be greater "
-                                 "than min, was min: [-10, 10], "
-                                 "max: [10, -10]"});
+      const auto samples = thinks::PoissonDiskSampling(
+          /* radius */ 1.F,
+          /* x_min */ std::array<float, 2>{{-1.F, 1.F}},
+          /* x_max */ std::array<float, 2>{{1.F, -1.F}});
+      REQUIRE(samples.empty());
+    }
+    {
+      const auto samples = thinks::PoissonDiskSampling(
+          /* radius */ 1.F,
+          /* x_min */ std::array<float, 2>{{1.F, -1.F}},
+          /* x_max */ std::array<float, 2>{{-1.F, 1.F}});
+      REQUIRE(samples.empty());
     }
   }
 
-  SECTION("Zero sample attempts") {
-    // Not relevant here.
-    constexpr auto kRadius = 1.F;
-    constexpr auto kXMinValue = -10.F;
-    constexpr auto kXMaxValue = 10.F;
-
-    constexpr auto kMaxSampleAttempts = std::uint32_t{0};
-
-    // Strange () work-around for catch framework.
-    REQUIRE_THROWS_MATCHES(
-        (TestPoissonDiskSampling<float, 2>(kRadius, kXMinValue, kXMaxValue,
-                                           kMaxSampleAttempts)),
-        std::invalid_argument,
-        thinks::ExceptionContentMatcher{
-            "max sample attempts must be greater than zero, was 0"});
+  SECTION("max_sample_attempts == 0") {
+    const auto samples = thinks::PoissonDiskSampling(
+        /* radius */ 1.F,
+        /* x_min */ std::array<float, 2>{{-1.F, -1.F}},
+        /* x_max */ std::array<float, 2>{{1.F, 1.F}},
+        /* max_sample_attempts */ std::uint32_t{0});
+    REQUIRE(samples.empty());
   }
 }
-#endif
+
 }  // namespace
 }  // namespace thinks
