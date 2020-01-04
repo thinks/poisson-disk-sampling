@@ -76,9 +76,10 @@ constexpr auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
   return d;
 }
 
-// O(N^2) verification. Verifies that the distance between each possible
-// sample pair meets the Poisson requirement, i.e. is greater than some radius.
-// Returns true if Poisson criteria is met for all samples, otherwise false.
+// Brute-force (with some tricks) verification that the distance between each
+// possible sample pair meets the Poisson requirement, i.e. is greater than some
+// radius. Returns true if Poisson criteria is met for all samples, otherwise
+// false.
 template <typename VecT, typename FloatT>
 auto VerifyPoisson(const std::vector<VecT>& samples,
                    const FloatT radius) noexcept -> bool {
@@ -98,6 +99,7 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
   // Launch threads.
   std::vector<std::future<bool>> futures;
   for (std::size_t i = 0; i < thread_count; ++i) {
+    // Each thread works on local copy of samples.
     futures.emplace_back(std::async(std::launch::async, [=]() {
       // We know that distance is symmetrical, such that
       // dist(s[j], s[k]) == dist(s[k], s[j]). Therefore
@@ -188,6 +190,7 @@ auto VerifyBounds(const std::vector<VecT>& samples,
   // Launch threads.
   std::vector<std::future<bool>> futures;
   for (std::size_t i = 0; i < thread_count; ++i) {
+    // Each thread works on local copy of samples.
     futures.emplace_back(std::async(std::launch::async, [=]() {
       const std::size_t begin = i * chunk_size;
       const std::size_t end = std::min((i + 1) * chunk_size, sample_count);
@@ -215,8 +218,18 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
                                const std::array<FloatT, N>& x_max,
                                const std::uint32_t max_sample_attempts = 30,
                                const std::uint32_t seed = 0) noexcept -> bool {
+  FloatT scaled_radius = radius;
+
+  // clang-format off
+  #ifndef NDEBUG
+    // Reduce the number of samples for debug builds to decrease 
+    // verification times.
+    scaled_radius *= 2;
+  #endif
+  // clang-format on
+
   const auto samples = thinks::PoissonDiskSampling<FloatT, N, VecT>(
-      radius, x_min, x_max, max_sample_attempts, seed);
+      scaled_radius, x_min, x_max, max_sample_attempts, seed);
   return VerifyBounds(samples, x_min, x_max) && VerifyPoisson(samples, radius);
 }
 
