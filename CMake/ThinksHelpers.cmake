@@ -9,7 +9,7 @@ include(ThinksConfigureCopts)
 
 # The IDE folder for 'thinks' that will be used if 'thinks' is 
 # included in a CMake project that sets
-#    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+#   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # For example, Visual Studio supports folders.
 set(THINKS_IDE_FOLDER thinks)
 
@@ -54,7 +54,7 @@ set(THINKS_IDE_FOLDER thinks)
 #   COPTS
 #     ${THINKS_DEFAULT_COPTS}
 #   DEPS
-#     thinks::awesome # not "awesome" !
+#     thinks::awesome  (not "awesome"!)
 #   PUBLIC
 # )
 #
@@ -104,6 +104,7 @@ function(thinks_cc_library)
       target_compile_options(${_NAME}
         PRIVATE 
           ${THINKS_CC_LIB_COPTS}
+          "/std:c++17"
       )
       target_link_libraries(${_NAME}
         PUBLIC 
@@ -127,8 +128,8 @@ function(thinks_cc_library)
       endif()
 
       # Only non-INTERFACE libraries have the CXX_STANDARD property set.
-      set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
-      set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+      #set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
+      #set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
     else()
       # Generating header-only library.
       add_library(${_NAME} INTERFACE)
@@ -180,6 +181,7 @@ function(thinks_cc_executable)
   target_compile_options(${_NAME}
     PRIVATE 
       ${THINKS_CC_EXE_COPTS}
+      "/std:c++17"
   )
   target_link_libraries(${_NAME}
     PUBLIC 
@@ -196,8 +198,8 @@ function(thinks_cc_executable)
   # Add all 'thinks' targets to a a folder in the IDE for organization.
   set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER})
 
-  set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
-  set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+  #set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
+  #set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
   add_executable(thinks::${THINKS_CC_EXE_NAME} ALIAS ${_NAME})
 endfunction()
@@ -237,7 +239,7 @@ endfunction()
 #     "awesome_test.cc"
 #   DEPS
 #     thinks::awesome
-#     Catch2::Catch2  # Or some other nice testing framework!
+#     Catch2::Catch2  (Or some other nice testing framework!)
 # )
 function(THINKS_CC_TEST)
   if(NOT BUILD_TESTING)
@@ -267,6 +269,7 @@ function(THINKS_CC_TEST)
   target_compile_options(${_NAME}
     PRIVATE 
       ${THINKS_CC_TEST_COPTS}
+      "/std:c++17"
   )
   target_link_libraries(${_NAME}
     PUBLIC 
@@ -278,8 +281,8 @@ function(THINKS_CC_TEST)
   # Add all Thinks targets to a folder in the IDE for organization.
   set_property(TARGET ${_NAME} PROPERTY FOLDER ${THINKS_IDE_FOLDER}/test)
 
-  set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
-  set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+  #set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${THINKS_CXX_STANDARD})
+  #set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
   add_test(NAME ${_NAME} COMMAND ${_NAME})
 endfunction()

@@ -28,21 +28,31 @@ if (NOT CLANG_TIDY)
   message(STATUS "clang-tidy not found")
 else()
   message(STATUS "clang-tidy = ${CLANG_TIDY}")
-  #set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
 
 # Find dependencies
 ## pthread
 find_package(Threads REQUIRED)
 
+option(THINKS_RUN_TESTS "If ON, tests will be run." OFF)
+
+if(${THINKS_RUN_TESTS})
+  # Enable CTest. This will set BUILD_TESTING to ON unless otherwise specified
+  # on the command line.
+  include(CTest)
+  enable_testing()
+  message(STATUS "BUILD_TESTING = ${BUILD_TESTING}")
+endif()
+
 # Build tests and examples only when NOT included as subproject.
-if ("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
+if (BUILD_TESTING)
   # Enable CTest.
   # This will set BUILD_TESTING to ON unless otherwise specified
   # on the command line.
   include(CTest)
   enable_testing()
-  message(STATUS "BUILD_TESTING = ${BUILD_TESTING}")
+  
 
   # JSON
   set(JSON_BuildTests OFF CACHE INTERNAL "")

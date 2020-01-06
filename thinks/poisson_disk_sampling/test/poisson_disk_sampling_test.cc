@@ -20,7 +20,7 @@ namespace {
 // Simple small vector type.
 template <typename T, std::size_t N>
 struct Vec {
-  T m[N];
+  std::array<T, N> m;
 };
 
 }  // namespace
@@ -30,7 +30,7 @@ namespace thinks {
 // Specializations of VecTraits in thinks:: namespace.
 template <typename T, std::size_t N>
 struct VecTraits<Vec<T, N>> {
-  using ValueType = std::decay_t<decltype(*Vec<T, N>::m)>;
+  using ValueType = typename decltype(Vec<T, N>::m)::value_type;
 
   static_assert(sizeof(Vec<T, N>) == N * sizeof(T),
                 "Vec type must be tightly packed");
@@ -52,7 +52,7 @@ namespace {
 auto ThreadCount(const std::size_t max_thread_count) noexcept -> std::size_t {
   // return 1;
   return std::thread::hardware_concurrency() > 0
-             ? std::min<std::size_t>(std::thread::hardware_concurrency(),
+             ? std::min(static_cast<std::size_t>(std::thread::hardware_concurrency()),
                                      max_thread_count)
              : 1;
 }
@@ -137,13 +137,12 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
     }));
   }
 
-  for (auto&& f : futures) {
-    f.wait();
-  }
-
+  // clang-format off
   // Check results.
+  for (auto&& f : futures) { f.wait(); }
   return std::all_of(std::begin(futures), std::end(futures),
                      [](std::future<bool>& f) { return f.get(); });
+  // clang-format on
 }
 
 template <typename VecT, typename FloatT, std::size_t N>
@@ -155,7 +154,7 @@ constexpr auto SampleInsideBounds(const VecT& sample,
 
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(kDims == VecTraitsType::kSize,
-                "bounds/samples dimensionality mismatch");
+                "sample/bounds dimensionality mismatch");
 
   for (std::size_t i = 0; i < kDims; ++i) {
     const auto xi = static_cast<FloatT>(VecTraitsType::Get(sample, i));
@@ -202,13 +201,12 @@ auto VerifyBounds(const std::vector<VecT>& samples,
     }));
   }
 
+  // clang-format off
   // Check results.
-  for (auto&& f : futures) {
-    f.wait();
-  }
-
+  for (auto&& f : futures) { f.wait(); }
   return std::all_of(std::begin(futures), std::end(futures),
                      [](std::future<bool>& f) { return f.get(); });
+  // clang-format on
 }
 
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
@@ -217,51 +215,75 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
                                const std::array<FloatT, N>& x_max,
                                const std::uint32_t max_sample_attempts = 30,
                                const std::uint32_t seed = 0) noexcept -> bool {
-  FloatT scaled_radius = radius;
+  FloatT config_radius = radius;
 
-// clang-format off
+  // clang-format off
   #ifndef NDEBUG
     // Reduce the number of samples for debug builds to decrease 
-    // verification times.
-    scaled_radius *= 2;
+    // verification times. Larger radius gives fewer samples.
+    config_radius *= 2;
   #endif
   // clang-format on
 
   const auto samples = thinks::PoissonDiskSampling<FloatT, N, VecT>(
-      scaled_radius, x_min, x_max, max_sample_attempts, seed);
+      config_radius, x_min, x_max, max_sample_attempts, seed);
   return VerifyBounds(samples, x_min, x_max) && VerifyPoisson(samples, radius);
 }
+
+template <typename FloatT, std::size_t N>
+struct SampleTestArgs;
+
+template <typename FloatT>
+struct SampleTestArgs<FloatT, 2> {
+  static constexpr auto kRadius = FloatT{2};
+  static constexpr auto kXMin = std::array<FloatT, 2>{{-500, -500}};
+  static constexpr auto kXMax = std::array<FloatT, 2>{{500, 500}};
+};
+
+template <typename FloatT>
+struct SampleTestArgs<FloatT, 3> {
+  static constexpr auto kRadius = FloatT{2};
+  static constexpr auto kXMin = std::array<FloatT, 3>{{-50, -50, -50}};
+  static constexpr auto kXMax = std::array<FloatT, 3>{{50, 50, 50}};
+};
+
+template <typename FloatT>
+struct SampleTestArgs<FloatT, 4> {
+  static constexpr auto kRadius = FloatT{2};
+  static constexpr auto kXMin = std::array<FloatT, 4>{{-5, -5, -5, -5}};
+  static constexpr auto kXMax = std::array<FloatT, 4>{{5, 5, 5, 5}};
+};
 
 TEST_CASE("Test samples <std::array>", "[container]") {
   SECTION("N = 2") {
     REQUIRE(VerifyPoissonDiskSampling(
-        /* radius */ 2.F,
-        /* x_min */ std::array<float, 2>{{-500.F, -500.F}},
-        /* x_max */ std::array<float, 2>{{500.F, 500.F}}));
+        SampleTestArgs<float, 2>::kRadius,
+        SampleTestArgs<float, 2>::kXMin,
+        SampleTestArgs<float, 2>::kXMax));
     REQUIRE(VerifyPoissonDiskSampling(
-        /* radius */ 2.0,
-        /* x_min */ std::array<double, 2>{{-500.0, -500.0}},
-        /* x_max */ std::array<double, 2>{{500.0, 500.0}}));
+        SampleTestArgs<double, 2>::kRadius,
+        SampleTestArgs<double, 2>::kXMin,
+        SampleTestArgs<double, 2>::kXMax));    
   }
   SECTION("N = 3") {
     REQUIRE(VerifyPoissonDiskSampling(
-        /* radius */ 2.F,
-        /* x_min */ std::array<float, 3>{{-50.F, -50.F, -50.F}},
-        /* x_max */ std::array<float, 3>{{50.F, 50.F, 50.F}}));
+        SampleTestArgs<float, 3>::kRadius,
+        SampleTestArgs<float, 3>::kXMin,
+        SampleTestArgs<float, 3>::kXMax));
     REQUIRE(VerifyPoissonDiskSampling(
-        /* radius */ 2.0,
-        /* x_min */ std::array<double, 3>{{-50.0, -50.0, -50.0}},
-        /* x_max */ std::array<double, 3>{{50.0, 50.0, 50.0}}));
+        SampleTestArgs<double, 3>::kRadius,
+        SampleTestArgs<double, 3>::kXMin,
+        SampleTestArgs<double, 3>::kXMax));
   }
   SECTION("N = 4") {
     REQUIRE(VerifyPoissonDiskSampling(
-        /* radius */ 2.F,
-        /* x_min */ std::array<float, 4>{{-5.F, -5.F, -5.F, -5.F}},
-        /* x_max */ std::array<float, 4>{{5.F, 5.F, 5.F, 5.F}}));
+        SampleTestArgs<float, 4>::kRadius,
+        SampleTestArgs<float, 4>::kXMin,
+        SampleTestArgs<float, 4>::kXMax));
     REQUIRE(VerifyPoissonDiskSampling(
-        /* radius */ 2.0,
-        /* x_min */ std::array<double, 4>{{-5.0, -5.0, -5.0, -5.0}},
-        /* x_max */ std::array<double, 4>{{5.0, 5.0, 5.0, 5.0}}));
+        SampleTestArgs<double, 4>::kRadius,
+        SampleTestArgs<double, 4>::kXMin,
+        SampleTestArgs<double, 4>::kXMax));
   }
 }
 
@@ -269,93 +291,112 @@ TEST_CASE("Test samples <Vec>", "[container]") {
   SECTION("N = 2") {
     using VecType = Vec<float, 2>;
     REQUIRE(VerifyPoissonDiskSampling<float, 2, VecType>(
-        /* radius */ 2.F,
-        /* x_min */ std::array<float, 2>{{-500.F, -500.F}},
-        /* x_max */ std::array<float, 2>{{500.F, 500.F}}));
+        SampleTestArgs<float, 2>::kRadius,
+        SampleTestArgs<float, 2>::kXMin,
+        SampleTestArgs<float, 2>::kXMax));
     REQUIRE(VerifyPoissonDiskSampling<double, 2, VecType>(
-        /* radius */ 2.0,
-        /* x_min */ std::array<double, 2>{{-500.0, -500.0}},
-        /* x_max */ std::array<double, 2>{{500.0, 500.0}}));
+        SampleTestArgs<double, 2>::kRadius,
+        SampleTestArgs<double, 2>::kXMin,
+        SampleTestArgs<double, 2>::kXMax));
   }
   SECTION("N = 3") {
     using VecType = Vec<float, 3>;
     REQUIRE(VerifyPoissonDiskSampling<float, 3, VecType>(
-        /* radius */ 2.F,
-        /* x_min */ std::array<float, 3>{{-50.F, -50.F, -50.F}},
-        /* x_max */ std::array<float, 3>{{50.F, 50.F, 50.F}}));
+        SampleTestArgs<float, 3>::kRadius,
+        SampleTestArgs<float, 3>::kXMin,
+        SampleTestArgs<float, 3>::kXMax));
     REQUIRE(VerifyPoissonDiskSampling<double, 3, VecType>(
-        /* radius */ 2.0,
-        /* x_min */ std::array<double, 3>{{-50.0, -50.0, -50.0}},
-        /* x_max */ std::array<double, 3>{{50.0, 50.0, 50.0}}));
+        SampleTestArgs<double, 3>::kRadius,
+        SampleTestArgs<double, 3>::kXMin,
+        SampleTestArgs<double, 3>::kXMax));
   }
   SECTION("N = 4") {
     using VecType = Vec<float, 4>;
     REQUIRE(VerifyPoissonDiskSampling<float, 4, VecType>(
-        /* radius */ 2.F,
-        /* x_min */ std::array<float, 4>{{-5.F, -5.F, -5.F, -5.F}},
-        /* x_max */ std::array<float, 4>{{5.F, 5.F, 5.F, 5.F}}));
+        SampleTestArgs<float, 4>::kRadius,
+        SampleTestArgs<float, 4>::kXMin,
+        SampleTestArgs<float, 4>::kXMax));
     REQUIRE(VerifyPoissonDiskSampling<double, 4, VecType>(
-        /* radius */ 2.0,
-        /* x_min */ std::array<double, 4>{{-5.F, -5.F, -5.F, -5.F}},
-        /* x_max */ std::array<double, 4>{{5.F, 5.F, 5.F, 5.F}}));
+        SampleTestArgs<double, 4>::kRadius,
+        SampleTestArgs<double, 4>::kXMin,
+        SampleTestArgs<double, 4>::kXMax));
   }
 }
 
+struct ValidBounds {
+  static constexpr auto kXMin = std::array<float, 2>{{-1, -1}};
+  static constexpr auto kXMax = std::array<float, 2>{{1, 1}};
+};
+
 TEST_CASE("Invalid arguments", "[container]") {
+  constexpr auto kValidRadius = 1.F;
+
   SECTION("radius == 0") {
     const auto samples = thinks::PoissonDiskSampling(
-        /* radius */ 0.F,
-        /* x_min */ std::array<float, 2>{{-1.F, -1.F}},
-        /* x_max */ std::array<float, 2>{{1.F, 1.F}});
+        /* radius */ 0.F,  // NOLINT
+        ValidBounds::kXMin, ValidBounds::kXMax);
     REQUIRE(samples.empty());
   }
 
   SECTION("radius < 0") {
     const auto samples = thinks::PoissonDiskSampling(
-        /* radius */ -1.F,
-        /* x_min */ std::array<float, 2>{{-1.F, -1.F}},
-        /* x_max */ std::array<float, 2>{{1.F, 1.F}});
+        /* radius */ -1.F,  // NOLINT
+        ValidBounds::kXMin, ValidBounds::kXMax);
     REQUIRE(samples.empty());
   }
 
   SECTION("x_min == x_max") {
-    const auto samples = thinks::PoissonDiskSampling(
-        /* radius */ 1.F,
-        /* x_min */ std::array<float, 2>{{1.F, 1.F}},
-        /* x_max */ std::array<float, 2>{{1.F, 1.F}});
-    REQUIRE(samples.empty());
+    {
+      const auto samples = thinks::PoissonDiskSampling(
+          kValidRadius,
+          /* x_min */ std::array<float, 2>{{1.F, 1.F}},   // NOLINT
+          /* x_max */ std::array<float, 2>{{1.F, 1.F}});  // NOLINT
+      REQUIRE(samples.empty());
+    }
+    {
+      const auto samples = thinks::PoissonDiskSampling(
+          kValidRadius,
+          /* x_min */ std::array<float, 2>{{1.F, -1.F}},  // NOLINT
+          /* x_max */ std::array<float, 2>{{1.F, 1.F}});  // NOLINT
+      REQUIRE(samples.empty());
+    }
+    {
+      const auto samples = thinks::PoissonDiskSampling(
+          kValidRadius,
+          /* x_min */ std::array<float, 2>{{-1.F, 1.F}},  // NOLINT
+          /* x_max */ std::array<float, 2>{{1.F, 1.F}});  // NOLINT
+      REQUIRE(samples.empty());
+    }
   }
 
   SECTION("x_min > x_max") {
     {
       const auto samples = thinks::PoissonDiskSampling(
-          /* radius */ 1.F,
-          /* x_min */ std::array<float, 2>{{1.F, 1.F}},
-          /* x_max */ std::array<float, 2>{{-1.F, -1.F}});
+          kValidRadius,
+          /* x_min */ std::array<float, 2>{{1.F, 1.F}},     // NOLINT
+          /* x_max */ std::array<float, 2>{{-1.F, -1.F}});  // NOLINT
       REQUIRE(samples.empty());
     }
     {
       const auto samples = thinks::PoissonDiskSampling(
-          /* radius */ 1.F,
-          /* x_min */ std::array<float, 2>{{-1.F, 1.F}},
-          /* x_max */ std::array<float, 2>{{1.F, -1.F}});
+          kValidRadius,
+          /* x_min */ std::array<float, 2>{{1.F, -1.F}},   // NOLINT
+          /* x_max */ std::array<float, 2>{{-1.F, 1.F}});  // NOLINT
       REQUIRE(samples.empty());
     }
     {
       const auto samples = thinks::PoissonDiskSampling(
-          /* radius */ 1.F,
-          /* x_min */ std::array<float, 2>{{1.F, -1.F}},
-          /* x_max */ std::array<float, 2>{{-1.F, 1.F}});
+          kValidRadius,
+          /* x_min */ std::array<float, 2>{{-1.F, 1.F}},   // NOLINT
+          /* x_max */ std::array<float, 2>{{1.F, -1.F}});  // NOLINT
       REQUIRE(samples.empty());
     }
   }
 
   SECTION("max_sample_attempts == 0") {
     const auto samples = thinks::PoissonDiskSampling(
-        /* radius */ 1.F,
-        /* x_min */ std::array<float, 2>{{-1.F, -1.F}},
-        /* x_max */ std::array<float, 2>{{1.F, 1.F}},
-        /* max_sample_attempts */ std::uint32_t{0});
+        kValidRadius, ValidBounds::kXMin, ValidBounds::kXMax,
+        /* max_sample_attempts */ std::uint32_t{0});  // NOLINT
     REQUIRE(samples.empty());
   }
 }

@@ -66,8 +66,10 @@ constexpr auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
 // Returns true if x is element-wise inclusively inside x_min and x_max,
 // otherwise false. Assumes that x_min is element-wise less than x_max.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
-constexpr auto Inside(const VecT& sample, const std::array<FloatT, N>& x_min,
-                      const std::array<FloatT, N>& x_max) noexcept -> bool {
+constexpr auto InsideBounds(const VecT& sample,
+                            const std::array<FloatT, N>& x_min,
+                            const std::array<FloatT, N>& x_max) noexcept
+    -> bool {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
@@ -377,8 +379,8 @@ auto RandActiveSample(const std::vector<std::uint32_t>& active_indices,
 // Returns a pseudo-random coordinate that is guaranteed be at a
 // distance [radius, 2 * radius] from center.
 template <typename VecTraitsT, typename VecT, typename FloatT>
-auto RandAnnulusSample(const VecT& center, const FloatT radius,
-                       std::uint32_t* const seed) noexcept -> VecT {
+constexpr auto RandAnnulusSample(const VecT& center, const FloatT radius,
+                                 std::uint32_t* const seed) noexcept -> VecT {
   VecT p = {};
   for (;;) {
     // Generate a random component in the range [-2, 2] for each dimension.
@@ -523,8 +525,14 @@ struct VecTraits<std::array<FloatT, N>> {
 };
 
 // Returns a list of samples with the guarantees:
-// * No two samples are closer to each other than radius.
-// * No sample is outside the region [x_min, x_max].
+// - No two samples are closer to each other than radius.
+// - No sample is outside the region [x_min, x_max].
+//
+// If the arguments are invalid an empty vector is returned.
+// The arguments are invalid if:
+// - Radius is <= 0, or
+// - x_min[i] >= x_max[i], or
+// - max_sample_attempts == 0.
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>,
           typename VecTraitsT = VecTraits<VecT>>
 auto PoissonDiskSampling(const FloatT radius,
@@ -563,14 +571,14 @@ auto PoissonDiskSampling(const FloatT radius,
     const auto active_sample =
         pds::RandActiveSample(active_indices, samples, &local_seed);
 
-    auto attempt_count = decltype(max_sample_attempts){0};
+    auto attempt_count = std::uint32_t{0};
     while (attempt_count < max_sample_attempts) {
       // Randomly create a candidate sample inside the active sample's annulus.
       const auto cand_sample = pds::RandAnnulusSample<VecTraitsT>(
           active_sample.position, grid.sample_radius(), &local_seed);
 
       // Check if candidate sample is within bounds.
-      if (pds::Inside<VecTraitsT>(cand_sample, x_min, x_max)) {
+      if (pds::InsideBounds<VecTraitsT>(cand_sample, x_min, x_max)) {
         // Check candidate sample proximity to nearby samples.
         const auto grid_neighbors =
             pds::GridNeighborhood<VecTraitsT>(cand_sample, grid);
