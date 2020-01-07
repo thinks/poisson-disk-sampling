@@ -49,6 +49,30 @@ struct VecTraits<Vec<T, N>> {
 
 namespace {
 
+template <typename FloatT, std::size_t N>
+struct SampleTestArgs;
+
+template <typename FloatT>
+struct SampleTestArgs<FloatT, 2> {
+  static constexpr auto kRadius = FloatT{2};
+  static constexpr auto kXMin = std::array<FloatT, 2>{{-500, -500}};
+  static constexpr auto kXMax = std::array<FloatT, 2>{{500, 500}};
+};
+
+template <typename FloatT>
+struct SampleTestArgs<FloatT, 3> {
+  static constexpr auto kRadius = FloatT{2};
+  static constexpr auto kXMin = std::array<FloatT, 3>{{-50, -50, -50}};
+  static constexpr auto kXMax = std::array<FloatT, 3>{{50, 50, 50}};
+};
+
+template <typename FloatT>
+struct SampleTestArgs<FloatT, 4> {
+  static constexpr auto kRadius = FloatT{2};
+  static constexpr auto kXMin = std::array<FloatT, 4>{{-5, -5, -5, -5}};
+  static constexpr auto kXMax = std::array<FloatT, 4>{{5, 5, 5, 5}};
+};
+
 auto ThreadCount(const std::size_t max_thread_count) noexcept -> std::size_t {
   // return 1;
   return std::thread::hardware_concurrency() > 0
@@ -229,30 +253,6 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
       config_radius, x_min, x_max, max_sample_attempts, seed);
   return VerifyBounds(samples, x_min, x_max) && VerifyPoisson(samples, radius);
 }
-
-template <typename FloatT, std::size_t N>
-struct SampleTestArgs;
-
-template <typename FloatT>
-struct SampleTestArgs<FloatT, 2> {
-  static constexpr auto kRadius = FloatT{2};
-  static constexpr auto kXMin = std::array<FloatT, 2>{{-500, -500}};
-  static constexpr auto kXMax = std::array<FloatT, 2>{{500, 500}};
-};
-
-template <typename FloatT>
-struct SampleTestArgs<FloatT, 3> {
-  static constexpr auto kRadius = FloatT{2};
-  static constexpr auto kXMin = std::array<FloatT, 3>{{-50, -50, -50}};
-  static constexpr auto kXMax = std::array<FloatT, 3>{{50, 50, 50}};
-};
-
-template <typename FloatT>
-struct SampleTestArgs<FloatT, 4> {
-  static constexpr auto kRadius = FloatT{2};
-  static constexpr auto kXMin = std::array<FloatT, 4>{{-5, -5, -5, -5}};
-  static constexpr auto kXMax = std::array<FloatT, 4>{{5, 5, 5, 5}};
-};
 
 TEST_CASE("Test samples <std::array>", "[container]") {
   SECTION("N = 2") {
