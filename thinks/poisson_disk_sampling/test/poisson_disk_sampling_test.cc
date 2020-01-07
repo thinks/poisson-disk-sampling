@@ -231,50 +231,10 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
   return VerifyBounds(samples, x_min, x_max) && VerifyPoisson(samples, radius);
 }
 
-
-#if 0
-template <typename FloatT, std::size_t N>
-constexpr auto SampleTestXMin() noexcept -> std::array<FloatT, N> { 
-  if constexpr (N == 2) {
-    return {{-500, -500}};
-  }
-  if constexpr (N == 3) {
-    return {{-50, -50, -50}};
-  }
-  if constexpr (N == 4) {
-    return {{-5, -5, -5, -5}};
-  }
-  return {}; 
-}
-
-template <typename FloatT, std::size_t N>
-constexpr auto SampleTestXMax() noexcept -> std::array<FloatT, N> { 
-  if constexpr (N == 2) {
-    return {{500, 500}};
-  }
-  if constexpr (N == 3) {
-    return {{50, 50, 50}};
-  }
-  if constexpr (N == 4) {
-    return {{5, 5, 5, 5}};
-  }
-  return {}; 
-}
-#endif
-
 template <typename FloatT>
-constexpr auto SampleTestRadius() noexcept -> FloatT { return FloatT{2}; }
-#if 0
-template <typename FloatT, std::size_t N>
-constexpr auto SampleTestXMin() noexcept -> std::array<FloatT, N> {
-  std::array<FloatT, N> a = {};
-  for (std::size_t i = 0; i < std::tuple_size<decltype(a)>::value; ++i) {
-    a[i] = FloatT{XMin<N>()};
-  }
-  return a; 
+constexpr auto SampleTestRadius() noexcept -> FloatT {
+  return FloatT{2};
 }
-#endif
-
 
 template <typename FloatT, std::size_t N>
 struct SampleTestBounds;
@@ -325,41 +285,44 @@ TEST_CASE("Test samples <std::array>", "[container]") {
                                       SampleTestBounds<double, 4>::x_max()));
   }
 }
-#if 0
+
 TEST_CASE("Test samples <Vec>", "[container]") {
   SECTION("N = 2") {
     using VecType = Vec<float, 2>;
     REQUIRE(VerifyPoissonDiskSampling<float, 2, VecType>(
-        SampleTestArgs<float, 2>::radius(), SampleTestArgs<float, 2>::x_min(),
-        SampleTestArgs<float, 2>::x_max()));
+        SampleTestRadius<float>(), SampleTestBounds<float, 2>::x_min(),
+        SampleTestBounds<float, 2>::x_max()));
     REQUIRE(VerifyPoissonDiskSampling<double, 2, VecType>(
-        SampleTestArgs<double, 2>::radius(), SampleTestArgs<double, 2>::x_min(),
-        SampleTestArgs<double, 2>::x_max()));
+        SampleTestRadius<double>(), SampleTestBounds<double, 2>::x_min(),
+        SampleTestBounds<double, 2>::x_max()));
   }
   SECTION("N = 3") {
     using VecType = Vec<float, 3>;
     REQUIRE(VerifyPoissonDiskSampling<float, 3, VecType>(
-        SampleTestArgs<float, 3>::radius(), SampleTestArgs<float, 3>::x_min(),
-        SampleTestArgs<float, 3>::x_max()));
+        SampleTestRadius<float>(), SampleTestBounds<float, 3>::x_min(),
+        SampleTestBounds<float, 3>::x_max()));
     REQUIRE(VerifyPoissonDiskSampling<double, 3, VecType>(
-        SampleTestArgs<double, 3>::radius(), SampleTestArgs<double, 3>::x_min(),
-        SampleTestArgs<double, 3>::x_max()));
+        SampleTestRadius<double>(), SampleTestBounds<double, 3>::x_min(),
+        SampleTestBounds<double, 3>::x_max()));
   }
   SECTION("N = 4") {
     using VecType = Vec<float, 4>;
     REQUIRE(VerifyPoissonDiskSampling<float, 4, VecType>(
-        SampleTestArgs<float, 4>::radius(), SampleTestArgs<float, 4>::x_min(),
-        SampleTestArgs<float, 4>::x_max()));
+        SampleTestRadius<float>(), SampleTestBounds<float, 4>::x_min(),
+        SampleTestBounds<float, 4>::x_max()));
     REQUIRE(VerifyPoissonDiskSampling<double, 4, VecType>(
-        SampleTestArgs<double, 4>::radius(), SampleTestArgs<double, 4>::x_min(),
-        SampleTestArgs<double, 4>::x_max()));
+        SampleTestRadius<double>(), SampleTestBounds<double, 4>::x_min(),
+        SampleTestBounds<double, 4>::x_max()));
   }
 }
-#endif
 
 struct ValidBounds {
-  static constexpr auto x_min() noexcept -> std::array<float, 2> { return {{-1, -1}}; }
-  static constexpr auto x_max() noexcept -> std::array<float, 2> { return {{1, 1}}; }
+  static constexpr auto x_min() noexcept -> std::array<float, 2> {
+    return {{-1, -1}};
+  }
+  static constexpr auto x_max() noexcept -> std::array<float, 2> {
+    return {{1, 1}};
+  }
 };
 
 TEST_CASE("Invalid arguments", "[container]") {
