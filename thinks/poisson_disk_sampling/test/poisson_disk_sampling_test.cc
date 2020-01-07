@@ -269,9 +269,9 @@ template <typename FloatT, std::size_t N>
 constexpr auto SampleTestXMin() noexcept -> std::array<FloatT, N> {
   std::array<FloatT, N> a = {};
   for (std::size_t i = 0; i < std::tuple_size<decltype(a)>::value; ++i) {
-    a[i] = 
+    a[i] = FloatT{XMin<N>()};
   }
-  return FloatT{2}; 
+  return a; 
 }
 #endif
 
@@ -358,8 +358,8 @@ TEST_CASE("Test samples <Vec>", "[container]") {
 #endif
 
 struct ValidBounds {
-  static constexpr auto kXMin = std::array<float, 2>{{-1, -1}};
-  static constexpr auto kXMax = std::array<float, 2>{{1, 1}};
+  static constexpr auto x_min() noexcept -> std::array<float, 2> { return {{-1, -1}}; }
+  static constexpr auto x_max() noexcept -> std::array<float, 2> { return {{1, 1}}; }
 };
 
 TEST_CASE("Invalid arguments", "[container]") {
@@ -368,14 +368,14 @@ TEST_CASE("Invalid arguments", "[container]") {
   SECTION("radius == 0") {
     const auto samples = thinks::PoissonDiskSampling(
         /* radius */ 0.F,  // NOLINT
-        ValidBounds::kXMin, ValidBounds::kXMax);
+        ValidBounds::x_min(), ValidBounds::x_max());
     REQUIRE(samples.empty());
   }
 
   SECTION("radius < 0") {
     const auto samples = thinks::PoissonDiskSampling(
         /* radius */ -1.F,  // NOLINT
-        ValidBounds::kXMin, ValidBounds::kXMax);
+        ValidBounds::x_min(), ValidBounds::x_max());
     REQUIRE(samples.empty());
   }
 
@@ -429,7 +429,7 @@ TEST_CASE("Invalid arguments", "[container]") {
 
   SECTION("max_sample_attempts == 0") {
     const auto samples = thinks::PoissonDiskSampling(
-        kValidRadius, ValidBounds::kXMin, ValidBounds::kXMax,
+        kValidRadius, ValidBounds::x_min(), ValidBounds::x_max(),
         /* max_sample_attempts */ std::uint32_t{0});  // NOLINT
     REQUIRE(samples.empty());
   }
