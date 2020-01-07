@@ -7,6 +7,6 @@
   "cmake.configureArgs": [
     "-DCMAKE_VERBOSE_MAKEFILE=ON",
     "-DTHINKS_RUN_TESTS=ON",
-    "-DCMAKE_CXX_STANDARD=14"
+    "-DCMAKE_CXX_STANDARD=17"
   ],
 }
