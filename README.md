@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # Poisson Disk Sampling
 
 [ ] - Update CMake, add cppbestpractices build flags.
