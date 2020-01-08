@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/thinks/poisson-disk-sampling.svg?branch=master)](https://travis-ci.org/thinks/poisson-disk-sampling) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Poisson Disk Sampling
@@ -12,7 +13,6 @@ This repository contains a [single file](https://github.com/thinks/poisson-disk-
 
 All code in this repository is released under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
-[![Build Status](https://travis-ci.org/thinks/poisson-disk-sampling.svg?branch=master)](https://travis-ci.org/thinks/poisson-disk-sampling)
 
 ## Contributions
 
