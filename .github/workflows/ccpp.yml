@@ -26,7 +26,7 @@ jobs:
         #clang-tidy --version
     - name: MSVC
       run : |
-        C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat
+        C:/"Program Files (x86)"/"Microsoft Visual Studio"/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
     - name: Build and test release
       run: | 
         mkdir build_rel
