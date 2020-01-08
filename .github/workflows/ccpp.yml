@@ -29,8 +29,8 @@ jobs:
         C:/"Program Files (x86)"/"Microsoft Visual Studio"/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat
     - name: Build and test release
       run: | 
-        $Env:CC
-        $Env:CXX
+        echo $Env:CC
+        echo $Env:CXX
         mkdir build_rel
         cd build_rel
         cmake -G Ninja -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
