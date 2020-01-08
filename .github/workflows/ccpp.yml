@@ -14,6 +14,7 @@ jobs:
         cxx_standard: [14, 17]
     steps:
     - uses: actions/checkout@v1
+    - uses: seanmiddleditch/gha-setup-ninja@master
     - name: Submodules
       run: git submodule update --init --recursive
     - name: Versions
@@ -27,13 +28,13 @@ jobs:
       run: | 
         mkdir build_rel
         cd build_rel
-        cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
     - name: Build and test debug
       run: | 
         mkdir build_dbg
         cd build_dbg
-        cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
