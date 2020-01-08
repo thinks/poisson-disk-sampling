@@ -218,7 +218,7 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
                                const std::uint32_t seed = 0) noexcept -> bool {
   FloatT config_radius = radius;
 
-// clang-format off
+  // clang-format off
   #ifndef NDEBUG
     // Reduce the number of samples for debug builds to decrease 
     // verification times. Larger radius gives fewer samples.
