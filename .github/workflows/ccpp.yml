@@ -8,7 +8,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        #os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest]
         #cxx_standard: [11, 14, 17]
         cxx_standard: [14, 17]
     steps:
@@ -26,7 +27,6 @@ jobs:
       run: | 
         mkdir build_rel
         cd build_rel
-        pwd
         cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
@@ -34,7 +34,6 @@ jobs:
       run: | 
         mkdir build_dbg
         cd build_dbg
-        pwd
         cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
         cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
