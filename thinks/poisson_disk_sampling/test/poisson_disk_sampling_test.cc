@@ -171,8 +171,8 @@ constexpr auto SampleInsideBounds(const VecT& sample,
 // x_max, otherwise false.
 template <typename VecT, typename FloatT, std::size_t N>
 auto VerifyBounds(const std::vector<VecT>& samples,
-                  const std::array<FloatT, N> x_min,
-                  const std::array<FloatT, N> x_max) noexcept -> bool {
+                  const std::array<FloatT, N>& x_min,
+                  const std::array<FloatT, N>& x_max) noexcept -> bool {
   if (samples.empty()) {
     return false;
   }
@@ -211,13 +211,13 @@ auto VerifyBounds(const std::vector<VecT>& samples,
 
 template <typename FloatT, std::size_t N, typename VecT = std::array<FloatT, N>>
 auto VerifyPoissonDiskSampling(const FloatT radius,
-                               const std::array<FloatT, N> x_min,
-                               const std::array<FloatT, N> x_max,
+                               const std::array<FloatT, N>& x_min,
+                               const std::array<FloatT, N>& x_max,
                                const std::uint32_t max_sample_attempts = 30,
                                const std::uint32_t seed = 0) noexcept -> bool {
   FloatT config_radius = radius;
 
-  // clang-format off
+// clang-format off
   #ifndef NDEBUG
     // Reduce the number of samples for debug builds to decrease 
     // verification times. Larger radius gives fewer samples.
