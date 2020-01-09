@@ -50,7 +50,6 @@ struct VecTraits<Vec<T, N>> {
 namespace {
 
 auto ThreadCount(const std::size_t max_thread_count) noexcept -> std::size_t {
-  // return 1;
   return std::thread::hardware_concurrency() > 0
              ? std::min(static_cast<std::size_t>(
                             std::thread::hardware_concurrency()),
