@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <future>
+#include <limits>
 //#include <iomanip>
 //#include <iostream>
 #include <thread>
@@ -259,7 +260,7 @@ struct SampleTestBounds<FloatT, 4> {
 };
 // clang-format on
 
-TEST_CASE("Test samples <std::array>", "[container]") {
+TEST_CASE("Verify samples <std::array>", "[container]") {
   SECTION("N = 2") {
     REQUIRE(VerifyPoissonDiskSampling(SampleTestRadius<float>(),
                                       SampleTestBounds<float, 2>::x_min(),
@@ -286,7 +287,7 @@ TEST_CASE("Test samples <std::array>", "[container]") {
   }
 }
 
-TEST_CASE("Test samples <Vec>", "[container]") {
+TEST_CASE("Verify samples <Vec>", "[container]") {
   SECTION("N = 2") {
     using VecType = Vec<float, 2>;
     REQUIRE(VerifyPoissonDiskSampling<float, 2, VecType>(
@@ -314,6 +315,63 @@ TEST_CASE("Test samples <Vec>", "[container]") {
         SampleTestRadius<double>(), SampleTestBounds<double, 4>::x_min(),
         SampleTestBounds<double, 4>::x_max()));
   }
+}
+
+TEST_CASE("Verify max sampling attempts") {
+  // Verify that we get a denser sampling, i.e. more samples,
+  // when we increase the max sample attempts parameter (with
+  // all other parameters constant).
+
+  constexpr auto kRadius = 0.5f;
+  constexpr auto kXMin = std::array<float, 2>{{-10.f, -10.f}};
+  constexpr auto kXMax = std::array<float, 2>{{10.f, 10.f}};
+
+  const auto samples_10 = thinks::PoissonDiskSampling(
+      kRadius, kXMin, kXMax, /* max_sample_attempts */ 10);
+  const auto samples_40 = thinks::PoissonDiskSampling(
+      kRadius, kXMin, kXMax, /* max_sample_attempts */ 40);
+
+  REQUIRE(samples_10.size() < samples_40.size());
+}
+
+TEST_CASE("Verify seed") {
+  // Verify that different seeds give different sample distributions.
+
+  constexpr auto kRadius = 0.5f;
+  constexpr auto kXMin = std::array<float, 2>{{-10.f, -10.f}};
+  constexpr auto kXMax = std::array<float, 2>{{10.f, 10.f}};
+  constexpr auto kMaxSampleAttempts = std::uint32_t{20};
+
+  const auto samples_1981 = thinks::PoissonDiskSampling(
+      kRadius, kXMin, kXMax, kMaxSampleAttempts, /* seed */ 1981);
+  const auto samples_1337 = thinks::PoissonDiskSampling(
+      kRadius, kXMin, kXMax, kMaxSampleAttempts, /* seed */ 1337);
+
+  // For each sample in the first point set compute the smallest
+  // distance checking every sample in the second point set.
+  const auto sample_count_1981 = samples_1981.size();
+  const auto sample_count_1337 = samples_1337.size();
+  auto min_dist =
+      std::vector<float>(sample_count_1981, std::numeric_limits<float>::max());
+  for (std::size_t i = 0; i < sample_count_1981; ++i) {
+    const auto si = samples_1981[i];
+    auto min_sqr_dist = std::numeric_limits<float>::max();
+    for (std::size_t j = 0; j < sample_count_1337; ++j) {
+      const auto sj = samples_1981[j];
+      min_sqr_dist = std::min(
+          min_sqr_dist,
+          SquaredDistance<thinks::VecTraits<std::array<float, 2>>>(si, sj));
+    }
+    min_dist[i] = std::sqrt(min_sqr_dist);
+  }
+
+  // Verify that the largest of the smallest distances is non-zero,
+  // which guarantees that there is at least one point in the first
+  // point set that is not present in the second point set. The threshold is
+  // arbitrarily chosen here.
+  const auto max_min_dist =
+      *std::max_element(std::cbegin(min_dist), std::cend(min_dist));
+  REQUIRE(max_min_dist > 0.1F);
 }
 
 struct ValidBounds {
