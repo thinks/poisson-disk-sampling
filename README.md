@@ -1,6 +1,7 @@
-[![Build Status](https://travis-ci.org/thinks/poisson-disk-sampling.svg?branch=master)](https://travis-ci.org/thinks/poisson-disk-sampling) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Standard](https://img.shields.io/badge/c%2B%2B-14/17/20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
+[![Build Status](https://travis-ci.org/thinks/poisson-disk-sampling.svg?branch=master)](https://travis-ci.org/thinks/poisson-disk-sampling) 
+[![Actions](https://github.com/thinks/poisson-disk-sampling/workflows/.github/workflows/main.yml/badge.svg)](https://github.com/thinks/poisson-disk-sampling/actions)
 
 # Poisson Disk Sampling
 
