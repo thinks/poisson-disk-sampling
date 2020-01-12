@@ -106,7 +106,7 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
       // we need only compute the upper half of the matrix (excluding diagonal).
       //
       // Load balance threads such that "short" (small j) and "long" (large j)
-      // columns are divided equally among threads.
+      // columns are divided evenly among threads.
       const auto r_sqr = squared(radius);
       for (std::size_t j = i; j < sample_count; j += thread_count) {
         const auto sj = samples[j];
@@ -118,18 +118,6 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
 
           // Fail for NaN.
           if (!(dist_sqr > r_sqr)) {
-            /*std::ostringstream oss;
-            oss << std::setprecision(17);
-            oss << "s[" << j << "]: {" << sj[0] << ", " << sj[1] << ", " <<
-            sj[2]
-                << "}\n";
-            oss << "s[" << k << "]: {" << sk[0] << ", " << sk[1] << ", " <<
-            sk[2]
-                << "}\n";
-            oss << dist_sqr << " | " << r_sqr << "\n";
-            oss << std::sqrt(dist_sqr) << " | " << radius << "\n";
-            oss << "fail\n";
-            std::cerr << oss.str();*/
             return false;
           }
         }
@@ -218,13 +206,11 @@ auto VerifyPoissonDiskSampling(const FloatT radius,
                                const std::uint32_t seed = 0) noexcept -> bool {
   FloatT config_radius = radius;
 
-// clang-format off
-  #ifndef NDEBUG
-    // Reduce the number of samples for debug builds to decrease 
-    // verification times. Larger radius gives fewer samples.
-    config_radius *= 2;
-  #endif
-  // clang-format on
+#ifndef NDEBUG
+  // Reduce the number of samples for debug builds to decrease
+  // verification times. Larger radius gives fewer samples.
+  config_radius *= 2;
+#endif
 
   const auto samples = thinks::PoissonDiskSampling<FloatT, N, VecT>(
       config_radius, x_min, x_max, max_sample_attempts, seed);
@@ -348,10 +334,12 @@ TEST_CASE("Verify seed") {
 
   // For each sample in the first point set compute the smallest
   // distance checking every sample in the second point set.
+  // Then, if the smallest distance is larger than some threshold
+  // we say that the sample from the first point set is distinct
+  // from any sample in the second point set. 
   const auto sample_count_1981 = samples_1981.size();
   const auto sample_count_1337 = samples_1337.size();
-  auto min_dist =
-      std::vector<float>(sample_count_1981, std::numeric_limits<float>::max());
+  auto distinct_sample_found = false;
   for (std::size_t i = 0; i < sample_count_1981; ++i) {
     const auto si = samples_1981[i];
     auto min_sqr_dist = std::numeric_limits<float>::max();
@@ -361,16 +349,13 @@ TEST_CASE("Verify seed") {
           min_sqr_dist,
           SquaredDistance<thinks::VecTraits<std::array<float, 2>>>(si, sj));
     }
-    min_dist[i] = std::sqrt(min_sqr_dist);
+    if (min_sqr_dist > 0.1F) {
+      distinct_sample_found = true;  
+      break;
+    }
   }
 
-  // Verify that the largest of the smallest distances is non-zero,
-  // which guarantees that there is at least one point in the first
-  // point set that is not present in the second point set. The threshold is
-  // arbitrarily chosen here.
-  const auto max_min_dist =
-      *std::max_element(std::cbegin(min_dist), std::cend(min_dist));
-  REQUIRE(max_min_dist > 0.1F);
+  REQUIRE(distinct_sample_found);
 }
 
 struct ValidBounds {
