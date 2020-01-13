@@ -1,14 +1,16 @@
-name: C/C++ CI
-
 on: [push, pull_request]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        cxx_standard: [14, 17]
     steps:
     - uses: actions/checkout@v1
+    - uses: seanmiddleditch/gha-setup-ninja@master
     - name: Submodules
       run: git submodule update --init --recursive
     - name: Versions
@@ -19,15 +21,38 @@ jobs:
       run: | 
         mkdir build_rel
         cd build_rel
-        cmake -DCMAKE_BUILD_TYPE=RELEASE ..
-        cmake --build . --target thinks_poisson_disk_sampling_examples
-        cmake --build . --target thinks_poisson_disk_sampling_test
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
+        cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
     - name: Build and test debug
       run: | 
         mkdir build_dbg
         cd build_dbg
-        cmake -DCMAKE_BUILD_TYPE=DEBUG ..
-        cmake --build . --target thinks_poisson_disk_sampling_examples
-        cmake --build . --target thinks_poisson_disk_sampling_test
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
+        cmake --build . --target all
         ctest -j 6 --output-on-failure --verbose
+  build_win:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx_standard: [14, 17]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Submodules
+      run: git submodule update --init --recursive
+    - name: Build and test release
+      run: | 
+        mkdir build_rel
+        cd build_rel
+        cmake -G "Visual Studio 16 2019" -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
+        cmake --build . --config Release --target ALL_BUILD
+        ctest -C Release -j 6 --output-on-failure --verbose
+    - name: Build and test debug
+      run: | 
+        mkdir build_dbg
+        cd build_dbg
+        cmake -G "Visual Studio 16 2019" DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DTHINKS_RUN_TESTS=ON ..
+        cmake --build . --config Debug --target ALL_BUILD
+        ctest -C Debug -j 6 --output-on-failure --verbose
+
