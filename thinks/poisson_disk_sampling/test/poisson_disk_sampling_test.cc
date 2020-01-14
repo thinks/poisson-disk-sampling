@@ -228,20 +228,20 @@ struct SampleTestBounds;
 // clang-format off
 template <typename FloatT>
 struct SampleTestBounds<FloatT, 2> {
-  static constexpr auto x_min() noexcept -> std::array<FloatT, 2> { return {{-500, -500}}; }  // NOLINT
-  static constexpr auto x_max() noexcept -> std::array<FloatT, 2> { return {{500, 500}}; }    // NOLINT
+  static constexpr auto x_min() noexcept -> std::array<FloatT, 2> { return {{-100, -100}}; }  // NOLINT
+  static constexpr auto x_max() noexcept -> std::array<FloatT, 2> { return {{100, 100}}; }    // NOLINT
 };
 
 template <typename FloatT>
 struct SampleTestBounds<FloatT, 3> {
-  static constexpr auto x_min() noexcept -> std::array<FloatT, 3> { return {{-50, -50, -50}}; }  // NOLINT
-  static constexpr auto x_max() noexcept -> std::array<FloatT, 3> { return {{50, 50, 50}}; }     // NOLINT
+  static constexpr auto x_min() noexcept -> std::array<FloatT, 3> { return {{-20, -20, -20}}; }  // NOLINT
+  static constexpr auto x_max() noexcept -> std::array<FloatT, 3> { return {{20, 20, 20}}; }     // NOLINT
 };
 
 template <typename FloatT>
 struct SampleTestBounds<FloatT, 4> {
-  static constexpr auto x_min() noexcept -> std::array<FloatT, 4> { return {{-5, -5, -5, -5}}; }  // NOLINT
-  static constexpr auto x_max() noexcept -> std::array<FloatT, 4> { return {{5, 5, 5, 5}}; }      // NOLINT
+  static constexpr auto x_min() noexcept -> std::array<FloatT, 4> { return {{-10, -10, -10, -10}}; }  // NOLINT
+  static constexpr auto x_max() noexcept -> std::array<FloatT, 4> { return {{10, 10, 10, 10}}; }      // NOLINT
 };
 // clang-format on
 
