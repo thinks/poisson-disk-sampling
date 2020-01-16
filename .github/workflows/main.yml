@@ -17,7 +17,7 @@ jobs:
         # See https://help.github.com/en/articles/workflow-syntax-for-github-actions.
         name: [
           ubuntu-latest-gcc-9,
-          macos-latest-xcode-10.3,
+          macos-10.14-xcode-10.3,
           windows-latest-cl
         ]
         include:
