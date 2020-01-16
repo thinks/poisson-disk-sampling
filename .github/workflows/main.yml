@@ -20,7 +20,7 @@ jobs:
           ubuntu-latest-gcc-9-cxx-17,
           macOS-latest-xcode-cxx-14,
           macOS-latest-xcode-cxx-17,
-          windows-latest-cl-cxx-14
+          windows-latest-cl-cxx-14,
           windows-latest-cl-cxx-17
         ]
         include:
