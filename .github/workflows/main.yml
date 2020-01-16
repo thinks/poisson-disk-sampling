@@ -16,22 +16,43 @@ jobs:
         # Github Actions requires a single row to be added to the build matrix.
         # See https://help.github.com/en/articles/workflow-syntax-for-github-actions.
         name: [
-          ubuntu-latest-gcc-9,
-          macOS-latest-xcode,
-          windows-latest-cl
+          ubuntu-latest-gcc-9-cxx-14,
+          ubuntu-latest-gcc-9-cxx-17,
+          macOS-latest-xcode-cxx-14,
+          macOS-latest-xcode-cxx-17,
+          windows-latest-cl-cxx-14
+          windows-latest-cl-cxx-17
         ]
         include:
-          - name: ubuntu-latest-gcc-9
+          - name: ubuntu-latest-gcc-9-cxx-14
             os: ubuntu-latest
             compiler: gcc
             version: "9"
-          - name: macOS-latest-xcode
+            cxx_std: 14
+          - name: ubuntu-latest-gcc-9-cxx-17
+            os: ubuntu-latest
+            compiler: gcc
+            version: "9"
+            cxx_std: 17
+          - name: macOS-latest-xcode-cxx-14
             os: macOS-latest
             compiler: xcode
             version: "10.3"
-          - name: windows-latest-cl
+            cxx_std: 14
+          - name: macOS-latest-xcode-cxx-17
+            os: macOS-latest
+            compiler: xcode
+            version: "10.3"
+            cxx_std: 17
+          - name: windows-latest-cl-cxx-14
             os: windows-latest
             compiler: cl    
+            cxx_std: 14
+          - name: windows-latest-cl-cxx-17
+            os: windows-latest
+            compiler: cl    
+            cxx_std: 17
+
     steps:
       - uses: actions/checkout@v1
       - name: Submodules
@@ -104,7 +125,7 @@ jobs:
       - name: Build & Test Debug x64
         run: |
           cmake -E remove_directory build
-          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
           cmake --build build
           cd build 
           ctest -j2 --output-on-failure --verbose
@@ -112,7 +133,7 @@ jobs:
       - name: Build & Test Release x64
         run: |
           cmake -E remove_directory build
-          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
           cmake --build build
           cd build 
           ctest -j2 --output-on-failure --verbose
