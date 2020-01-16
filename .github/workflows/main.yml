@@ -17,7 +17,7 @@ jobs:
         # See https://help.github.com/en/articles/workflow-syntax-for-github-actions.
         name: [
           ubuntu-latest-gcc-9,
-          macos-10.14-xcode-10.3,
+          macOS-10.14-xcode-10.3,
           windows-latest-cl
         ]
         include:
@@ -25,7 +25,7 @@ jobs:
             os: ubuntu-latest
             compiler: gcc
             version: "9"
-          - name: macos-10.14-xcode-10.3
+          - name: macOS-10.14-xcode-10.3
             os: macOS-10.14
             compiler: xcode
             version: "10.3"
@@ -64,7 +64,7 @@ jobs:
             echo "::set-env name=CC::gcc-${{ matrix.version }}"
             echo "::set-env name=CXX::g++-${{ matrix.version }}"
           else
-            sudo xcode-select -switch /Applications/Xcode_${{ matrix.version }}.app
+            #sudo xcode-select -switch /Applications/Xcode_${{ matrix.version }}.app
             echo "::set-env name=CC::clang"
             echo "::set-env name=CXX::clang++"
           fi    
