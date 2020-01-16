@@ -106,11 +106,13 @@ jobs:
           cmake -E remove_directory build
           cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=ON
           cmake --build build
-          cd build && ctest -j2 --output-on-failure --verbose
+          cd build 
+          ctest -j2 --output-on-failure --verbose
 
       - name: Build & Test Release x64
         run: |
           cmake -E remove_directory build
           cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON
           cmake --build build
-          cd build && ctest -j2 --output-on-failure --verbose
+          cd build 
+          ctest -j2 --output-on-failure --verbose
