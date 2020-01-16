@@ -25,8 +25,8 @@ jobs:
             os: ubuntu-latest
             compiler: gcc
             version: "9"
-          - name: macos-latest-xcode-10.3
-            os: macos-latest
+          - name: macos-10.14-xcode-10.3
+            os: macOS-10.14
             compiler: xcode
             version: "10.3"
           - name: windows-latest-cl
