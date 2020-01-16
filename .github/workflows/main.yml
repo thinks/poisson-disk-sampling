@@ -17,7 +17,7 @@ jobs:
         # See https://help.github.com/en/articles/workflow-syntax-for-github-actions.
         name: [
           ubuntu-latest-gcc-9,
-          macOS-10.14-xcode-10.3,
+          macOS-latest-xcode,
           windows-latest-cl
         ]
         include:
@@ -25,7 +25,7 @@ jobs:
             os: ubuntu-latest
             compiler: gcc
             version: "9"
-          - name: macOS-10.14-xcode-10.3
+          - name: macOS-latest-xcode
             os: macOS-10.14
             compiler: xcode
             version: "10.3"
