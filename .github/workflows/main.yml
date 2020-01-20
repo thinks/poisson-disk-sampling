@@ -9,6 +9,9 @@ jobs:
 
     env:
       CMAKE_GENERATOR: Ninja  
+      CMAKE_VERBOSE_MAKEFILE: ON
+      CTEST_OUTPUT_ON_FAILURE: ON
+      CTEST_PARALLEL_LEVEL: 2
 
     strategy:
       fail-fast: false
@@ -18,10 +21,10 @@ jobs:
         name: [
           ubuntu-latest-gcc-9-cxx-14,
           ubuntu-latest-gcc-9-cxx-17,
-          macOS-latest-xcode-cxx-14,
-          macOS-latest-xcode-cxx-17,
-          windows-latest-cl-cxx-14,
-          windows-latest-cl-cxx-17
+          macOS-10.15-xcode-cxx-14,
+          macOS-10.15-xcode-cxx-17,
+          windows-2019-cl-cxx-14,
+          windows-2019-cl-cxx-17
         ]
         include:
           - name: ubuntu-latest-gcc-9-cxx-14
@@ -34,21 +37,21 @@ jobs:
             compiler: gcc
             version: "9"
             cxx_std: 17
-          - name: macOS-latest-xcode-cxx-14
+          - name: macOS-10.15-xcode-cxx-14
             os: macOS-latest
             compiler: xcode
-            version: "10.3"
+            #version: "10.3"
             cxx_std: 14
-          - name: macOS-latest-xcode-cxx-17
+          - name: macOS-10.15-xcode-cxx-17
             os: macOS-latest
             compiler: xcode
-            version: "10.3"
+            #version: "10.3"
             cxx_std: 17
-          - name: windows-latest-cl-cxx-14
+          - name: windows-2019-cl-cxx-14
             os: windows-latest
             compiler: cl    
             cxx_std: 14
-          - name: windows-latest-cl-cxx-17
+          - name: windows-2019-cl-cxx-17
             os: windows-latest
             compiler: cl    
             cxx_std: 17
@@ -68,29 +71,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build
 
-          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          #if [ "${{ matrix.compiler }}" = "gcc" ]; then
             sudo apt-get install -y g++-${{ matrix.version }}
             echo "::set-env name=CC::gcc-${{ matrix.version }}"
             echo "::set-env name=CXX::g++-${{ matrix.version }}"          
-          else
-            sudo apt-get install -y clang-${{ matrix.version }} 
-            echo "::set-env name=CC::clang-${{ matrix.version }}"
-            echo "::set-env name=CXX::clang++-${{ matrix.version }}"          
-          fi
+          #else
+          #  sudo apt-get install -y clang-${{ matrix.version }} 
+          #  echo "::set-env name=CC::clang-${{ matrix.version }}"
+          #  echo "::set-env name=CXX::clang++-${{ matrix.version }}"          
+          #fi
 
       - name: Install (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install cmake ninja
-          if [ "${{ matrix.compiler }}" = "gcc" ]; then
-            brew install gcc@${{ matrix.version }}
-            echo "::set-env name=CC::gcc-${{ matrix.version }}"
-            echo "::set-env name=CXX::g++-${{ matrix.version }}"
-          else
+          #if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          #  brew install gcc@${{ matrix.version }}
+          #  echo "::set-env name=CC::gcc-${{ matrix.version }}"
+          #  echo "::set-env name=CXX::g++-${{ matrix.version }}"
+          #else
             #sudo xcode-select -switch /Applications/Xcode_${{ matrix.version }}.app
             echo "::set-env name=CC::clang"
             echo "::set-env name=CXX::clang++"
-          fi    
+          #fi    
 
       - name: Install (Windows)
         if: runner.os == 'Windows'
@@ -125,15 +128,19 @@ jobs:
       - name: Build & Test Debug x64
         run: |
           cmake -E remove_directory build
-          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
+          #cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
           cmake --build build
           cd build 
-          ctest -j2 --output-on-failure --verbose
+          ctest --verbose
+          #ctest -j2 --output-on-failure --verbose
 
       - name: Build & Test Release x64
         run: |
           cmake -E remove_directory build
-          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
+          #cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }}
           cmake --build build
           cd build 
-          ctest -j2 --output-on-failure --verbose
+          ctest --verbose
+          #ctest -j2 --output-on-failure --verbose
