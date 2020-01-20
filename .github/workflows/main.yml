@@ -129,6 +129,13 @@ jobs:
         if: runner.os == 'Windows'
         run: .github\workflows\vsenv.bat -arch=x64 -host_arch=x64      
 
+      - name: clang-tidy (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cmake -E remove_directory build
+          cmake -B build -S . -DTHINKS_CLANG_TIDY=ON -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
+          cmake --build build
+
       - name: Build & Test Debug x64
         run: |
           cmake -E remove_directory build

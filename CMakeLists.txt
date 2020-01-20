@@ -23,12 +23,16 @@ include(ThinksHelpers)
 # Include current path
 list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_program(CLANG_TIDY NAMES clang-tidy)
-if (NOT CLANG_TIDY)
-  message(STATUS "clang-tidy not found")
-else()
-  message(STATUS "clang-tidy = ${CLANG_TIDY}")
-  #set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+option(THINKS_CLANG_TIDY "If ON, clang-tidy is used." OFF)
+
+if (${THINKS_CLANG_TIDY})
+  find_program(CLANG_TIDY NAMES clang-tidy)
+  if (NOT CLANG_TIDY)
+    message(ERROR "clang-tidy not found")
+  else()
+    message(STATUS "clang-tidy = ${CLANG_TIDY}")
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+  endif()
 endif()
 
 # Find dependencies
