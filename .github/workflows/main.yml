@@ -87,10 +87,10 @@ jobs:
             echo "::set-env name=CXX::g++-${{ matrix.version }}"          
           else
             # clang-tidy
-            #curl -sSL http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -o llvm.tar.gz
-            #sudo tar xf llvm.tar.gz --strip 1 -C /usr/local
+            curl -sSL http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -o llvm.tar.gz
+            sudo tar xf llvm.tar.gz --strip 1 -C /usr/local
 
-            sudo apt-get install -y clang-${{ matrix.version }} 
+            #sudo apt-get install -y clang-${{ matrix.version }} 
             echo "::set-env name=CC::clang-${{ matrix.version }}"
             echo "::set-env name=CXX::clang++-${{ matrix.version }}"          
           fi
