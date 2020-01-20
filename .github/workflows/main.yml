@@ -21,8 +21,9 @@ jobs:
         name: [
           ubuntu-18.04-gcc-9-cxx-14,
           ubuntu-18.04-gcc-9-cxx-17,
-          macOS-10.14-xcode-cxx-14,
-          macOS-10.14-xcode-cxx-17,
+          ubuntu-18.04-clang-9-cxx-17,
+          macOS-latest-xcode-cxx-14,
+          macOS-latest-xcode-cxx-17,
           windows-2019-cl-cxx-14,
           windows-2019-cl-cxx-17
         ]
@@ -37,12 +38,17 @@ jobs:
             compiler: gcc
             version: "9"
             cxx_std: 17
-          - name: macOS-10.14-xcode-cxx-14
-            os: macOS-10.14
+          - name: ubuntu-18.04-clang-9-cxx-17
+            os: ubuntu-18.04
+            compiler: clang
+            version: "9"
+            cxx_std: 17
+          - name: macOS-latest-xcode-cxx-14
+            os: macOS-latest
             compiler: xcode
             cxx_std: 14
-          - name: macOS-10.14-xcode-cxx-17
-            os: macOS-10.14
+          - name: macOS-latest-xcode-cxx-17
+            os: macOS-latest
             compiler: xcode
             cxx_std: 17
           - name: windows-2019-cl-cxx-14
@@ -69,21 +75,23 @@ jobs:
           curl -sSL http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -o llvm.tar.gz
           sudo tar xf llvm.tar.gz --strip 1 -C /usr/local
 
-          #sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
-
+          # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
+          if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
+            sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
+          fi
           sudo apt-get update
 
           sudo apt-get install -y ninja-build
           #sudo apt-get install -y clang-tidy
-          #if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
             sudo apt-get install -y g++-${{ matrix.version }}
             echo "::set-env name=CC::gcc-${{ matrix.version }}"
             echo "::set-env name=CXX::g++-${{ matrix.version }}"          
-          #else
-          #  sudo apt-get install -y clang-${{ matrix.version }} 
-          #  echo "::set-env name=CC::clang-${{ matrix.version }}"
-          #  echo "::set-env name=CXX::clang++-${{ matrix.version }}"          
-          #fi
+          else
+            sudo apt-get install -y clang-${{ matrix.version }} 
+            echo "::set-env name=CC::clang-${{ matrix.version }}"
+            echo "::set-env name=CXX::clang++-${{ matrix.version }}"          
+          fi
 
       - name: Install (macOS)
         if: runner.os == 'macOS'
@@ -129,13 +137,6 @@ jobs:
         if: runner.os == 'Windows'
         run: .github\workflows\vsenv.bat -arch=x64 -host_arch=x64      
 
-      - name: clang-tidy (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          cmake -E remove_directory build
-          cmake -B build -S . -DTHINKS_CLANG_TIDY=ON -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
-          cmake --build build
-
       - name: Build & Test Debug x64
         run: |
           cmake -E remove_directory build
@@ -151,3 +152,10 @@ jobs:
           cmake --build build
           cd build 
           ctest --verbose
+
+      - name: clang-tidy (Linux, clang)
+        if: runner.os == 'Linux' && matrix.compiler == 'clang'
+        run: |
+          cmake -E remove_directory build
+          cmake -B build -S . -DTHINKS_CLANG_TIDY=ON -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
+          cmake --build build
