@@ -19,33 +19,31 @@ jobs:
         # Github Actions requires a single row to be added to the build matrix.
         # See https://help.github.com/en/articles/workflow-syntax-for-github-actions.
         name: [
-          ubuntu-latest-gcc-9-cxx-14,
-          ubuntu-latest-gcc-9-cxx-17,
+          ubuntu-18.04-gcc-9-cxx-14,
+          ubuntu-18.04-gcc-9-cxx-17,
           macOS-10.15-xcode-cxx-14,
           macOS-10.15-xcode-cxx-17,
           windows-2019-cl-cxx-14,
           windows-2019-cl-cxx-17
         ]
         include:
-          - name: ubuntu-latest-gcc-9-cxx-14
-            os: ubuntu-latest
+          - name: ubuntu-18.04-gcc-9-cxx-14
+            os: ubuntu-18.04
             compiler: gcc
             version: "9"
             cxx_std: 14
-          - name: ubuntu-latest-gcc-9-cxx-17
-            os: ubuntu-latest
+          - name: ubuntu-18.04-gcc-9-cxx-17
+            os: ubuntu-18.04
             compiler: gcc
             version: "9"
             cxx_std: 17
           - name: macOS-10.15-xcode-cxx-14
-            os: macOS-latest
+            os: macOS-10.15
             compiler: xcode
-            #version: "10.3"
             cxx_std: 14
           - name: macOS-10.15-xcode-cxx-17
-            os: macOS-latest
+            os: macOS-10.15
             compiler: xcode
-            #version: "10.3"
             cxx_std: 17
           - name: windows-2019-cl-cxx-14
             os: windows-latest
