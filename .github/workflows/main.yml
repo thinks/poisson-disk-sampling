@@ -66,12 +66,12 @@ jobs:
           curl -sSL https://github.com/Kitware/CMake/releases/download/v3.15.4/cmake-3.15.4-Linux-x86_64.tar.gz -o cmake.tar.gz
           sudo tar xf cmake.tar.gz --strip 1 -C /usr/local
 
-          sudo apt-get update
-
           sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
 
+          sudo apt-get update
+
           sudo apt-get install -y ninja-build
-          sudo apt-get install -y clang-tidy-9
+          sudo apt-get install -y clang-tools-9
 
           #if [ "${{ matrix.compiler }}" = "gcc" ]; then
             sudo apt-get install -y g++-${{ matrix.version }}
