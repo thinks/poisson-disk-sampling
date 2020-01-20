@@ -66,12 +66,15 @@ jobs:
           curl -sSL https://github.com/Kitware/CMake/releases/download/v3.15.4/cmake-3.15.4-Linux-x86_64.tar.gz -o cmake.tar.gz
           sudo tar xf cmake.tar.gz --strip 1 -C /usr/local
 
-          sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
+          curl -sSL http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -o llvm.tar.gz
+          sudo tar xf llvm.tar.gz --strip 1 -C /usr/local
+
+          #sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
 
           sudo apt-get update
 
           sudo apt-get install -y ninja-build
-          sudo apt-get install -y clang-tidy
+          #sudo apt-get install -y clang-tidy
           #if [ "${{ matrix.compiler }}" = "gcc" ]; then
             sudo apt-get install -y g++-${{ matrix.version }}
             echo "::set-env name=CC::gcc-${{ matrix.version }}"
