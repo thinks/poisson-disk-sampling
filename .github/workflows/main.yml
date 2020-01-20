@@ -21,8 +21,8 @@ jobs:
         name: [
           ubuntu-18.04-gcc-9-cxx-14,
           ubuntu-18.04-gcc-9-cxx-17,
-          macOS-10.15-xcode-cxx-14,
-          macOS-10.15-xcode-cxx-17,
+          macOS-10.14-xcode-cxx-14,
+          macOS-10.14-xcode-cxx-17,
           windows-2019-cl-cxx-14,
           windows-2019-cl-cxx-17
         ]
@@ -37,12 +37,12 @@ jobs:
             compiler: gcc
             version: "9"
             cxx_std: 17
-          - name: macOS-10.15-xcode-cxx-14
-            os: macOS-10.15
+          - name: macOS-10.14-xcode-cxx-14
+            os: macOS-10.14
             compiler: xcode
             cxx_std: 14
-          - name: macOS-10.15-xcode-cxx-17
-            os: macOS-10.15
+          - name: macOS-10.14-xcode-cxx-17
+            os: macOS-10.14
             compiler: xcode
             cxx_std: 17
           - name: windows-2019-cl-cxx-14
@@ -68,6 +68,7 @@ jobs:
 
           sudo apt-get update
           sudo apt-get install -y ninja-build
+          sudo apt-get install -y clang-tidy
 
           #if [ "${{ matrix.compiler }}" = "gcc" ]; then
             sudo apt-get install -y g++-${{ matrix.version }}
@@ -126,19 +127,15 @@ jobs:
       - name: Build & Test Debug x64
         run: |
           cmake -E remove_directory build
-          #cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
           cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
           cmake --build build
           cd build 
           ctest --verbose
-          #ctest -j2 --output-on-failure --verbose
 
       - name: Build & Test Release x64
         run: |
           cmake -E remove_directory build
-          #cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} -DCMAKE_VERBOSE_MAKEFILE=ON
           cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }}
           cmake --build build
           cd build 
           ctest --verbose
-          #ctest -j2 --output-on-failure --verbose
