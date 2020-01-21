@@ -135,7 +135,7 @@ jobs:
           # Scoop modifies the PATH so we make the modified PATH global.
           echo "::set-env name=PATH::$env:PATH"    
 
-      - name: Configure x64
+      - name: Configure x64 (Windows)
         if: runner.os == 'Windows'
         run: .github\workflows\vsenv.bat -arch=x64 -host_arch=x64      
 
@@ -155,7 +155,7 @@ jobs:
           cd build 
           ctest --verbose
 
-      - name: clang-tidy (Linux, clang)
+      - name: clang-tidy (Linux && clang)
         if: runner.os == 'Linux' && matrix.compiler == 'clang'
         run: |
           cmake -E remove_directory build
