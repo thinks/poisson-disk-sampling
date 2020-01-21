@@ -322,9 +322,9 @@ TEST_CASE("Verify max sampling attempts") {
 TEST_CASE("Verify seed") {
   // Verify that different seeds give different sample distributions.
 
-  constexpr auto kRadius = 0.5f;
-  constexpr auto kXMin = std::array<float, 2>{{-10.f, -10.f}};
-  constexpr auto kXMax = std::array<float, 2>{{10.f, 10.f}};
+  constexpr auto kRadius = 0.5F;
+  constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
+  constexpr auto kXMax = std::array<float, 2>{{10.F, 10.F}};
   constexpr auto kMaxSampleAttempts = std::uint32_t{20};
 
   const auto samples_1981 = thinks::PoissonDiskSampling(
@@ -336,7 +336,8 @@ TEST_CASE("Verify seed") {
   // distance checking every sample in the second point set.
   // Then, if the smallest distance is larger than some threshold
   // we say that the sample from the first point set is distinct
-  // from any sample in the second point set. 
+  // from every sample in the second point set. Thus the two
+  // distributions must be different.
   const auto sample_count_1981 = samples_1981.size();
   const auto sample_count_1337 = samples_1337.size();
   auto distinct_sample_found = false;
