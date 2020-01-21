@@ -228,35 +228,20 @@ struct SampleTestBounds;
 // clang-format off
 template <typename FloatT>
 struct SampleTestBounds<FloatT, 2> {
-<<<<<<< HEAD
   static constexpr auto x_min() noexcept -> std::array<FloatT, 2> { return {{-100, -100}}; }  // NOLINT
   static constexpr auto x_max() noexcept -> std::array<FloatT, 2> { return {{100, 100}}; }    // NOLINT
-=======
-  static constexpr auto x_min() noexcept -> std::array<FloatT, 2> { return {{-500, -500}}; }  // NOLINT
-  static constexpr auto x_max() noexcept -> std::array<FloatT, 2> { return {{500, 500}}; }    // NOLINT
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
 };
 
 template <typename FloatT>
 struct SampleTestBounds<FloatT, 3> {
-<<<<<<< HEAD
   static constexpr auto x_min() noexcept -> std::array<FloatT, 3> { return {{-20, -20, -20}}; }  // NOLINT
   static constexpr auto x_max() noexcept -> std::array<FloatT, 3> { return {{20, 20, 20}}; }     // NOLINT
-=======
-  static constexpr auto x_min() noexcept -> std::array<FloatT, 3> { return {{-50, -50, -50}}; }  // NOLINT
-  static constexpr auto x_max() noexcept -> std::array<FloatT, 3> { return {{50, 50, 50}}; }     // NOLINT
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
 };
 
 template <typename FloatT>
 struct SampleTestBounds<FloatT, 4> {
-<<<<<<< HEAD
   static constexpr auto x_min() noexcept -> std::array<FloatT, 4> { return {{-10, -10, -10, -10}}; }  // NOLINT
   static constexpr auto x_max() noexcept -> std::array<FloatT, 4> { return {{10, 10, 10, 10}}; }      // NOLINT
-=======
-  static constexpr auto x_min() noexcept -> std::array<FloatT, 4> { return {{-5, -5, -5, -5}}; }  // NOLINT
-  static constexpr auto x_max() noexcept -> std::array<FloatT, 4> { return {{5, 5, 5, 5}}; }      // NOLINT
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
 };
 // clang-format on
 
@@ -322,15 +307,9 @@ TEST_CASE("Verify max sampling attempts") {
   // when we increase the max sample attempts parameter (with
   // all other parameters constant).
 
-<<<<<<< HEAD
   constexpr auto kRadius = 0.5F;
   constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
   constexpr auto kXMax = std::array<float, 2>{{10.F, 10.F}};
-=======
-  constexpr auto kRadius = 0.5f;
-  constexpr auto kXMin = std::array<float, 2>{{-10.f, -10.f}};
-  constexpr auto kXMax = std::array<float, 2>{{10.f, 10.f}};
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
 
   const auto samples_10 = thinks::PoissonDiskSampling(
       kRadius, kXMin, kXMax, /* max_sample_attempts */ 10);
@@ -343,15 +322,9 @@ TEST_CASE("Verify max sampling attempts") {
 TEST_CASE("Verify seed") {
   // Verify that different seeds give different sample distributions.
 
-<<<<<<< HEAD
   constexpr auto kRadius = 0.5F;
   constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
   constexpr auto kXMax = std::array<float, 2>{{10.F, 10.F}};
-=======
-  constexpr auto kRadius = 0.5f;
-  constexpr auto kXMin = std::array<float, 2>{{-10.f, -10.f}};
-  constexpr auto kXMax = std::array<float, 2>{{10.f, 10.f}};
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
   constexpr auto kMaxSampleAttempts = std::uint32_t{20};
 
   const auto samples_1981 = thinks::PoissonDiskSampling(
@@ -363,12 +336,8 @@ TEST_CASE("Verify seed") {
   // distance checking every sample in the second point set.
   // Then, if the smallest distance is larger than some threshold
   // we say that the sample from the first point set is distinct
-<<<<<<< HEAD
   // from every sample in the second point set. Thus the two
   // distributions must be different.
-=======
-  // from any sample in the second point set. 
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
   const auto sample_count_1981 = samples_1981.size();
   const auto sample_count_1337 = samples_1337.size();
   auto distinct_sample_found = false;
@@ -381,12 +350,8 @@ TEST_CASE("Verify seed") {
           min_sqr_dist,
           SquaredDistance<thinks::VecTraits<std::array<float, 2>>>(si, sj));
     }
-<<<<<<< HEAD
-    if (min_sqr_dist > 0.1F) { // NOLINT
-=======
-    if (min_sqr_dist > 0.1F) {
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
-      distinct_sample_found = true;  
+    if (min_sqr_dist > 0.1F) {  // NOLINT
+      distinct_sample_found = true;
       break;
     }
   }
@@ -395,17 +360,10 @@ TEST_CASE("Verify seed") {
 }
 
 struct ValidBounds {
-<<<<<<< HEAD
   static constexpr auto XMin() noexcept -> std::array<float, 2> {
     return {{-1, -1}};
   }
   static constexpr auto XMax() noexcept -> std::array<float, 2> {
-=======
-  static constexpr auto x_min() noexcept -> std::array<float, 2> {
-    return {{-1, -1}};
-  }
-  static constexpr auto x_max() noexcept -> std::array<float, 2> {
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
     return {{1, 1}};
   }
 };
@@ -416,22 +374,14 @@ TEST_CASE("Invalid arguments", "[container]") {
   SECTION("radius == 0") {
     const auto samples = thinks::PoissonDiskSampling(
         /* radius */ 0.F,  // NOLINT
-<<<<<<< HEAD
         ValidBounds::XMin(), ValidBounds::XMax());
-=======
-        ValidBounds::x_min(), ValidBounds::x_max());
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
     REQUIRE(samples.empty());
   }
 
   SECTION("radius < 0") {
     const auto samples = thinks::PoissonDiskSampling(
         /* radius */ -1.F,  // NOLINT
-<<<<<<< HEAD
         ValidBounds::XMin(), ValidBounds::XMax());
-=======
-        ValidBounds::x_min(), ValidBounds::x_max());
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
     REQUIRE(samples.empty());
   }
 
@@ -485,11 +435,7 @@ TEST_CASE("Invalid arguments", "[container]") {
 
   SECTION("max_sample_attempts == 0") {
     const auto samples = thinks::PoissonDiskSampling(
-<<<<<<< HEAD
         kValidRadius, ValidBounds::XMin(), ValidBounds::XMax(),
-=======
-        kValidRadius, ValidBounds::x_min(), ValidBounds::x_max(),
->>>>>>> a1c2d5422919e0a9a8cb076f2dfd4d5850d60cc9
         /* max_sample_attempts */ std::uint32_t{0});  // NOLINT
     REQUIRE(samples.empty());
   }
