@@ -26,7 +26,7 @@ list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 option(THINKS_CLANG_TIDY "If ON, clang-tidy is used." OFF)
 
 if (${THINKS_CLANG_TIDY})
-  find_program(CLANG_TIDY NAMES clang-tidy)
+  find_program(CLANG_TIDY NAMES clang-tidy clang-tidy-9)
   if (NOT CLANG_TIDY)
     message(FATAL_ERROR "clang-tidy not found")
   else()
