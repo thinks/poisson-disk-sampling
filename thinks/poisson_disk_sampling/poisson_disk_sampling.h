@@ -249,6 +249,7 @@ class Grid {
   // Returns the index for a position along the i'th axis.
   // Note that the returned index may be negative.
   template <typename FloatT2>
+  // NOLINTNEXTLINE
   auto AxisIndex(const std::size_t i, const FloatT2 pos) const noexcept ->
       typename IndexType::value_type {
     using IndexValueType = typename IndexType::value_type;
@@ -259,6 +260,7 @@ class Grid {
 
   // Note that the returned index elements may be negative.
   template <typename VecTraitsT, typename VecT>
+  // NOLINTNEXTLINE
   auto IndexFromSample(const VecT& sample) const noexcept -> IndexType {
     static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
@@ -269,10 +271,12 @@ class Grid {
     return index;
   }
 
+  // NOLINTNEXTLINE
   auto Cell(const IndexType& index) const noexcept -> CellType {
     return cells_[LinearIndex_(index)];
   }
 
+  // NOLINTNEXTLINE
   auto Cell(const IndexType& index) noexcept -> CellType& {
     return cells_[LinearIndex_(index)];
   }
@@ -287,6 +291,7 @@ class Grid {
   std::vector<CellType> cells_;
 
   // Assumes that all elements in index are >= 0.
+  // NOLINTNEXTLINE
   auto LinearIndex_(const IndexType& index) const noexcept -> std::size_t {
     auto k = static_cast<std::size_t>(index[0]);
     auto d = std::size_t{1};
