@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Standard](https://img.shields.io/badge/c%2B%2B-14/17/20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
-[![Actions](https://github.com/thinks/poisson-disk-sampling/workflows/.github/workflows/main.yml/badge.svg)](https://github.com/thinks/poisson-disk-sampling/actions)
+[![](https://github.com/thinks/poisson-disk-sampling/workflows/main.yml/badge.svg)](https://github.com/thinks/poisson-disk-sampling/actions)
 
 # Poisson Disk Sampling
 
