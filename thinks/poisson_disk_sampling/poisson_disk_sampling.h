@@ -249,7 +249,7 @@ class Grid {
   // Returns the index for a position along the i'th axis.
   // Note that the returned index may be negative.
   template <typename FloatT2>
-  auto AxisIndex(const std::size_t i, const FloatT2 pos) const noexcept ->
+  [[nodiscard]] auto AxisIndex(const std::size_t i, const FloatT2 pos) const noexcept ->
       typename IndexType::value_type {
     using IndexValueType = typename IndexType::value_type;
 
@@ -259,7 +259,7 @@ class Grid {
 
   // Note that the returned index elements may be negative.
   template <typename VecTraitsT, typename VecT>
-  auto IndexFromSample(const VecT& sample) const noexcept -> IndexType {
+  [[nodiscard]] auto IndexFromSample(const VecT& sample) const noexcept -> IndexType {
     static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
     IndexType index = {};
@@ -269,11 +269,11 @@ class Grid {
     return index;
   }
 
-  auto Cell(const IndexType& index) const noexcept -> CellType {
+  [[nodiscard]] auto Cell(const IndexType& index) const noexcept -> CellType {
     return cells_[LinearIndex_(index)];
   }
 
-  auto Cell(const IndexType& index) noexcept -> CellType& {
+  [[nodiscard]] auto Cell(const IndexType& index) noexcept -> CellType& {
     return cells_[LinearIndex_(index)];
   }
 
@@ -287,7 +287,7 @@ class Grid {
   std::vector<CellType> cells_;
 
   // Assumes that all elements in index are >= 0.
-  auto LinearIndex_(const IndexType& index) const noexcept -> std::size_t {
+  [[nodiscard]] auto LinearIndex_(const IndexType& index) const noexcept -> std::size_t {
     auto k = static_cast<std::size_t>(index[0]);
     auto d = std::size_t{1};
     for (auto i = std::size_t{1}; i < kDims; ++i) {

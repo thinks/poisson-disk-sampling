@@ -3,28 +3,18 @@
 [![Actions](https://github.com/thinks/poisson-disk-sampling/workflows/.github/workflows/ccpp.yml/badge.svg)](https://github.com/thinks/poisson-disk-sampling/actions)
 
 # Poisson Disk Sampling
-
-[ ] - Update CMake, add cppbestpractices build flags.
-[ ] - Build with MSVC, clang, gcc on travis.
-[ ] - AppVeyor
-[ ] - CodeCov or Coveralls
-[ ] - Coverity scan
-
 This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h), header-only, no-dependencies, C++ library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is based on the public domain [example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
 
 All code in this repository is released under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
 
 ## Contributions
-
 This repository contributes the following improvements compared to the public domain code released by the original author:
 * The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
 * The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) and section below).
-* The code is in a namespace (```thinks::poisson_disk_sampling```)
 
 ## Cloning
-
 This repository uses `git submodules`, which means that it needs to be cloned with the `--recursive` flag in order to initialize the submodules.
 
 ```
@@ -34,26 +24,22 @@ git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 Note that the submodules are only used for building tests and examples.
 
 ## Usage
-
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
 ```C++
 #include <array>
 #include <vector>
 
-#include <thinks/poisson_disk_sampling/poisson_disk_sampling.h>
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-std::vector<std::array<float, 2>> Foo()
-{
-  namespace pds = thinks::poisson_disk_sampling;
-
+std::vector<std::array<float, 2>> Foo() {
   // Input parameters.
   constexpr auto radius = 3.f;
   const auto x_min = std::array<float, 2>{{ -10.f, -10.f }};
   const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
 
   // Samples returned as std::vector<std::array<float, 2>>.
-  // Default seed and max attempts.
-  const auto samples = pds::PoissonDiskSampling(radius, x_min, x_max);
+  // Default seed and max sample attempts.
+  const auto samples = thinks::PoissonDiskSampling(radius, x_min, x_max);
   return samples;
 }
 ```

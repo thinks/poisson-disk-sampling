@@ -51,13 +51,6 @@ endif()
 
 # Build tests and examples only when NOT included as subproject.
 if (BUILD_TESTING)
-  # Enable CTest.
-  # This will set BUILD_TESTING to ON unless otherwise specified
-  # on the command line.
-  include(CTest)
-  enable_testing()
-  
-
   # JSON
   set(JSON_BuildTests OFF CACHE INTERNAL "")
   set(JSON_Install OFF CACHE INTERNAL "")
