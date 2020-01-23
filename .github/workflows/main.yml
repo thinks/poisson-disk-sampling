@@ -12,6 +12,7 @@ jobs:
       VERBOSE: ON #-DCMAKE_VERBOSE_MAKEFILE
       CTEST_OUTPUT_ON_FAILURE: ON
       CTEST_PARALLEL_LEVEL: 2
+      ASAN_OPTIONS: strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true
 
     strategy:
       fail-fast: false
@@ -138,6 +139,52 @@ jobs:
       - name: Configure x64 (Windows)
         if: runner.os == 'Windows'
         run: .github\workflows\vsenv.bat -arch=x64 -host_arch=x64      
+
+      - name: Configure ASAN/UBSAN (Linux || macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          # https://stackoverflow.com/a/37939589/11900641
+          function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+          
+          # Disable sanitizers in configurations where we know they are buggy.
+          # TODO: Move these conditions to the if clause if Github Actions ever
+          # adds support for comparing versions.
+          # See: https://github.community/t5/GitHub-Actions/Allow-comparing-versions-in-if-conditions/m-p/33912#M1710
+          #if [ "${{ runner.os }}" = "Linux" ] && \
+          #   [ "${{ matrix.compiler }}" = "gcc" ] && \
+          #   [ $(version ${{ matrix.version }}) -le $(version "5.0") ]; then
+          #  exit 0
+          #fi
+          #if [ "${{ runner.os }}" = "Linux" ] && \
+          #   [ "${{ matrix.compiler }}" = "clang" ] && \
+          #   [ $(version ${{ matrix.version }}) -le $(version "6.0") ]; then
+          #  exit 0
+          #fi
+          #if [ "${{ runner.os }}" = "macOS" ] && \
+          #   [ "${{ matrix.compiler }}" = "xcode" ] && \
+          #   [ $(version ${{ matrix.version }}) -le $(version "9.4.1") ]; then
+          #  exit 0
+          #fi
+          if [ "${{ runner.os }}" = "macOS" ] && \
+             [ "${{ matrix.compiler }}" = "gcc" ]; then
+            exit 0
+          fi
+          
+          ASAN_UBSAN_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+
+          # Link statically against ASAN libraries because dynamically linking
+          # against ASAN libraries causes problems when using dlopen on Ubuntu.
+          # See: https://github.com/DaanDeMeyer/doctest/runs/249002713
+          if [ "${{ runner.os }}" = "Linux" ] && [ "${{ matrix.compiler }}" = "gcc" ]; then
+            ASAN_UBSAN_FLAGS="$ASAN_UBSAN_FLAGS -static-libasan"
+          fi
+
+          # Compiling in bash on Windows doesn't work and powershell doesn't
+          # exit on non-zero exit codes so we're forced to use cmd which means
+          # we don't have a cross platform way to access environment variables.
+          # To circumvent this, we put the sanitizer flags in an environment
+          # variable that is automatically picked up by CMake.
+          echo "::set-env name=CXXFLAGS::$ASAN_UBSAN_FLAGS"
 
       - name: Build & Test Debug x64
         run: |
