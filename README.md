@@ -137,10 +137,10 @@ The tests for this distribution are written in the [Catch2](https://github.com/c
 
 Running the tests using [CTest](https://cmake.org/home/) is simple. In a terminal do the following (and similar for `Debug`):
 ```bash
-$ git clone --recursive git@github.com:/thinks/poisson-disk-sampling.git
+$ git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 $ cd poisson-disk-sampling
 $ cmake -E remove_directory build
-$ cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+$ cmake -B build -S . -G Ninja -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release
 $ cmake --build build
 $ cd build
 $ ctest -j4 --output-on-failure --verbose
