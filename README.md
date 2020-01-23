@@ -133,16 +133,15 @@ std::vector<Vec3> Bar()
 
 ## Tests
 
-The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/test/external/) in this repository. 
+The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/external/) in this repository. 
 
 Running the tests using [CTest](https://cmake.org/home/) is simple. In a terminal do the following (and similar for `Debug`):
 ```bash
-$ cd d:
-$ git clone git@github.com:/thinks/poisson-disk-sampling.git D:/pds
-$ mkdir build-pds
-$ cd build-pds
-$ cmake ../pds
-$ cmake --build . --config Release
-$ ctest . -C Release
+$ git clone --recursive git@github.com:/thinks/poisson-disk-sampling.git
+$ cd poisson-disk-sampling
+$ cmake -E remove_directory build
+$ cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+$ cmake --build build
+$ cd build
+$ ctest -j4 --output-on-failure --verbose
 ```
-For more detailed test output locate the test executable (_thinks_poisson_disk_sampling_test.exe_) in the build tree and run it directly.
