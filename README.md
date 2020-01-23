@@ -3,7 +3,7 @@
 ![](https://github.com/thinks/poisson-disk-sampling/workflows/CI/badge.svg)
 
 # Poisson Disk Sampling
-This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h), header-only, no-dependencies, C++ library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is based on the public domain [example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
+This repository contains a [single file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h), header-only, no-dependencies, C++ library for generating Poisson disk samplings in an arbitrary number of dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007. In fact, the implementation in this library is based on the public domain [example code](http://www.cs.ubc.ca/~rbridson/download/curlnoise.tar.gz) provided by the author.  
 
 All code in this repository is released under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
