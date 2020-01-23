@@ -454,7 +454,8 @@ int heap_leak() {
 
 TEST_CASE("ASAN") {
   int a = heap_leak();
-  a = 5;
+  std::cout << a << std::endl;
+
 }
 
 }  // namespace
