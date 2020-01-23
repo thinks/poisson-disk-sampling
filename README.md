@@ -12,16 +12,17 @@ All code in this repository is released under the [MIT license](https://en.wikip
 This repository contributes the following improvements compared to the public domain code released by the original author:
 * The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
-* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson-disk-sampling/test) and section below).
+* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/test) and section below).
 
 ## Cloning
-This repository uses `git submodules`, which means that it needs to be cloned with the `--recursive` flag in order to initialize the submodules.
-
+If you just want to use the provided header file in your project a simple clone is sufficient.
+```
+git clone https://github.com/thinks/poisson-disk-sampling.git
+```
+However, in order to build the tests and examples you need to initialize the submodules of this repository.
 ```
 git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 ```
-
-Note that the submodules are only used for building tests and examples.
 
 ## Usage
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
