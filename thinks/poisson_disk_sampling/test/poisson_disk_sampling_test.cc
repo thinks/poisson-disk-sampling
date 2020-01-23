@@ -9,13 +9,8 @@
 #include <cstdint>
 #include <future>
 #include <limits>
-//#include <iomanip>
-//#include <iostream>
 #include <thread>
 #include <vector>
-
-#include <iostream>
-
 
 #include "catch2/catch.hpp"
 
@@ -442,20 +437,6 @@ TEST_CASE("Invalid arguments", "[container]") {
         /* max_sample_attempts */ std::uint32_t{0});  // NOLINT
     REQUIRE(samples.empty());
   }
-}
-
-
-int heap_leak() {
-  int* a = new int[10086];
-  a[0] = 10086;
-  std::cout << a[0] << std::endl;
-  return 0;
-}
-
-TEST_CASE("ASAN") {
-  int a = heap_leak();
-  std::cout << a << std::endl;
-
 }
 
 }  // namespace
