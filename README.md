@@ -10,9 +10,9 @@ All code in this repository is released under the [MIT license](https://en.wikip
 
 ## Contributions
 This repository contributes the following improvements compared to the public domain code released by the original author:
-* The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/include/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
+* The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
-* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/test/) and section below).
+* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson-disk-sampling/test) and section below).
 
 ## Cloning
 This repository uses `git submodules`, which means that it needs to be cloned with the `--recursive` flag in order to initialize the submodules.
@@ -43,13 +43,13 @@ std::vector<std::array<float, 2>> Foo() {
   return samples;
 }
 ```
-The code snippet above generates a set of points in the 2D range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results (generated using a simple [python script](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/python/poisson_plot.py)). On the right-hand side the radius has been plotted to illustrate the distance separating the points. Here it is "clear" that each circle contains only a single point.
+The code snippet above generates a set of points in the 2D range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results (generated using a simple [python script](https://github.com/thinks/poisson-disk-sampling/blob/master/python/poisson_plot.py)). On the right-hand side the radius has been plotted to illustrate the distance separating the points. Here it is "clear" that each circle contains only a single point.
 
-![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/simple_example.png "Simple example")
+![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/images/simple_example.png "Simple example")
 
 There are two additional parameters of the `PoissonDiskSampling` function: `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. Both `seed` and `max_sample_attempts` have reasonable default values so they need not always be specified. The images below illustrate the effect of varying `seed` and `max_sample_attempts`. 
 
-![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/examples/images/seed_and_attempts.png "Seed and attempts")
+![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/images/seed_and_attempts.png "Seed and attempts")
 
 By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type, as in function `Foo` in the snippet below. The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type, as in function `Bar` below.
 ```C++
