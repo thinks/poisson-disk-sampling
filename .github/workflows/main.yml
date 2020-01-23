@@ -144,7 +144,7 @@ jobs:
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           # https://stackoverflow.com/a/37939589/11900641
-          function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+          #function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
           
           # Disable sanitizers in configurations where we know they are buggy.
           # TODO: Move these conditions to the if clause if Github Actions ever
@@ -169,7 +169,7 @@ jobs:
              [ "${{ matrix.compiler }}" = "gcc" ]; then
             exit 0
           fi
-          
+
           ASAN_UBSAN_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
 
           # Link statically against ASAN libraries because dynamically linking
