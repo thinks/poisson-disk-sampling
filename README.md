@@ -35,7 +35,7 @@ Poisson disk sampling aims to generate a set of samples within a bounded region 
 
 std::vector<std::array<float, 2>> Foo() {
   // Input parameters.
-  constexpr auto kRadius = 3.f;
+  constexpr auto kRadius = 3.F;
   constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
   constexpr auto kXMax = std::array<float, 2>{{10.F, 10.F}};
 
@@ -48,84 +48,68 @@ The code snippet above generates a set of points in the 2D range [-10, 10] separ
 
 ![Simple example](https://github.com/thinks/poisson-disk-sampling/blob/master/images/simple_example.png "Simple example")
 
-There are two additional parameters of the `PoissonDiskSampling` function: `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of computation time. Both `seed` and `max_sample_attempts` have reasonable default values so they need not always be specified. The images below illustrate the effect of varying `seed` and `max_sample_attempts`. 
+There are two additional parameters of the `PoissonDiskSampling` function: `seed` and `max_sample_attempts`. The `seed` parameter is used to generate pseudo-random numbers in a deterministic way. Changing the seed gives slightly different patterns. The `max_sample_attempts` controls the number of attempts that are made at finding neighboring points for each sample. Increasing this number could lead to a more tightly packed sampling in some cases, at the cost of additional computation time. Both `seed` and `max_sample_attempts` have reasonable default values so they need not always be specified. The images below illustrate the effect of varying `seed` and `max_sample_attempts`. 
 
 ![Seed and attempts](https://github.com/thinks/poisson-disk-sampling/blob/master/images/seed_and_attempts.png "Seed and attempts")
 
-By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type, as in function `Foo` in the snippet below. The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type, as in function `Bar` below.
+By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type, as in the function `Foo` in the snippet below. The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type, as in the function `Bar` below.
 ```C++
-struct Vec3
-{
-  float x;
-  float y;
-  float z;
+struct Vec3 {
+  float v[3];
 };
 
-struct Vec3Traits
-{
-  typedef float ValueType;
+// Traits outside thinks namespace.
+struct Vec3Traits {
+  using ValueType = float;
 
   static constexpr auto kSize = 3;
 
-  static ValueType Get(const Vec3& v, const std::size_t i)
-  {
-    return *(&v.x + i);
+  static constexpr auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+    return v.v[i];
   }
 
-  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
-  {
-    *(&v->x + i) = val;
+  static constexpr void Set(Vec3* const v, const std::size_t i, const ValueType val) {
+    v->v[i] = val;
   }
 };
 
 namespace thinks {
-namespace poisson_disk_sampling {
 
+// Traits in thinks namespace.
 template<>
-struct VecTraits<Vec3>
-{
-  typedef float ValueType;
+struct VecTraits<Vec3> {
+  using ValueType = float;
 
   static constexpr auto kSize = 3;
 
-  static ValueType Get(const Vec3& v, const std::size_t i)
-  {
-    return *(&v.x + i);
+  static constexpr auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+    return v.v[i];
   }
 
-  static void Set(Vec3* const v, const std::size_t i, const ValueType val)
-  {
-    *(&v->x + i) = val;
+  static constexpr void Set(Vec3* const v, const std::size_t i, const ValueType val) {
+    v->v[i] = val;
   }
 };
 
-} // namespace poisson_disk_sampling
 } // namespace thinks
 
-std::vector<Vec3> Foo()
-{
-  namespace pds = thinks::poisson_disk_sampling;
-
-  constexpr auto radius = 3.f;
-  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
-  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
+auto Foo() -> std::vector<Vec3> {
+  constexpr auto radius = 3.F;
+  constexpr auto x_min = std::array<float, 3>{{ -10.F, -10.F, -10.F }};
+  constexpr auto x_max = std::array<float, 3>{{ 10.F, 10.F, 10.F }};
   
   // Explicitly passing in our own traits class.
-  const auto samples = 
-    pds::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
-      radius, x_min, x_max);
-  return samples;
+  return thinks::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
+      kRadius, kXMin, kXMax);
 }
 
-std::vector<Vec3> Bar()
-{
-  namespace pds = thinks::poisson_disk_sampling;
+auto Bar() -> std::vector<Vec3> {
+  constexpr auto radius = 3.F;
+  constexpr auto x_min = std::array<float, 3>{{ -10.F, -10.F, -10.F }};
+  constexpr auto x_max = std::array<float, 3>{{ 10.F, 10.F, 10.F }};
 
-  constexpr auto radius = 3.f;
-  const auto x_min = std::array<float, 3>{{ -10.f, -10.f, -10.f }};
-  const auto x_max = std::array<float, 3>{{ 10.f, 10.f, 10.f }};
-
-  // No need to explicitly specify traits here.
+  // No need to explicitly specify traits here since there exists
+  // a suitable candidate for Vec3 in the thinks namespace.
   const auto samples = pds::PoissonDiskSampling<float, 3, Vec3>(
     radius, x_min, x_max);
   return samples;
