@@ -28,6 +28,7 @@ git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
 ```C++
 // C++17
+
 #include <array>
 #include <vector>
 
@@ -55,6 +56,11 @@ There are two additional parameters of the `PoissonDiskSampling` function: `seed
 By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type, as in the function `Foo` in the snippet below. The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type, as in the function `Bar` below.
 ```C++
 // C++17
+
+#include <array>
+#include <vector>
+
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 struct Vec3 {
   float v[3];
