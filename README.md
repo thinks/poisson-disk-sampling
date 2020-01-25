@@ -15,11 +15,11 @@ This repository contributes the following improvements compared to the public do
 * The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/test) and section below).
 
 ## Cloning
-If you just want to use the provided header file in your project a simple clone is sufficient.
+In order to use the [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) in your project a simple clone is sufficient.
 ```
 git clone https://github.com/thinks/poisson-disk-sampling.git
 ```
-However, in order to build the tests and examples you need to initialize the submodules of this repository.
+However, in order to build the tests and examples you need to initialize the submodules of this repository by recursively cloning it.
 ```
 git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 ```
