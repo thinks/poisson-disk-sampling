@@ -94,9 +94,9 @@ struct VecTraits<Vec3> {
 } // namespace thinks
 
 auto Foo() -> std::vector<Vec3> {
-  constexpr auto radius = 3.F;
-  constexpr auto x_min = std::array<float, 3>{{ -10.F, -10.F, -10.F }};
-  constexpr auto x_max = std::array<float, 3>{{ 10.F, 10.F, 10.F }};
+  constexpr auto kRadius = 3.F;
+  constexpr auto kXMin = std::array<float, 3>{{ -10.F, -10.F, -10.F }};
+  constexpr auto kXMax = std::array<float, 3>{{ 10.F, 10.F, 10.F }};
   
   // Explicitly passing in our own traits class.
   return thinks::PoissonDiskSampling<float, 3, Vec3, Vec3Traits>(
@@ -104,15 +104,14 @@ auto Foo() -> std::vector<Vec3> {
 }
 
 auto Bar() -> std::vector<Vec3> {
-  constexpr auto radius = 3.F;
-  constexpr auto x_min = std::array<float, 3>{{ -10.F, -10.F, -10.F }};
-  constexpr auto x_max = std::array<float, 3>{{ 10.F, 10.F, 10.F }};
+  constexpr auto kRadius = 3.F;
+  constexpr auto kXMin = std::array<float, 3>{{ -10.F, -10.F, -10.F }};
+  constexpr auto kXMax = std::array<float, 3>{{ 10.F, 10.F, 10.F }};
 
   // No need to explicitly specify traits here since there exists
   // a suitable candidate for Vec3 in the thinks namespace.
-  const auto samples = pds::PoissonDiskSampling<float, 3, Vec3>(
-    radius, x_min, x_max);
-  return samples;
+  return pds::PoissonDiskSampling<float, 3, Vec3>(
+      kRadius, kXMin, kXMax);
 }
 ```
 
