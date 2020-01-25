@@ -10,8 +10,8 @@
 
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   constexpr auto kRadius = 2.F;
-  constexpr std::array<float, 2> kXMin = {-10.F, -10.F};
-  constexpr std::array<float, 2> kXMax = {10.F, 10.F};
+  constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
+  constexpr auto kXMax = std::array<float, 2>{{10.F, 10.F}};
 
   // Minimal amount of information provided to sampling function.
   const auto samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax);
