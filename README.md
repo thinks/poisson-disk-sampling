@@ -12,7 +12,7 @@ All code in this repository is released under the [MIT license](https://en.wikip
 This repository contributes the following improvements compared to the public domain code released by the original author:
 * The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
-* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/test) and section below).
+* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/tree/master/thinks/poisson_disk_sampling/test) and section below).
 
 ## Cloning
 In order to use the [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) in your project a simple clone is sufficient.
@@ -54,6 +54,8 @@ There are two additional parameters of the `PoissonDiskSampling` function: `seed
 
 By default the samples are returned as a `std::vector<std::array<F, N>>`, where the inner type `std::array<F, N>` has the same type as that used to specify the region bounds (see example above). In some cases it is useful to have the samples returned as a different type. There are two ways of doing this. First, we can explicitly provide our vector type together with a traits type, as in the function `Foo` in the snippet below. The second way of doing it is to specialize the `thinks::poisson_disk_sampling::VecTraits` template for our vector type, as in the function `Bar` below.
 ```C++
+// C++17
+
 struct Vec3 {
   float v[3];
 };
@@ -110,7 +112,7 @@ auto Bar() -> std::vector<Vec3> {
 
   // No need to explicitly specify traits here since there exists
   // a suitable candidate for Vec3 in the thinks namespace.
-  return pds::PoissonDiskSampling<float, 3, Vec3>(
+  return thinks::PoissonDiskSampling<float, 3, Vec3>(
       kRadius, kXMin, kXMax);
 }
 ```
