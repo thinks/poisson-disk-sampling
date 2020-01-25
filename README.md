@@ -27,6 +27,7 @@ git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 ## Usage
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
 ```C++
+// C++17
 #include <array>
 #include <vector>
 
@@ -34,14 +35,13 @@ Poisson disk sampling aims to generate a set of samples within a bounded region 
 
 std::vector<std::array<float, 2>> Foo() {
   // Input parameters.
-  constexpr auto radius = 3.f;
-  const auto x_min = std::array<float, 2>{{ -10.f, -10.f }};
-  const auto x_max = std::array<float, 2>{{ 10.f, 10.f }};
+  constexpr auto kRadius = 3.f;
+  constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
+  constexpr auto kXMax = std::array<float, 2>{{10.F, 10.F}};
 
   // Samples returned as std::vector<std::array<float, 2>>.
   // Default seed and max sample attempts.
-  const auto samples = thinks::PoissonDiskSampling(radius, x_min, x_max);
-  return samples;
+  return thinks::PoissonDiskSampling(kRadius, kXMin, kXMax);
 }
 ```
 The code snippet above generates a set of points in the 2D range [-10, 10] separated by a distance (`radius`) of 3 units. The image below visualizes the results (generated using a simple [python script](https://github.com/thinks/poisson-disk-sampling/blob/master/python/poisson_plot.py)). On the right-hand side the radius has been plotted to illustrate the distance separating the points. Here it is "clear" that each circle contains only a single point.
