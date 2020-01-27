@@ -34,7 +34,7 @@ Poisson disk sampling aims to generate a set of samples within a bounded region 
 
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-std::vector<std::array<float, 2>> Foo() {
+auto Foo() -> std::vector<std::array<float, 2>> {
   // Input parameters.
   constexpr auto kRadius = 3.F;
   constexpr auto kXMin = std::array<float, 2>{{-10.F, -10.F}};
