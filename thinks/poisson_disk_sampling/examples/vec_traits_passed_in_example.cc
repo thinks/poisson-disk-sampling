@@ -6,8 +6,8 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 #include "thinks/poisson_disk_sampling/examples/config.h"
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 namespace {
 
@@ -26,7 +26,7 @@ struct Vec3Traits {
   }
 
   static _CONSTEXPR void Set(Vec3* const v, const std::size_t i,
-                            const ValueType val) {
+                             const ValueType val) {
     v->v[i] = val;
   }
 };

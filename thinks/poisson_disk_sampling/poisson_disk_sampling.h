@@ -14,7 +14,7 @@
 #include <type_traits>
 #include <vector>
 
-#if __cplusplus >= 201402L // C++14 or later.
+#if __cplusplus >= 201402L  // C++14 or later.
 #define _CONSTEXPR constexpr
 #else
 #define _CONSTEXPR inline
@@ -27,7 +27,7 @@ namespace poisson_disk_sampling_internal {
 template <typename ArithT>
 // NOLINTNEXTLINE
 _CONSTEXPR auto clamped(const ArithT min_value, const ArithT max_value,
-                       const ArithT value) noexcept -> ArithT {
+                        const ArithT value) noexcept -> ArithT {
   static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
   return value < min_value ? min_value
                            : (value > max_value ? max_value : value);
@@ -73,8 +73,8 @@ _CONSTEXPR auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
 // otherwise false. Assumes that x_min is element-wise less than x_max.
 template <typename VecTraitsT, typename VecT, typename FloatT, std::size_t N>
 _CONSTEXPR auto InsideBounds(const VecT& sample,
-                            const std::array<FloatT, N>& x_min,
-                            const std::array<FloatT, N>& x_max) noexcept
+                             const std::array<FloatT, N>& x_min,
+                             const std::array<FloatT, N>& x_max) noexcept
     -> bool {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
@@ -109,8 +109,8 @@ void EraseUnordered(std::vector<T>* const v, const std::size_t index) noexcept {
 // Assumes that min_index is element-wise less than or equal to max_index.
 template <typename IntT, std::size_t N>
 _CONSTEXPR auto Iterate(const std::array<IntT, N>& min_index,
-                       const std::array<IntT, N>& max_index,
-                       std::array<IntT, N>* const index) noexcept -> bool {
+                        const std::array<IntT, N>& max_index,
+                        std::array<IntT, N>* const index) noexcept -> bool {
   static_assert(std::is_integral<IntT>::value, "IntT must be integral");
   constexpr auto kDims = std::tuple_size<std::array<IntT, N>>::value;
   static_assert(kDims >= 1, "dimensions must be >= 1");
@@ -161,7 +161,7 @@ _CONSTEXPR auto NormRand(std::uint32_t* const seed) noexcept -> FloatT {
 // Assumes range > 0.
 template <typename FloatT>
 _CONSTEXPR auto RangeRand(const FloatT offset, const FloatT range,
-                         std::uint32_t* const seed) noexcept -> FloatT {
+                          std::uint32_t* const seed) noexcept -> FloatT {
   return offset + range * NormRand<FloatT>(seed);
 }
 
@@ -170,8 +170,8 @@ _CONSTEXPR auto RangeRand(const FloatT offset, const FloatT range,
 // Assumes that x_min[i] < x_max[i].
 template <typename FloatT, std::size_t N>
 _CONSTEXPR auto ArrayRangeRand(const std::array<FloatT, N>& x_min,
-                              const std::array<FloatT, N>& x_max,
-                              std::uint32_t* const seed) noexcept
+                               const std::array<FloatT, N>& x_max,
+                               std::uint32_t* const seed) noexcept
     -> std::array<FloatT, N> {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
 
@@ -188,7 +188,7 @@ _CONSTEXPR auto ArrayRangeRand(const std::array<FloatT, N>& x_min,
 // Assumes that x_min < x_max.
 template <std::size_t N, typename FloatT>
 _CONSTEXPR auto ArrayRangeRand(const FloatT x_min, const FloatT x_max,
-                              std::uint32_t* const seed) noexcept
+                               std::uint32_t* const seed) noexcept
     -> std::array<FloatT, N> {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
 
@@ -203,8 +203,8 @@ _CONSTEXPR auto ArrayRangeRand(const FloatT x_min, const FloatT x_max,
 // See ArrayRangeRand.
 template <typename VecT, typename VecTraitsT, typename FloatT, std::size_t N>
 _CONSTEXPR auto VecRangeRand(const std::array<FloatT, N>& x_min,
-                            const std::array<FloatT, N>& x_max,
-                            std::uint32_t* const seed) noexcept -> VecT {
+                             const std::array<FloatT, N>& x_max,
+                             std::uint32_t* const seed) noexcept -> VecT {
   constexpr auto kDims = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
 
@@ -218,7 +218,7 @@ _CONSTEXPR auto VecRangeRand(const std::array<FloatT, N>& x_min,
 
 // Returns a pseudo-random index in the range [0, size - 1].
 _CONSTEXPR auto IndexRand(const std::size_t size,
-                         std::uint32_t* const seed) noexcept -> std::size_t {
+                          std::uint32_t* const seed) noexcept -> std::size_t {
   constexpr auto kEps = 0.0001F;
   return static_cast<std::size_t>(
       RangeRand(float{0}, static_cast<float>(size) - kEps, seed));
@@ -353,7 +353,7 @@ auto MakeGrid(const FloatT sample_radius, const std::array<FloatT, N>& x_min,
 
 template <typename ArithT, std::size_t N>
 _CONSTEXPR auto ValidBounds(const std::array<ArithT, N>& x_min,
-                           const std::array<ArithT, N>& x_max) noexcept
+                            const std::array<ArithT, N>& x_max) noexcept
     -> bool {
   static_assert(std::is_arithmetic<ArithT>::value, "type must be arithmetic");
   constexpr auto kDims = std::tuple_size<std::array<ArithT, N>>::value;
@@ -391,7 +391,7 @@ auto RandActiveSample(const std::vector<std::uint32_t>& active_indices,
 // distance [radius, 2 * radius] from center.
 template <typename VecTraitsT, typename VecT, typename FloatT>
 _CONSTEXPR auto RandAnnulusSample(const VecT& center, const FloatT radius,
-                                 std::uint32_t* const seed) noexcept -> VecT {
+                                  std::uint32_t* const seed) noexcept -> VecT {
   VecT p = {};
   for (;;) {
     // Generate a random component in the range [-2, 2] for each dimension.
@@ -523,14 +523,14 @@ struct VecTraits<std::array<FloatT, N>> {
 
   // No bounds checking.
   static _CONSTEXPR auto Get(const std::array<FloatT, N>& vec,
-                            const std::size_t i) noexcept -> ValueType {
+                             const std::size_t i) noexcept -> ValueType {
     return vec[i];
   }
 
   // No bounds checking.
   static _CONSTEXPR void Set(std::array<FloatT, N>* const vec,
-                            const std::size_t i,
-                            const ValueType value) noexcept {
+                             const std::size_t i,
+                             const ValueType value) noexcept {
     (*vec)[i] = value;
   }
 };

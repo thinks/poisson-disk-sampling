@@ -2,6 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -11,7 +13,6 @@
 #include <vector>
 
 #include "catch2/catch.hpp"
-#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 #include "thinks/poisson_disk_sampling/test/config.h"
 
 namespace {
@@ -41,7 +42,7 @@ struct VecTraits<Vec<T, N>> {
   }
 
   static _CONSTEXPR void Set(Vec<T, N>* const v, const std::size_t i,
-                            const ValueType val) noexcept {
+                             const ValueType val) noexcept {
     v->m[i] = val;
   }
 };
@@ -134,8 +135,8 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
 
 template <typename VecT, typename FloatT, std::size_t N>
 _CONSTEXPR auto SampleInsideBounds(const VecT& sample,
-                                  const std::array<FloatT, N>& x_min,
-                                  const std::array<FloatT, N>& x_max) noexcept
+                                   const std::array<FloatT, N>& x_min,
+                                   const std::array<FloatT, N>& x_max) noexcept
     -> bool {
   using VecTraitsType = thinks::VecTraits<VecT>;
 

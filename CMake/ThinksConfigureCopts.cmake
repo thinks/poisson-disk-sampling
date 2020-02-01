@@ -95,7 +95,6 @@ else()
   set(THINKS_EXCEPTIONS_FLAG "")
 endif()
 
-#if("${CMAKE_CXX_STANDARD}" EQUAL 98 OR "${CMAKE_CXX_STANDARD}" EQUAL 11)
 if("${CMAKE_CXX_STANDARD}" EQUAL 98)
   message(FATAL_ERROR "thinks: requires at least C++14")
 elseif(NOT "${CMAKE_CXX_STANDARD}")
