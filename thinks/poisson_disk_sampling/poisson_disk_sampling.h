@@ -518,7 +518,7 @@ struct VecTraits<std::array<FloatT, N>> {
   static_assert(std::is_floating_point<ValueType>::value,
                 "ValueType must be floating point");
 
-  static _CONSTEXPR auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
+  static constexpr auto kSize = std::tuple_size<std::array<FloatT, N>>::value;
   static_assert(kSize >= 1, "kSize must be >= 1");
 
   // No bounds checking.
