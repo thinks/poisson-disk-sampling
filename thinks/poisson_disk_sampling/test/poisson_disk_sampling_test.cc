@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "catch2/catch.hpp"
+#include "thinks/poisson_disk_sampling/test/config.h"
 
 namespace {
 
@@ -35,13 +36,13 @@ struct VecTraits<Vec<T, N>> {
                 "Vec type must be tightly packed");
   static constexpr auto kSize = sizeof(Vec<T, N>) / sizeof(ValueType);
 
-  static constexpr auto Get(const Vec<T, N>& v, const std::size_t i) noexcept
+  static _CONSTEXPR auto Get(const Vec<T, N>& v, const std::size_t i) noexcept
       -> ValueType {
     return v.m[i];
   }
 
-  static constexpr void Set(Vec<T, N>* const v, const std::size_t i,
-                            const ValueType val) noexcept {
+  static _CONSTEXPR void Set(Vec<T, N>* const v, const std::size_t i,
+                             const ValueType val) noexcept {
     v->m[i] = val;
   }
 };
@@ -57,13 +58,13 @@ auto ThreadCount(const std::size_t max_thread_count) noexcept -> std::size_t {
 }
 
 template <typename T>
-constexpr auto squared(const T x) noexcept -> T {  // NOLINT
+_CONSTEXPR auto squared(const T x) noexcept -> T {  // NOLINT
   return x * x;
 }
 
 // Returns the squared distance between u and v. Not checking for overflow.
 template <typename VecTraitsT, typename VecT>
-constexpr auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
+_CONSTEXPR auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
     typename VecTraitsT::ValueType {
   static_assert(VecTraitsT::kSize >= 1, "vec dimensionality must be >= 1");
 
@@ -133,9 +134,9 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
 }
 
 template <typename VecT, typename FloatT, std::size_t N>
-constexpr auto SampleInsideBounds(const VecT& sample,
-                                  const std::array<FloatT, N>& x_min,
-                                  const std::array<FloatT, N>& x_max) noexcept
+_CONSTEXPR auto SampleInsideBounds(const VecT& sample,
+                                   const std::array<FloatT, N>& x_min,
+                                   const std::array<FloatT, N>& x_max) noexcept
     -> bool {
   using VecTraitsType = thinks::VecTraits<VecT>;
 
@@ -358,10 +359,10 @@ TEST_CASE("Verify seed") {
 }
 
 struct ValidBounds {
-  static constexpr auto XMin() noexcept -> std::array<float, 2> {
+  static _CONSTEXPR auto XMin() noexcept -> std::array<float, 2> {
     return {{-1, -1}};
   }
-  static constexpr auto XMax() noexcept -> std::array<float, 2> {
+  static _CONSTEXPR auto XMax() noexcept -> std::array<float, 2> {
     return {{1, 1}};
   }
 };

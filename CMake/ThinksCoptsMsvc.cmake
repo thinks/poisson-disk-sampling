@@ -18,6 +18,8 @@ list(APPEND THINKS_MSVC_EXCEPTION_FLAGS
 
 list(APPEND THINKS_MSVC_FLAGS
   "/permissive-"  # [cpp-bp] enforces standards conformance
+  
+  "/Zc:__cplusplus"
 
   "/W4"  # [cpp-bp] warning level 4 (Abseil uses /W3)
   "/WX"  # [cpp-bp] warnings as errors

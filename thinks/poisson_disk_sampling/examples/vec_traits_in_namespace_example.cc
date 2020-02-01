@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <fstream>
 
+#include "thinks/poisson_disk_sampling/examples/config.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 namespace {
@@ -25,11 +26,12 @@ struct VecTraits<Vec3> {
 
   static constexpr auto kSize = 3;
 
-  static constexpr auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+  static _CONSTEXPR auto Get(const Vec3& v, const std::size_t i) -> ValueType {
     return v.v[i];
   }
 
-  static constexpr void Set(Vec3* const v, const std::size_t i, const ValueType val) {
+  static _CONSTEXPR void Set(Vec3* const v, const std::size_t i,
+                             const ValueType val) {
     v->v[i] = val;
   }
 };
