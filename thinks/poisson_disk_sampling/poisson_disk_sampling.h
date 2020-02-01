@@ -533,6 +533,9 @@ struct VecTraits<std::array<FloatT, N>> {
 // - No two samples are closer to each other than radius.
 // - No sample is outside the region [x_min, x_max].
 //
+// The algorithm tries to fit as many samples as possible
+// into the region without violating the above requirements.
+//
 // If the arguments are invalid an empty vector is returned.
 // The arguments are invalid if:
 // - Radius is <= 0, or

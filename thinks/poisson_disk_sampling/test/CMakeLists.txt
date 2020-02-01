@@ -11,6 +11,7 @@ thinks_cc_test(
   COPTS
     ${THINKS_TEST_COPTS}
   DEPS
+    thinks::poisson_disk_sampling
     Catch2::Catch2
     ${CMAKE_THREAD_LIBS_INIT}
 )
