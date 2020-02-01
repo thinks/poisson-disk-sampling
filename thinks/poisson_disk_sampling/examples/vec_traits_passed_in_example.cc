@@ -21,11 +21,11 @@ struct Vec3Traits {
 
   static constexpr auto kSize = 3;
 
-  static _CONSTEXPR auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+  static _TCONSTEXPR auto Get(const Vec3& v, const std::size_t i) -> ValueType {
     return v.v[i];
   }
 
-  static _CONSTEXPR void Set(Vec3* const v, const std::size_t i,
+  static _TCONSTEXPR void Set(Vec3* const v, const std::size_t i,
                              const ValueType val) {
     v->v[i] = val;
   }

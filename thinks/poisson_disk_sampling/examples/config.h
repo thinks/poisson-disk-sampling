@@ -5,7 +5,7 @@
 #pragma once
 
 #if __cplusplus >= 201402L  // C++14 or later.
-#define _CONSTEXPR constexpr
+#define _TCONSTEXPR constexpr
 #else
-#define _CONSTEXPR inline
+#define _TCONSTEXPR inline
 #endif
