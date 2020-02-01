@@ -17,7 +17,7 @@
 #if __cplusplus >= 201402L // C++14 or later.
 #define _CONSTEXPR constexpr
 #else
-#define _CONSTEXPR
+#define _CONSTEXPR inline
 #endif
 
 namespace thinks {
