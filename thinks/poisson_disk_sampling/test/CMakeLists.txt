@@ -6,11 +6,13 @@ thinks_cc_test(
   NAME
     poisson_disk_sampling_test
   SRCS
+    "config.h"
     "catch_main.cc"
     "poisson_disk_sampling_test.cc"
   COPTS
     ${THINKS_TEST_COPTS}
   DEPS
+    thinks::poisson_disk_sampling
     Catch2::Catch2
     ${CMAKE_THREAD_LIBS_INIT}
 )

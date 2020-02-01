@@ -9,4 +9,7 @@
     "-DTHINKS_RUN_TESTS=ON",
     "-DCMAKE_CXX_STANDARD=17"
   ],
+  "files.associations": {
+    "array": "cpp"
+  },
 }
