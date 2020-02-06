@@ -20,7 +20,7 @@ In order to use the [single header file](https://github.com/thinks/poisson-disk-
 ```
 git clone https://github.com/thinks/poisson-disk-sampling.git
 ```
-However, in order to build the tests and examples you need to initialize the submodules of this repository by recursively cloning it.
+However, in order to build the tests and examples you need to initialize the submodules of this repository by cloning it recursively.
 ```
 git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 ```
