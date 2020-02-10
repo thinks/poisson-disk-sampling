@@ -13,7 +13,7 @@ All code in this repository is released under the [MIT license](https://en.wikip
 This repository contributes the following improvements compared to the public domain code released by the original author:
 * The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
-* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/tree/master/thinks/poisson_disk_sampling/test) and section below).
+* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/tree/master/thinks/poisson_disk_sampling/test) and [test section](#tests-section) below).
 
 ## Cloning
 In order to use the [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) in your project a simple clone is sufficient.
@@ -124,7 +124,7 @@ auto Bar() -> std::vector<Vec3> {
 }
 ```
 
-## Tests
+## [Tests](#tests-section)
 
 The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/external/) in this repository. 
 
