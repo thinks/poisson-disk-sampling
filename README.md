@@ -25,6 +25,18 @@ However, in order to build the tests and examples you need to initialize the sub
 ```
 git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
 ```
+The easiest way to access the code is to use the provided CMake target. Assuming you cloned this repository (preferably as a submodule) in your `external` folder, just add the following lines of code.
+```
+// CMakeLists.txt
+add_subdirectory(external/poisson-disk-sampling)
+add_library(my_lib my_lib.cpp)
+target_link_libraries(my_lib PUBLIC thinks::poisson_disk_sampling)
+
+// my_lib.cpp
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h
+
+// Use the thinks::PoissonDiskSampling(...) function in your code.
+```
 
 ## Usage
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius. Let us first show a simple example.
