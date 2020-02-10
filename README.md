@@ -14,6 +14,7 @@ This repository contributes the following improvements compared to the public do
 * The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
 * The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/tree/master/thinks/poisson_disk_sampling/test) and [test section](#tests) below).
+* The code is bundled with a modern CMake build system that enables easy inclusion in existing projects.
 
 ## Cloning
 In order to use the [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) in your project a simple clone is sufficient.
