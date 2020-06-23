@@ -72,6 +72,13 @@ if (BUILD_TESTING)
     INTERFACE
       external/Simple-FFT/include)
   add_library(d1vanov::simple_fft ALIAS simple_fft)
+
+  # Hedley
+  add_library(hedley INTERFACE)
+  target_include_directories(hedley
+    INTERFACE
+      external/hedley)
+  add_library(nemequ::hedley ALIAS hedley)
 endif()
 
 add_subdirectory(thinks)

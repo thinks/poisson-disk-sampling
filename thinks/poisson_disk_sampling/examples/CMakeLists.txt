@@ -27,6 +27,7 @@ thinks_cc_executable(
     thinks::poisson_disk_sampling
     thinks_pnm_io
     d1vanov::simple_fft
+    nemequ::hedley
 )
 
 thinks_cc_executable(

@@ -8,13 +8,17 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "thinks/poisson_disk_sampling/examples/config.h"
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+
+#include "hedley.h"
+
 // Ignore warnings from external header files.
-#pragma warning(push, 0)  
+HEDLEY_DIAGNOSTIC_PUSH
 #include "simple_fft/fft.h"
 #include "thinks/pnm_io/pnm_io.h"
-#pragma warning(pop)  
+HEDLEY_DIAGNOSTIC_POP
 
-#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 [[nodiscard]] static constexpr auto reinterval(
     const double in_val, const double old_min, const double old_max,
