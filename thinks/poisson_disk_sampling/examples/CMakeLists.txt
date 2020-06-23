@@ -17,6 +17,20 @@ thinks_cc_executable(
 
 thinks_cc_executable(
   NAME
+    periodogram_example
+  SRCS
+    "config.h"
+    "periodogram_example.cc"
+  COPTS
+    ${THINKS_DEFAULT_COPTS}
+  DEPS
+    thinks::poisson_disk_sampling
+    thinks_pnm_io
+    d1vanov::simple_fft
+)
+
+thinks_cc_executable(
+  NAME
     simple_example
   SRCS
     "config.h"

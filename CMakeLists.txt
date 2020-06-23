@@ -60,6 +60,18 @@ if (BUILD_TESTING)
   # Catch
   add_subdirectory(external/Catch2)
   check_target(Catch2::Catch2)
+
+  # pnm_io
+  add_subdirectory(external/pnm-io)
+  check_target(thinks_pnm_io)
+
+  # Simple-FFT
+  #add_subdirectory(external/Simple-FFT)
+  add_library(simple_fft INTERFACE)
+  target_include_directories(simple_fft
+    INTERFACE
+      external/Simple-FFT/include)
+  add_library(d1vanov::simple_fft ALIAS simple_fft)
 endif()
 
 add_subdirectory(thinks)
