@@ -13,7 +13,8 @@ All code in this repository is released under the [MIT license](https://en.wikip
 This repository contributes the following improvements compared to the public domain code released by the original author:
 * The code is in a [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) and has no dependencies other than the standard library.
 * The code is flexible in that results can be retrieved as a user-defined vector type (see examples below).
-* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/tree/master/thinks/poisson_disk_sampling/test) and section below).
+* The code is tested (see [test folder](https://github.com/thinks/poisson-disk-sampling/tree/master/thinks/poisson_disk_sampling/test) and [test section](#tests) below).
+* The code is bundled with a modern CMake build system that enables easy inclusion in existing projects.
 
 ## Cloning
 In order to use the [single header file](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/poisson_disk_sampling.h) in your project a simple clone is sufficient.
@@ -23,6 +24,23 @@ git clone https://github.com/thinks/poisson-disk-sampling.git
 However, in order to build the tests and examples you need to initialize the submodules of this repository by cloning it recursively.
 ```
 git clone --recursive https://github.com/thinks/poisson-disk-sampling.git
+```
+The easiest way to access the code is to use the provided CMake target. Assuming you cloned this repository (preferably as a submodule) in your `external` folder, just add the following lines of code to your CMakeLists.txt:
+
+```CMake
+// CMakeLists.txt
+add_subdirectory(external/poisson-disk-sampling)
+add_library(my_lib my_lib.cpp)
+target_link_libraries(my_lib PUBLIC thinks::poisson_disk_sampling)
+```
+
+Giving you easy access to the functionality in your code.
+
+```C++
+// my_lib.cpp
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h
+
+// Use the thinks::PoissonDiskSampling(...) function in your code.
 ```
 
 ## Usage
@@ -126,7 +144,7 @@ auto Bar() -> std::vector<Vec3> {
 
 ## Tests
 
-The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework. The Catch2 framework is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/external/) in this repository. 
+The tests for this distribution are written in the [Catch2](https://github.com/catchorg/Catch2) framework, which is included as a [submodule](https://github.com/thinks/poisson-disk-sampling/blob/master/external/) in this repository. 
 
 Running the tests using [CTest](https://cmake.org/home/) is simple. In a terminal do the following (and similar for `Debug`):
 ```bash
