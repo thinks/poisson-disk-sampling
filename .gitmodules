@@ -4,9 +4,6 @@
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
-[submodule "external/pnm-io"]
-	path = external/pnm-io
-	url = https://github.com/thinks/pnm-io.git
 [submodule "external/Simple-FFT"]
 	path = external/Simple-FFT
 	url = https://github.com/d1vanov/Simple-FFT.git
