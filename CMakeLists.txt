@@ -61,12 +61,7 @@ if (BUILD_TESTING)
   add_subdirectory(external/Catch2)
   check_target(Catch2::Catch2)
 
-  # pnm_io
-  add_subdirectory(external/pnm-io)
-  check_target(thinks_pnm_io)
-
   # Simple-FFT
-  #add_subdirectory(external/Simple-FFT)
   add_library(simple_fft INTERFACE)
   target_include_directories(simple_fft
     INTERFACE
@@ -79,6 +74,13 @@ if (BUILD_TESTING)
     INTERFACE
       external/hedley)
   add_library(nemequ::hedley ALIAS hedley)
+
+  # STB
+  add_library(stb INTERFACE)
+  target_include_directories(stb
+    INTERFACE
+      external/stb)
+  add_library(nothings::stb ALIAS stb)
 endif()
 
 add_subdirectory(thinks)

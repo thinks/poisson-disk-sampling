@@ -25,9 +25,9 @@ thinks_cc_executable(
     ${THINKS_DEFAULT_COPTS}
   DEPS
     thinks::poisson_disk_sampling
-    thinks_pnm_io
     d1vanov::simple_fft
     nemequ::hedley
+    nothings::stb
 )
 
 thinks_cc_executable(

@@ -8,21 +8,23 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "thinks/poisson_disk_sampling/examples/config.h"
+#include "hedley.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-#include "hedley.h"
+#define STBI_MSC_SECURE_CRT
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 // Ignore warnings from external header files.
 HEDLEY_DIAGNOSTIC_PUSH
 #include "simple_fft/fft.h"
-#include "thinks/pnm_io/pnm_io.h"
 HEDLEY_DIAGNOSTIC_POP
 
 
-[[nodiscard]] static constexpr auto reinterval(
-    const double in_val, const double old_min, const double old_max,
-    const double new_min, const double new_max) noexcept -> double {
+HEDLEY_WARN_UNUSED_RESULT
+static constexpr auto reinterval(const double in_val, const double old_min,
+                                 const double old_max, const double new_min,
+                                 const double new_max) noexcept -> double {
   return (old_max - old_min) == 0.0
              ? new_max
              : (((in_val - old_min) * (new_max - new_min)) /
@@ -77,8 +79,8 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return *lhs;
 }
 
-[[nodiscard]] static auto Scaled(const Image<double>& img,
-                                 const double scalar) noexcept
+HEDLEY_WARN_UNUSED_RESULT static auto Scaled(const Image<double>& img,
+                                             const double scalar) noexcept
     -> Image<double> {
   Image<double> out = img;
   const auto w = out.width();
@@ -91,8 +93,8 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return out;
 }
 
-[[nodiscard]] static auto SubtractAverage(const Image<double>& img) noexcept
-    -> Image<double> {
+HEDLEY_WARN_UNUSED_RESULT static auto SubtractAverage(
+    const Image<double>& img) noexcept -> Image<double> {
   auto out = img;
   const auto w = out.width();
   const auto h = out.height();
@@ -113,8 +115,8 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return out;
 }
 
-[[nodiscard]] static auto Fft2d(const Image<double>& img_in) noexcept
-    -> Image<std::complex<double>> {
+HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
+    const Image<double>& img_in) noexcept -> Image<std::complex<double>> {
   // Create a complex image with imaginary components set to zero.
   auto c_img = Image<std::complex<double>>(img_in.width(), img_in.height());
   const auto w = c_img.width();
@@ -135,7 +137,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return c_img;
 }
 
-[[nodiscard]] static auto FftShift2d(
+HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
     const Image<std::complex<double>>& fft_img) noexcept
     -> Image<std::complex<double>> {
   if (!(fft_img.width() % 2 == 0 && fft_img.height() % 2 == 0)) {
@@ -169,7 +171,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
 }
 
 // The periodogram is the squared magnitude of the FFT bins.
-[[nodiscard]] static auto Periodogram(
+HEDLEY_WARN_UNUSED_RESULT static auto Periodogram(
     const Image<std::complex<double>>& fft_img) noexcept -> Image<double> {
   auto img = Image<double>(fft_img.width(), fft_img.height());
   const auto w = img.width();
@@ -183,7 +185,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return img;
 }
 
-[[nodiscard]] static auto CreateSampleImage(
+HEDLEY_WARN_UNUSED_RESULT static auto CreateSampleImage(
     const std::size_t width, const std::size_t height,
     const std::array<double, 2>& sample_min,
     const std::array<double, 2>& sample_max,
@@ -202,7 +204,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return img;
 }
 
-[[nodiscard]] static auto To8bits(const Image<double>& img) noexcept
+HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
     -> Image<std::uint8_t> {
   double min_pixel = std::numeric_limits<double>::max();
   double max_pixel = std::numeric_limits<double>::lowest();
@@ -226,13 +228,19 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
 }
 
 static void WriteImage(const std::string& filename, const Image<double>& img) {
-  const Image<std::uint8_t> tmp = To8bits(img);
-  thinks::WritePgmImage(filename, tmp.width(), tmp.height(), tmp.data());
+  constexpr auto kComp = 1; // Greyscale.
+
+  const auto w = static_cast<int>(img.width());
+  const auto h = static_cast<int>(img.height());
+  if (stbi_write_png(filename.c_str(), w, h, kComp, To8bits(img).data(), w) == 0) {
+    std::cerr << "failed writing image";
+    std::abort();
+  }
 }
 
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   try {
-    constexpr auto kImageCount = 100u;
+    constexpr auto kImageCount = 10u;
 
     constexpr auto kRadius = 1.0;
     constexpr std::array<double, 2> kXMin = {0.0, 0.0};
@@ -251,7 +259,7 @@ int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
                  1.0 / kImageCount),
           &avg_periodogram_img);
     }
-    WriteImage("avg_periodogram.pgm", avg_periodogram_img);
+    WriteImage("avg_periodogram.png", avg_periodogram_img);
   } catch (std::exception& e) {
     std::cerr << "std::exception: " << e.what();
     std::abort();
