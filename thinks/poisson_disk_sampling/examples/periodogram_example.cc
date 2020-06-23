@@ -5,12 +5,16 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
+#include <cstdlib>
 #include <iostream>
 
+// Ignore warnings from external header files.
+#pragma warning(push, 0)  
 #include "simple_fft/fft.h"
 #include "thinks/pnm_io/pnm_io.h"
-#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+#pragma warning(pop)  
 
+#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 [[nodiscard]] static constexpr auto reinterval(
     const double in_val, const double old_min, const double old_max,
@@ -54,10 +58,15 @@ class Image {
 
 static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
     -> Image<double>& {
-  const auto min_width = std::min(rhs.width(), lhs->width());
-  const auto min_height = std::min(rhs.height(), lhs->height());
-  for (auto i = 0u; i < min_width; ++i) {
-    for (auto j = 0u; j < min_height; ++j) {
+  if (!(rhs.width() == lhs->width() && rhs.height() == lhs->height())) {
+    std::cerr << "AddEq width/height mismatch";
+    std::abort();
+  }
+
+  const auto w = rhs.width();
+  const auto h = rhs.height();
+  for (auto i = 0u; i < w; ++i) {
+    for (auto j = 0u; j < h; ++j) {
       (*lhs)(i, j) += rhs(i, j);
     }
   }
@@ -89,7 +98,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
       avg += out(i, j);
     }
   }
-  avg /= w * h;
+  avg /= static_cast<double>(w * h);
 
   for (auto i = 0u; i < w; ++i) {
     for (auto j = 0u; j < h; ++j) {
@@ -191,14 +200,14 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
 
 [[nodiscard]] static auto To8bits(const Image<double>& img) noexcept
     -> Image<std::uint8_t> {
-  double min = std::numeric_limits<double>::max();
-  double max = std::numeric_limits<double>::lowest();
+  double min_pixel = std::numeric_limits<double>::max();
+  double max_pixel = std::numeric_limits<double>::lowest();
   const auto w = img.width();
   const auto h = img.height();
   for (auto i = 0u; i < w; ++i) {
     for (auto j = 0u; j < h; ++j) {
-      min = std::min(min, img(i, j));
-      max = std::max(max, img(i, j));
+      min_pixel = std::min(min_pixel, img(i, j));
+      max_pixel = std::max(max_pixel, img(i, j));
     }
   }
 
@@ -206,7 +215,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   for (auto i = 0u; i < w; ++i) {
     for (auto j = 0u; j < h; ++j) {
       out(i, j) = static_cast<std::uint8_t>(
-          reinterval(img(i, j), min, max, 0.0, 255.999));
+          reinterval(img(i, j), min_pixel, max_pixel, 0.0, 255.999));
     }
   }
   return out;
@@ -219,14 +228,14 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
 
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   try {
-    constexpr auto kImageCount = 10u;
+    constexpr auto kImageCount = 100u;
 
     constexpr auto kRadius = 1.0;
     constexpr std::array<double, 2> kXMin = {0.0, 0.0};
     constexpr std::array<double, 2> kXMax = {128.0, 128.0};
     constexpr auto kMaxSampleAttempts = std::uint32_t{30};
 
-    Image<double> avg_periodogram_img(2047, 2048);
+    Image<double> avg_periodogram_img(2048, 2048);
     for (auto i = 0u; i < kImageCount; ++i) {
       AddEq(
           Scaled(Periodogram(FftShift2d(Fft2d(SubtractAverage(CreateSampleImage(
