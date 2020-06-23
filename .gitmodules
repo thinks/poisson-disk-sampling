@@ -10,3 +10,6 @@
 [submodule "external/Simple-FFT"]
 	path = external/Simple-FFT
 	url = https://github.com/d1vanov/Simple-FFT.git
+[submodule "external/hedley"]
+	path = external/hedley
+	url = https://github.com/nemequ/hedley.git
