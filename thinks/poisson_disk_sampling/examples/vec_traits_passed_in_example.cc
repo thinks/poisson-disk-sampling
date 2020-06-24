@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "thinks/poisson_disk_sampling/examples/config.h"
+#include "hedley.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 namespace {
@@ -21,12 +21,13 @@ struct Vec3Traits {
 
   static constexpr auto kSize = 3;
 
-  static _TCONSTEXPR auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+  static HEDLEY_CONSTEXPR auto Get(const Vec3& v, const std::size_t i)
+      -> ValueType {
     return v.v[i];
   }
 
-  static _TCONSTEXPR void Set(Vec3* const v, const std::size_t i,
-                             const ValueType val) {
+  static HEDLEY_CONSTEXPR void Set(Vec3* const v, const std::size_t i,
+                                   const ValueType val) {
     v->v[i] = val;
   }
 };

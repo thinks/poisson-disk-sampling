@@ -86,8 +86,8 @@ class Image {
   }
 
  private:
-  // NOLINTNEXTLINE
   HEDLEY_WARN_UNUSED_RESULT
+  // NOLINTNEXTLINE
   constexpr std::size_t _linearIndex(const std::size_t i,
                                      const std::size_t j) const {
     return i + _width * j;
@@ -253,11 +253,13 @@ HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
     }
   }
 
+  constexpr auto kMinMappedPixel = 0.0;
+  constexpr auto kMaxMappedPixel = 255.999;
   Image<std::uint8_t> out(w, h);
   for (auto i = 0U; i < w; ++i) {
     for (auto j = 0U; j < h; ++j) {
-      out(i, j) = static_cast<std::uint8_t>(
-          Reinterval(img(i, j), min_pixel, max_pixel, 0.0, 255.999));
+      out(i, j) = static_cast<std::uint8_t>(Reinterval(
+          img(i, j), min_pixel, max_pixel, kMinMappedPixel, kMaxMappedPixel));
     }
   }
   return out;
