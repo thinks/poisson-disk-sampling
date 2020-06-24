@@ -142,9 +142,8 @@ auto Bar() -> std::vector<Vec3> {
 }
 ```
 
-## Peridogram
+## Periodogram
 ![Average periodogram](https://github.com/thinks/poisson-disk-sampling/blob/master/images/avg_periodogram_512.png "Average periodogram")
-
 
 ## Tests
 
