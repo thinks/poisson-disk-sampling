@@ -6,7 +6,6 @@ thinks_cc_test(
   NAME
     poisson_disk_sampling_test
   SRCS
-    "config.h"
     "catch_main.cc"
     "poisson_disk_sampling_test.cc"
   COPTS
