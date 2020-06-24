@@ -48,7 +48,6 @@ thinks_cc_executable(
     ${THINKS_DEFAULT_COPTS}
   DEPS
     thinks::poisson_disk_sampling
-    nemequ::hedley
 )
 
 thinks_cc_executable(
@@ -60,5 +59,4 @@ thinks_cc_executable(
     ${THINKS_DEFAULT_COPTS}
   DEPS
     thinks::poisson_disk_sampling
-    nemequ::hedley
 )
