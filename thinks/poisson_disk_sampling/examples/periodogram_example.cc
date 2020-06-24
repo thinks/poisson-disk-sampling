@@ -17,14 +17,18 @@ HEDLEY_DIAGNOSTIC_PUSH
 #if defined (HEDLEY_GCC_VERSION)
 _Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
 _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
+_Pragma("GCC diagnostic ignored \"-Wconversion\"")
+_Pragma("GCC diagnostic ignored \"-cast-qual\"")
 #endif
 
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-#include "simple_fft/fft.h"
 
 HEDLEY_DIAGNOSTIC_POP
+
+#include "simple_fft/fft.h"
+
 
 HEDLEY_WARN_UNUSED_RESULT
 static HEDLEY_CONSTEXPR auto reinterval(
