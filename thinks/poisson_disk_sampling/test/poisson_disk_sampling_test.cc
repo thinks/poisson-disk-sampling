@@ -69,7 +69,7 @@ constexpr auto squared(const T x) noexcept -> T {  // NOLINT
 
 // Returns the squared distance between u and v. Not checking for overflow.
 template <typename VecTraitsT, typename VecT>
-constexpr auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
+CONSTEXPR14 auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
     typename VecTraitsT::ValueType {
   static_assert(VecTraitsT::kSize >= 1, "vec dimensionality must be >= 1");
 
@@ -139,7 +139,7 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
 }
 
 template <typename VecT, typename FloatT, std::size_t N>
-constexpr auto SampleInsideBounds(const VecT& sample,
+CONSTEXPR14 auto SampleInsideBounds(const VecT& sample,
                                    const std::array<FloatT, N>& x_min,
                                    const std::array<FloatT, N>& x_max) noexcept
     -> bool {
