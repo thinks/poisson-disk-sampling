@@ -277,13 +277,14 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   try {
     constexpr auto kImageCount = 10U;
+    constexpr auto kPixelSize = 2048U;
 
     constexpr auto kRadius = 1.0;
     constexpr std::array<double, 2> kXMin = {0.0, 0.0};
     constexpr std::array<double, 2> kXMax = {128.0, 128.0};
     constexpr auto kMaxSampleAttempts = std::uint32_t{30};
 
-    Image<double> avg_periodogram_img(2048, 2048);
+    Image<double> avg_periodogram_img(kPixelSize, kPixelSize);
     for (auto i = 0U; i < kImageCount; ++i) {
       AddEq(
           Scaled(Periodogram(FftShift2d(Fft2d(SubtractAverage(CreateSampleImage(
