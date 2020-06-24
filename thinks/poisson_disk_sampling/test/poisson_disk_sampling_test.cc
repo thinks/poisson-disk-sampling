@@ -13,7 +13,12 @@
 #include <vector>
 
 #include "catch2/catch.hpp"
-#include "thinks/poisson_disk_sampling/test/config.h"
+
+#if __cplusplus >= 201402L  // C++14 or later.
+#define CONSTEXPR14 constexpr
+#else
+#define CONSTEXPR14 inline
+#endif
 
 namespace {
 
@@ -36,12 +41,12 @@ struct VecTraits<Vec<T, N>> {
                 "Vec type must be tightly packed");
   static constexpr auto kSize = sizeof(Vec<T, N>) / sizeof(ValueType);
 
-  static _TCONSTEXPR auto Get(const Vec<T, N>& v, const std::size_t i) noexcept
+  static constexpr auto Get(const Vec<T, N>& v, const std::size_t i) noexcept
       -> ValueType {
     return v.m[i];
   }
 
-  static _TCONSTEXPR void Set(Vec<T, N>* const v, const std::size_t i,
+  static CONSTEXPR14 void Set(Vec<T, N>* const v, const std::size_t i,
                              const ValueType val) noexcept {
     v->m[i] = val;
   }
@@ -58,13 +63,13 @@ auto ThreadCount(const std::size_t max_thread_count) noexcept -> std::size_t {
 }
 
 template <typename T>
-_TCONSTEXPR auto squared(const T x) noexcept -> T {  // NOLINT
+constexpr auto squared(const T x) noexcept -> T {  // NOLINT
   return x * x;
 }
 
 // Returns the squared distance between u and v. Not checking for overflow.
 template <typename VecTraitsT, typename VecT>
-_TCONSTEXPR auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
+constexpr auto SquaredDistance(const VecT& u, const VecT& v) noexcept ->
     typename VecTraitsT::ValueType {
   static_assert(VecTraitsT::kSize >= 1, "vec dimensionality must be >= 1");
 
@@ -134,7 +139,7 @@ auto VerifyPoisson(const std::vector<VecT>& samples,
 }
 
 template <typename VecT, typename FloatT, std::size_t N>
-_TCONSTEXPR auto SampleInsideBounds(const VecT& sample,
+constexpr auto SampleInsideBounds(const VecT& sample,
                                    const std::array<FloatT, N>& x_min,
                                    const std::array<FloatT, N>& x_max) noexcept
     -> bool {
@@ -359,10 +364,10 @@ TEST_CASE("Verify seed") {
 }
 
 struct ValidBounds {
-  static _TCONSTEXPR auto XMin() noexcept -> std::array<float, 2> {
+  static constexpr auto XMin() noexcept -> std::array<float, 2> {
     return {{-1, -1}};
   }
-  static _TCONSTEXPR auto XMax() noexcept -> std::array<float, 2> {
+  static constexpr auto XMax() noexcept -> std::array<float, 2> {
     return {{1, 1}};
   }
 };
