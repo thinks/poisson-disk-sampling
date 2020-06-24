@@ -41,7 +41,7 @@ HEDLEY_DIAGNOSTIC_POP
 // clang-format on
 
 HEDLEY_WARN_UNUSED_RESULT
-static HEDLEY_CONSTEXPR auto reinterval(
+static HEDLEY_CONSTEXPR auto Reinterval(
     const double in_val, const double old_min, const double old_max,
     const double new_min, const double new_max) noexcept -> double {
   return (old_max - old_min) == 0.0
@@ -57,20 +57,36 @@ class Image {
   Image(const std::size_t width, const std::size_t height)
       : _width(width), _height(height), _pixels(_width * _height, PixelT{0}) {}
 
-  constexpr std::size_t width() const { return _width; }
-  constexpr std::size_t height() const { return _height; }
-  const PixelT* data() const { return _pixels.data(); }
-  PixelT* data() { return _pixels.data(); }
+  // NOLINTNEXTLINE
+  HEDLEY_WARN_UNUSED_RESULT constexpr auto width() const -> std::size_t {
+    return _width;
+  }
 
-  PixelT& operator()(const std::size_t i, const std::size_t j) {
+  // NOLINTNEXTLINE
+  HEDLEY_WARN_UNUSED_RESULT constexpr auto height() const -> std::size_t {
+    return _height;
+  }
+
+  // NOLINTNEXTLINE
+  HEDLEY_WARN_UNUSED_RESULT auto data() const -> const PixelT* {
+    return _pixels.data();
+  }
+
+  // NOLINTNEXTLINE
+  HEDLEY_WARN_UNUSED_RESULT auto data() -> PixelT* { return _pixels.data(); }
+
+  HEDLEY_WARN_UNUSED_RESULT
+  auto operator()(const std::size_t i, const std::size_t j) -> PixelT& {
     return _pixels[_linearIndex(i, j)];
   }
 
-  const PixelT& operator()(const std::size_t i, const std::size_t j) const {
+  HEDLEY_WARN_UNUSED_RESULT
+  auto operator()(const std::size_t i, const std::size_t j) const -> const PixelT& {
     return _pixels[_linearIndex(i, j)];
   }
 
  private:
+  HEDLEY_WARN_UNUSED_RESULT
   constexpr std::size_t _linearIndex(const std::size_t i,
                                      const std::size_t j) const {
     return i + _width * j;
@@ -213,10 +229,10 @@ HEDLEY_WARN_UNUSED_RESULT static auto CreateSampleImage(
   Image<double> img(width, height);
   for (const auto& sample : samples) {
     const auto i = static_cast<std::size_t>(
-        reinterval(sample[0], sample_min[0], sample_max[0], 0.0,
+        Reinterval(sample[0], sample_min[0], sample_max[0], 0.0,
                    static_cast<double>(width - 1)));
     const auto j = static_cast<std::size_t>(
-        reinterval(sample[1], sample_min[1], sample_max[1], 0.0,
+        Reinterval(sample[1], sample_min[1], sample_max[1], 0.0,
                    static_cast<double>(height - 1)));
     img(i, j) = 1.0;
   }
@@ -240,7 +256,7 @@ HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
   for (auto i = 0u; i < w; ++i) {
     for (auto j = 0u; j < h; ++j) {
       out(i, j) = static_cast<std::uint8_t>(
-          reinterval(img(i, j), min_pixel, max_pixel, 0.0, 255.999));
+          Reinterval(img(i, j), min_pixel, max_pixel, 0.0, 255.999));
     }
   }
   return out;
