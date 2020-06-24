@@ -270,6 +270,7 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
 
   const auto w = static_cast<int>(img.width());
   const auto h = static_cast<int>(img.height());
+  // NOLINTNEXTLINE
   if (stbi_write_png(filename.c_str(), w, h, kComp, To8bits(img).data(), w) == 0) {
     std::cerr << "failed writing image";
     std::abort();
