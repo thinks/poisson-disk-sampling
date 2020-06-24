@@ -18,6 +18,8 @@ _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 _Pragma("GCC diagnostic ignored \"-Wconversion\"")
 _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
 _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
+_Pragma("GCC diagnostic ignored \"-Wmissing-prototypes\"")
+_Pragma("GCC diagnostic ignored \"-Wimplicit-fallthrough\"")
 #endif
 
 #if defined (HEDLEY_MSVC_VERSION)
