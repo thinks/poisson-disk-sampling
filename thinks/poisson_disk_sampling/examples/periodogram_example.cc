@@ -86,6 +86,7 @@ class Image {
   }
 
  private:
+  // NOLINTNEXTLINE
   HEDLEY_WARN_UNUSED_RESULT
   constexpr std::size_t _linearIndex(const std::size_t i,
                                      const std::size_t j) const {
@@ -106,8 +107,8 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
 
   const auto w = rhs.width();
   const auto h = rhs.height();
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       (*lhs)(i, j) += rhs(i, j);
     }
   }
@@ -120,8 +121,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto Scaled(const Image<double>& img,
   Image<double> out = img;
   const auto w = out.width();
   const auto h = out.height();
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       out(i, j) *= scalar;
     }
   }
@@ -134,15 +135,15 @@ HEDLEY_WARN_UNUSED_RESULT static auto SubtractAverage(
   const auto w = out.width();
   const auto h = out.height();
   double avg = 0.0;
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       avg += out(i, j);
     }
   }
   avg /= static_cast<double>(w * h);
 
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       out(i, j) -= avg;
     }
   }
@@ -156,8 +157,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
   auto c_img = Image<std::complex<double>>(img_in.width(), img_in.height());
   const auto w = c_img.width();
   const auto h = c_img.height();
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       c_img(i, j) = {img_in(i, j), 0.0};
     }
   }
@@ -189,15 +190,15 @@ HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
   // Simple and slow implementation, not optimized.
   //
   // Shift rows.
-  for (auto j = 0u; j < h; ++j) {
-    for (auto i = 0u; i < half_w; ++i) {
+  for (auto j = 0U; j < h; ++j) {
+    for (auto i = 0U; i < half_w; ++i) {
       std::swap(shift_img(i, j), shift_img(half_w + i, j));
     }
   }
 
   // Shift cols.
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < half_h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < half_h; ++j) {
       std::swap(shift_img(i, j), shift_img(i, half_h + j));
     }
   }
@@ -211,8 +212,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto Periodogram(
   auto img = Image<double>(fft_img.width(), fft_img.height());
   const auto w = img.width();
   const auto h = img.height();
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       const auto p = std::abs(fft_img(i, j));
       img(i, j) = p * p;
     }
@@ -245,16 +246,16 @@ HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
   double max_pixel = std::numeric_limits<double>::lowest();
   const auto w = img.width();
   const auto h = img.height();
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       min_pixel = std::min(min_pixel, img(i, j));
       max_pixel = std::max(max_pixel, img(i, j));
     }
   }
 
   Image<std::uint8_t> out(w, h);
-  for (auto i = 0u; i < w; ++i) {
-    for (auto j = 0u; j < h; ++j) {
+  for (auto i = 0U; i < w; ++i) {
+    for (auto j = 0U; j < h; ++j) {
       out(i, j) = static_cast<std::uint8_t>(
           Reinterval(img(i, j), min_pixel, max_pixel, 0.0, 255.999));
     }
@@ -275,7 +276,7 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
 
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   try {
-    constexpr auto kImageCount = 10u;
+    constexpr auto kImageCount = 10U;
 
     constexpr auto kRadius = 1.0;
     constexpr std::array<double, 2> kXMin = {0.0, 0.0};
@@ -283,7 +284,7 @@ int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
     constexpr auto kMaxSampleAttempts = std::uint32_t{30};
 
     Image<double> avg_periodogram_img(2048, 2048);
-    for (auto i = 0u; i < kImageCount; ++i) {
+    for (auto i = 0U; i < kImageCount; ++i) {
       AddEq(
           Scaled(Periodogram(FftShift2d(Fft2d(SubtractAverage(CreateSampleImage(
                      avg_periodogram_img.width(), avg_periodogram_img.height(),
