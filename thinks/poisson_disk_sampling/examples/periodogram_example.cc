@@ -11,20 +11,24 @@
 #include "hedley.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
+// Ignore warnings from external header files.
+HEDLEY_DIAGNOSTIC_PUSH
+
+#if defined (HEDLEY_GCC)
+_Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
+#endif
+
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-
-// Ignore warnings from external header files.
-HEDLEY_DIAGNOSTIC_PUSH
 #include "simple_fft/fft.h"
+
 HEDLEY_DIAGNOSTIC_POP
 
-
 HEDLEY_WARN_UNUSED_RESULT
-static constexpr auto reinterval(const double in_val, const double old_min,
-                                 const double old_max, const double new_min,
-                                 const double new_max) noexcept -> double {
+static HEDLEY_CONSTEXPR auto reinterval(
+    const double in_val, const double old_min, const double old_max,
+    const double new_min, const double new_max) noexcept -> double {
   return (old_max - old_min) == 0.0
              ? new_max
              : (((in_val - old_min) * (new_max - new_min)) /

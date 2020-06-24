@@ -19,7 +19,6 @@ thinks_cc_executable(
   NAME
     periodogram_example
   SRCS
-    "config.h"
     "periodogram_example.cc"
   COPTS
     ${THINKS_DEFAULT_COPTS}
