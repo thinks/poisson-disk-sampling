@@ -14,8 +14,9 @@
 // Ignore warnings from external header files.
 HEDLEY_DIAGNOSTIC_PUSH
 
-#if defined (HEDLEY_GCC)
+#if defined (HEDLEY_GCC_VERSION)
 _Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
+_Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 #endif
 
 #define STBI_MSC_SECURE_CRT
