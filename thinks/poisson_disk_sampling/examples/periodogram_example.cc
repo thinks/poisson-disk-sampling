@@ -17,8 +17,12 @@ _Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
 _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 _Pragma("GCC diagnostic ignored \"-Wconversion\"")
 _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
+_Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
 #endif
+
+#if defined (HEDLEY_MSVC_VERSION)
 #define STBI_MSC_SECURE_CRT
+#endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 HEDLEY_DIAGNOSTIC_POP
@@ -26,6 +30,7 @@ HEDLEY_DIAGNOSTIC_POP
 HEDLEY_DIAGNOSTIC_PUSH
 #if defined (HEDLEY_GCC_VERSION)
 _Pragma("GCC diagnostic ignored \"-Wconversion\"")
+_Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 #endif
 #include "simple_fft/fft.h"
 HEDLEY_DIAGNOSTIC_POP
