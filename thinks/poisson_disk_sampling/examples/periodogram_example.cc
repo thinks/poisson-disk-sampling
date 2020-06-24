@@ -11,32 +11,33 @@
 #include "hedley.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
+// clang-format off
 HEDLEY_DIAGNOSTIC_PUSH
-#if defined (HEDLEY_GNUC_VERSION)
+#if defined(HEDLEY_MSVC_VERSION)
+#define STBI_MSC_SECURE_CRT
+#elif defined(HEDLEY_GCC_VERSION)
 _Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
 _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 _Pragma("GCC diagnostic ignored \"-Wconversion\"")
 _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
 _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
-_Pragma("GCC diagnostic ignored \"-Wmissing-prototypes\"")
-_Pragma("GCC diagnostic ignored \"-Wimplicit-fallthrough\"")
+#elif defined(__clang__)
+_Pragma("clang diagnostic ignored \"-Wmissing-prototypes\"")
+_Pragma("clang diagnostic ignored \"-Wimplicit-fallthrough\"")
 #endif
 
-#if defined (HEDLEY_MSVC_VERSION)
-#define STBI_MSC_SECURE_CRT
-#endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 HEDLEY_DIAGNOSTIC_POP
 
 HEDLEY_DIAGNOSTIC_PUSH
-#if defined (HEDLEY_GNUC_VERSION)
+#if defined (HEDLEY_GCC_VERSION)
 _Pragma("GCC diagnostic ignored \"-Wconversion\"")
 _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 #endif
 #include "simple_fft/fft.h"
 HEDLEY_DIAGNOSTIC_POP
-
+// clang-format on
 
 HEDLEY_WARN_UNUSED_RESULT
 static HEDLEY_CONSTEXPR auto reinterval(
