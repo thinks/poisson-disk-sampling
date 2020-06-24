@@ -60,6 +60,27 @@ if (BUILD_TESTING)
   # Catch
   add_subdirectory(external/Catch2)
   check_target(Catch2::Catch2)
+
+  # Simple-FFT
+  add_library(simple_fft INTERFACE)
+  target_include_directories(simple_fft
+    INTERFACE
+      external/Simple-FFT/include)
+  add_library(d1vanov::simple_fft ALIAS simple_fft)
+
+  # Hedley
+  add_library(hedley INTERFACE)
+  target_include_directories(hedley
+    INTERFACE
+      external/hedley)
+  add_library(nemequ::hedley ALIAS hedley)
+
+  # STB
+  add_library(stb INTERFACE)
+  target_include_directories(stb
+    INTERFACE
+      external/stb)
+  add_library(nothings::stb ALIAS stb)
 endif()
 
 add_subdirectory(thinks)

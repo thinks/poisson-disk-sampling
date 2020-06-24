@@ -7,11 +7,25 @@
 #include <memory>
 
 namespace thinks {
+namespace poisson_disk_sampling_internal {
+
+template <typename FloatT, std::size_t N>
+struct Grid {
+  
+  FloatT dx;
+  FloatT dx_inv;
+  std::array<FloatT, N> x_min;
+  std::array<FloatT, N> x_max;
+  std::array<std::int32_t, N> size;
+};
+
+} // namespace poisson_disk_sampling_internal {
 
 template <typename FloatT, std::size_t N>
 struct Samples {
   constexpr auto kDim = N;
 
+  // vector?
   std::unique_ptr<FloatT[]> positions;
   std::size_t count;
 };

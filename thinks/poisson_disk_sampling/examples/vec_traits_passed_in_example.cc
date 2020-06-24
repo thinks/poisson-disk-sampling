@@ -6,8 +6,13 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "thinks/poisson_disk_sampling/examples/config.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+
+#if __cplusplus >= 201402L  // C++14 or later.
+#define PDS_CEXPR constexpr
+#else
+#define PDS_CEXPR inline
+#endif
 
 namespace {
 
@@ -21,12 +26,12 @@ struct Vec3Traits {
 
   static constexpr auto kSize = 3;
 
-  static _TCONSTEXPR auto Get(const Vec3& v, const std::size_t i) -> ValueType {
+  static PDS_CEXPR auto Get(const Vec3& v, const std::size_t i) -> ValueType {
     return v.v[i];
   }
 
-  static _TCONSTEXPR void Set(Vec3* const v, const std::size_t i,
-                             const ValueType val) {
+  static PDS_CEXPR void Set(Vec3* const v, const std::size_t i,
+                            const ValueType val) {
     v->v[i] = val;
   }
 };

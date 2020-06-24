@@ -36,7 +36,7 @@ target_link_libraries(my_lib PUBLIC thinks::poisson_disk_sampling)
 
 Giving you easy access to the functionality in your code.
 
-```C++
+```C++17
 // my_lib.cpp
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h
 
@@ -141,6 +141,13 @@ auto Bar() -> std::vector<Vec3> {
       kRadius, kXMin, kXMax);
 }
 ```
+
+## Periodogram
+Poisson disk sampling generates samples from a blue noise distribution. We can verify this by plotting the corresponding periodogram, noticing that there are minimal low frequency components and no concentrated spikes in energy.
+
+The image below was generated using the code in [one of the provided examples](https://github.com/thinks/poisson-disk-sampling/blob/master/thinks/poisson_disk_sampling/examples/periodogram_example.cc) and is an average over 100 sampling patterns (original pixel resolution 2048x2048).
+
+![Average periodogram](https://github.com/thinks/poisson-disk-sampling/blob/master/images/avg_periodogram_512.png "Average periodogram")
 
 ## Tests
 

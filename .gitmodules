@@ -4,3 +4,12 @@
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
+[submodule "external/Simple-FFT"]
+	path = external/Simple-FFT
+	url = https://github.com/d1vanov/Simple-FFT.git
+[submodule "external/hedley"]
+	path = external/hedley
+	url = https://github.com/nemequ/hedley.git
+[submodule "external/stb"]
+	path = external/stb
+	url = https://github.com/nothings/stb.git

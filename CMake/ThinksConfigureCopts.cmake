@@ -4,43 +4,7 @@
 #
 # Inspired by Abseil (https://github.com/abseil/abseil-cpp).
 
-# target_compile_options(thinks_poisson_disk_sampling_test PRIVATE
-#  # Clang warnings.
-#  $<$<CXX_COMPILER_ID:Clang>:
-#    -Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wno-c++98-compat -Werror >
-#  # GCC warnings.
-#  $<$<CXX_COMPILER_ID:GNU>:
-#    -Wall -Wextra -Wshadow -Werror >
-#  # MSVC warnings.
-#  $<$<CXX_COMPILER_ID:MSVC>:
-#    /W4 /WX >)
-
-#target_compile_options(thinks_poisson_disk_sampling_examples PRIVATE
-#  # Clang warnings.
-#  $<$<CXX_COMPILER_ID:Clang>:
-#    -Wall 
-#    -Wextra 
-#    -Wconversion 
-#    -Wsign-conversion 
-#    -Wshadow 
-#    -Wno-c++98-compat 
-#    -Wno-c++98-compat-pedantic 
-#    -Werror 
-#  >
-#  # GCC warnings.
-#  $<$<CXX_COMPILER_ID:GNU>:
-#    -Wall 
-#    -Wextra 
-#    -Wshadow 
-#    -Werror 
-#  >
-#  # MSVC warnings.
-#  $<$<CXX_COMPILER_ID:MSVC>:
-#    /W4 
-#    /WX 
-#  >)
-
-include(ThinksCoptsClang)
+include(ThinksCoptsClangCl)
 include(ThinksCoptsGcc)
 include(ThinksCoptsLlvm)
 include(ThinksCoptsMsvc)
@@ -98,8 +62,8 @@ endif()
 if("${CMAKE_CXX_STANDARD}" EQUAL 98)
   message(FATAL_ERROR "thinks: requires at least C++14")
 elseif(NOT "${CMAKE_CXX_STANDARD}")
-  message(STATUS "thinks: No CMAKE_CXX_STANDARD set, assuming 14")
-  set(THINKS_CXX_STANDARD 14)
+  message(STATUS "thinks: No CMAKE_CXX_STANDARD set, assuming 17")
+  set(THINKS_CXX_STANDARD 17)
 else()
   set(THINKS_CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 endif()
