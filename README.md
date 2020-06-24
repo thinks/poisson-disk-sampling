@@ -36,7 +36,7 @@ target_link_libraries(my_lib PUBLIC thinks::poisson_disk_sampling)
 
 Giving you easy access to the functionality in your code.
 
-```C++
+```C++17
 // my_lib.cpp
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h
 
@@ -141,6 +141,10 @@ auto Bar() -> std::vector<Vec3> {
       kRadius, kXMin, kXMax);
 }
 ```
+
+## Peridogram
+![Average periodogram](https://github.com/thinks/poisson-disk-sampling/blob/master/images/avg_periodogram_512.png "Average periodogram")
+
 
 ## Tests
 

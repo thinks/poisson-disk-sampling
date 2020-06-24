@@ -284,7 +284,7 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
 
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   try {
-    constexpr auto kImageCount = 10U;
+    constexpr auto kImageCount = 100U;
     constexpr auto kPixelSize = 2048U;
 
     constexpr auto kRadius = 1.0;
