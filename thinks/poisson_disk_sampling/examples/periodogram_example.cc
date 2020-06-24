@@ -22,6 +22,7 @@ _Pragma("GCC diagnostic ignored \"-Wconversion\"")
 _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
 _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
 #elif defined(__clang__)
+_Pragma("clang diagnostic ignored \"-Wcast-qual\"")
 _Pragma("clang diagnostic ignored \"-Wmissing-prototypes\"")
 _Pragma("clang diagnostic ignored \"-Wimplicit-fallthrough\"")
 #endif
