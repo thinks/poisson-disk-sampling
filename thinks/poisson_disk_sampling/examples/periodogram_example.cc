@@ -280,7 +280,7 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
     std::cerr << "failed writing image";
     std::abort();
   }
-} 
+}
 
 int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
   try {
