@@ -35,7 +35,8 @@
 *.opendb
 *.ipch
 
-.vs
+.vs/
+.vscode/
 ipch/
 build/
-.vscode/c_cpp_properties.json
+CMakeSettings.json
