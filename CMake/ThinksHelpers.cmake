@@ -190,7 +190,7 @@ function(thinks_cc_executable)
   )
   target_compile_definitions(${_NAME} 
     PUBLIC 
-      ${THINKS_CC_LIB_DEFINES}
+      ${THINKS_CC_EXE_DEFINES}
   )
 
   # Add all 'thinks' targets to a a folder in the IDE for organization.
