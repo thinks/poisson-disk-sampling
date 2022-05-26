@@ -8,88 +8,55 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "hedley.h"
-#include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
-
-// clang-format off
-HEDLEY_DIAGNOSTIC_PUSH
-#if defined(HEDLEY_MSVC_VERSION)
-#define STBI_MSC_SECURE_CRT
-#elif defined(HEDLEY_GCC_VERSION)
-_Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
-_Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
-_Pragma("GCC diagnostic ignored \"-Wconversion\"")
-_Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
-_Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
-#elif defined(__clang__)
-_Pragma("clang diagnostic ignored \"-Wcast-qual\"")
-_Pragma("clang diagnostic ignored \"-Wmissing-prototypes\"")
-_Pragma("clang diagnostic ignored \"-Wimplicit-fallthrough\"")
-#endif
+#include "simple_fft/fft.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+// #define STBI_MSC_SECURE_CRT
 #include "stb_image_write.h"
-HEDLEY_DIAGNOSTIC_POP
 
-HEDLEY_DIAGNOSTIC_PUSH
-#if defined (HEDLEY_GCC_VERSION)
-_Pragma("GCC diagnostic ignored \"-Wconversion\"")
-_Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
-#endif
-#include "simple_fft/fft.h"
-HEDLEY_DIAGNOSTIC_POP
-// clang-format on
+#include "tph/poisson_disk_sampling.hpp"
 
-HEDLEY_WARN_UNUSED_RESULT
-static HEDLEY_CONSTEXPR auto Reinterval(
-    const double in_val, const double old_min, const double old_max,
-    const double new_min, const double new_max) noexcept -> double {
+[[nodiscard]] static constexpr auto Reinterval(const double in_val,
+                                               const double old_min,
+                                               const double old_max,
+                                               const double new_min,
+                                               const double new_max) noexcept -> double {
   return (old_max - old_min) == 0.0
              ? new_max
-             : (((in_val - old_min) * (new_max - new_min)) /
-                (old_max - old_min)) +
-                   new_min;
+             : (((in_val - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
 }
 
 template <typename PixelT>
 class Image {
- public:
+public:
   Image(const std::size_t width, const std::size_t height)
       : _width(width), _height(height), _pixels(_width * _height, PixelT{0}) {}
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT constexpr auto width() const -> std::size_t {
-    return _width;
-  }
+  [[nodiscard]] constexpr auto width() const -> std::size_t { return _width; }
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT constexpr auto height() const -> std::size_t {
-    return _height;
-  }
+  [[nodiscard]] constexpr auto height() const -> std::size_t { return _height; }
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT auto data() const -> const PixelT* {
-    return _pixels.data();
-  }
+  [[nodiscard]] auto data() const -> const PixelT* { return _pixels.data(); }
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT auto data() -> PixelT* { return _pixels.data(); }
+  [[nodiscard]] auto data() -> PixelT* { return _pixels.data(); }
 
-  HEDLEY_WARN_UNUSED_RESULT
-  auto operator()(const std::size_t i, const std::size_t j) -> PixelT& {
+  [[nodiscard]] auto operator()(const std::size_t i, const std::size_t j) noexcept -> PixelT& {
     return _pixels[_linearIndex(i, j)];
   }
 
-  HEDLEY_WARN_UNUSED_RESULT
-  auto operator()(const std::size_t i, const std::size_t j) const -> const PixelT& {
+  [[nodiscard]] auto operator()(const std::size_t i, const std::size_t j) const -> const PixelT& {
     return _pixels[_linearIndex(i, j)];
   }
 
- private:
-  HEDLEY_WARN_UNUSED_RESULT
+private:
+  [[nodiscard]]
   // NOLINTNEXTLINE
-  constexpr std::size_t _linearIndex(const std::size_t i,
-                                     const std::size_t j) const {
+  constexpr std::size_t
+  _linearIndex(const std::size_t i, const std::size_t j) const noexcept {
     return i + _width * j;
   }
 
@@ -98,6 +65,7 @@ class Image {
   std::vector<PixelT> _pixels;
 };
 
+//[[nodiscard]] 
 static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
     -> Image<double>& {
   if (!(rhs.width() == lhs->width() && rhs.height() == lhs->height())) {
@@ -115,8 +83,7 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   return *lhs;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto Scaled(const Image<double>& img,
-                                             const double scalar) noexcept
+[[nodiscard]] static auto Scaled(const Image<double>& img, const double scalar) noexcept
     -> Image<double> {
   Image<double> out = img;
   const auto w = out.width();
@@ -129,8 +96,7 @@ HEDLEY_WARN_UNUSED_RESULT static auto Scaled(const Image<double>& img,
   return out;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto SubtractAverage(
-    const Image<double>& img) noexcept -> Image<double> {
+[[nodiscard]] static auto SubtractAverage(const Image<double>& img) noexcept -> Image<double> {
   auto out = img;
   const auto w = out.width();
   const auto h = out.height();
@@ -151,8 +117,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto SubtractAverage(
   return out;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
-    const Image<double>& img_in) noexcept -> Image<std::complex<double>> {
+[[nodiscard]] static auto Fft2d(const Image<double>& img_in) noexcept
+    -> Image<std::complex<double>> {
   // Create a complex image with imaginary components set to zero.
   auto c_img = Image<std::complex<double>>(img_in.width(), img_in.height());
   const auto w = c_img.width();
@@ -164,8 +130,7 @@ HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
   }
 
   const char* error_description = nullptr;
-  if (!simple_fft::FFT(c_img, c_img.width(), c_img.height(),
-                       error_description)) {
+  if (!simple_fft::FFT(c_img, c_img.width(), c_img.height(), error_description)) {
     std::cerr << "FFT error: " << error_description;
     std::abort();
   }
@@ -173,8 +138,7 @@ HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
   return c_img;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
-    const Image<std::complex<double>>& fft_img) noexcept
+[[nodiscard]] static auto FftShift2d(const Image<std::complex<double>>& fft_img) noexcept
     -> Image<std::complex<double>> {
   if (!(fft_img.width() % 2 == 0 && fft_img.height() % 2 == 0)) {
     std::cerr << "FFT shift error: odd dimension";
@@ -207,8 +171,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
 }
 
 // The periodogram is the squared magnitude of the FFT bins.
-HEDLEY_WARN_UNUSED_RESULT static auto Periodogram(
-    const Image<std::complex<double>>& fft_img) noexcept -> Image<double> {
+[[nodiscard]] static auto Periodogram(const Image<std::complex<double>>& fft_img) noexcept
+    -> Image<double> {
   auto img = Image<double>(fft_img.width(), fft_img.height());
   const auto w = img.width();
   const auto h = img.height();
@@ -221,27 +185,25 @@ HEDLEY_WARN_UNUSED_RESULT static auto Periodogram(
   return img;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto CreateSampleImage(
-    const std::size_t width, const std::size_t height,
-    const std::array<double, 2>& sample_min,
-    const std::array<double, 2>& sample_max,
-    const std::vector<std::array<double, 2>>& samples) noexcept
+[[nodiscard]] static auto CreateSampleImage(const std::size_t width,
+                                            const std::size_t height,
+                                            const std::array<double, 2>& sample_min,
+                                            const std::array<double, 2>& sample_max,
+                                            const std::vector<double>& samples) noexcept
     -> Image<double> {
   Image<double> img(width, height);
-  for (const auto& sample : samples) {
-    const auto i = static_cast<std::size_t>(
-        Reinterval(sample[0], sample_min[0], sample_max[0], 0.0,
-                   static_cast<double>(width - 1)));
-    const auto j = static_cast<std::size_t>(
-        Reinterval(sample[1], sample_min[1], sample_max[1], 0.0,
-                   static_cast<double>(height - 1)));
+  const auto sample_count = samples.size() / 2U;
+  for (std::decay_t<decltype(sample_count)> k = 0; k < sample_count; ++k) {
+    const auto i = static_cast<std::size_t>(Reinterval(
+        samples[2 * k], sample_min[0], sample_max[0], 0.0, static_cast<double>(width - 1)));
+    const auto j = static_cast<std::size_t>(Reinterval(
+        samples[2 * k + 1], sample_min[1], sample_max[1], 0.0, static_cast<double>(height - 1)));
     img(i, j) = 1.0;
   }
   return img;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
-    -> Image<std::uint8_t> {
+[[nodiscard]] static auto To8bits(const Image<double>& img) noexcept -> Image<std::uint8_t> {
   double min_pixel = std::numeric_limits<double>::max();
   double max_pixel = std::numeric_limits<double>::lowest();
   const auto w = img.width();
@@ -258,8 +220,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
   Image<std::uint8_t> out(w, h);
   for (auto i = 0U; i < w; ++i) {
     for (auto j = 0U; j < h; ++j) {
-      out(i, j) = static_cast<std::uint8_t>(Reinterval(
-          img(i, j), min_pixel, max_pixel, kMinMappedPixel, kMaxMappedPixel));
+      out(i, j) = static_cast<std::uint8_t>(
+          Reinterval(img(i, j), min_pixel, max_pixel, kMinMappedPixel, kMaxMappedPixel));
     }
   }
   return out;
@@ -282,7 +244,7 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
   }
 }
 
-int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
+int main(int /*argc*/, char* /*argv*/[]) { // NOLINT
   try {
     constexpr auto kImageCount = 100U;
     constexpr auto kPixelSize = 2048U;
@@ -294,15 +256,18 @@ int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
 
     Image<double> avg_periodogram_img(kPixelSize, kPixelSize);
     for (auto i = 0U; i < kImageCount; ++i) {
-      AddEq(
-          Scaled(Periodogram(FftShift2d(Fft2d(SubtractAverage(CreateSampleImage(
-                     avg_periodogram_img.width(), avg_periodogram_img.height(),
-                     kXMin, kXMax,
-                     thinks::PoissonDiskSampling(kRadius, kXMin, kXMax,
-                                                 kMaxSampleAttempts,
-                                                 /* seed */ i)))))),
-                 1.0 / kImageCount),
-          &avg_periodogram_img);
+      AddEq(Scaled(Periodogram(FftShift2d(Fft2d(SubtractAverage(
+                       CreateSampleImage(avg_periodogram_img.width(),
+                                         avg_periodogram_img.height(),
+                                         kXMin,
+                                         kXMax,
+                                         tph::PoissonDiskSampling(kRadius,
+                                                                  kXMin,
+                                                                  kXMax,
+                                                                  kMaxSampleAttempts,
+                                                                  /*seed=*/i)))))),
+                   1.0 / kImageCount),
+            &avg_periodogram_img);
     }
     WriteImage("avg_periodogram.png", avg_periodogram_img);
   } catch (std::exception& e) {

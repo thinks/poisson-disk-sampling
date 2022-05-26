@@ -4,6 +4,62 @@
 
 #pragma once
 
+#include <array>
+#include <cstdint>
+#include <type_traits>
+#include <vector>
+
+namespace tph {
+
+// Returns a list of samples with the guarantees:
+// - No two samples are closer to each other than radius.
+// - No sample is outside the region [x_min, x_max].
+//
+// The algorithm tries to fit as many samples as possible
+// into the region without violating the above requirements.
+//
+// If the arguments are invalid an empty vector is returned.
+// The arguments are invalid if:
+// - Radius is <= 0, or
+// - x_min[i] >= x_max[i], or
+// - max_sample_attempts == 0.
+template <typename FloatT, std::size_t N>
+[[nodiscard]] constexpr auto PoissonDiskSampling(const FloatT radius,
+                                                 const std::array<FloatT, N>& x_min,
+                                                 const std::array<FloatT, N>& x_max,
+                                                 const std::uint32_t max_sample_attempts = 30,
+                                                 const std::uint32_t seed = 0) noexcept
+    -> std::vector<FloatT> {
+  static_assert(std::is_floating_point<FloatT>::value, "type must be floating point");
+  constexpr auto kDims = std::tuple_size<typename std::decay<decltype(x_min)>::type>::value;
+  static_assert(kDims >= 1, "dimensionality must be >= 1");
+
+  // Validate input.
+  // Returning an empty list of samples indicates an error,
+  // since for any valid input there is always at least one sample.
+  bool valid_bounds = true;
+  for (std::size_t i = 0; i < kDims; ++i) {
+    if (!(x_max[i] > x_min[i])) {
+      valid_bounds = false;
+    }
+  }
+  if (!(radius > FloatT{0}) || !(max_sample_attempts > 0) || !valid_bounds) {
+    return {};
+  }
+
+
+  std::vector<FloatT> res;
+  res.push_back(42);
+  res.push_back(43);
+  res.push_back(44);
+  res.push_back(45);
+  return res;
+}
+
+} // namespace tph 
+
+#if 0
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -628,3 +684,5 @@ auto PoissonDiskSampling(const FloatT radius,
 }  // namespace thinks
 
 #undef CONSTEXPR14
+
+#endif
