@@ -35,25 +35,3 @@ target_link_libraries(simple_example
   PRIVATE
     tph_poisson_disk_sampling::tph_poisson_disk_sampling
 )
-
-# thinks_cc_executable(
-#   NAME
-#     vec_traits_in_namespace_example
-#   SRCS
-#     "vec_traits_in_namespace_example.cc"
-#   COPTS
-#     ${THINKS_DEFAULT_COPTS}
-#   DEPS
-#     thinks::poisson_disk_sampling
-# )
-
-# thinks_cc_executable(
-#   NAME
-#     vec_traits_passed_in_example
-#   SRCS
-#     "vec_traits_passed_in_example.cc"
-#   COPTS
-#     ${THINKS_DEFAULT_COPTS}
-#   DEPS
-#     thinks::poisson_disk_sampling
-# )
