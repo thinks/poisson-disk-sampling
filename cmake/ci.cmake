@@ -34,7 +34,7 @@ message(STATUS "🔖 GCC ${GCC_TOOL_VERSION} (${GCC_TOOL})")
 # -Wno-padded                     We do not care about padding warnings.
 # -Wno-covered-switch-default     All switches list all cases and a default case.
 # -Wno-weak-vtables               The library is header-only.
-# -Wreserved-identifier           See https://github.com/onqtam/doctest/issues/536.
+# -Wno-reserved-identifier        See https://github.com/onqtam/doctest/issues/536.
 
 set(CLANG_CXXFLAGS
     -Werror
