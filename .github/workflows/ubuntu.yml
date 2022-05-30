@@ -33,9 +33,9 @@ jobs:
       #     platform: x64      
       - uses: seanmiddleditch/gha-setup-ninja@master
       - name: cmake
-        run: cmake -S . -B build -DTPH_CI=On
+        run: cmake -S . -B build_gcc -DTPH_CI=On
       - name: build
-        run: cmake --build build --target ci_test_gcc
+        run: cmake --build build_gcc --target ci_test_gcc
 
   # ci_static_analysis:
   #   runs-on: ubuntu-latest

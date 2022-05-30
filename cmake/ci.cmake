@@ -352,9 +352,9 @@ add_custom_target(ci_test_gcc
   COMMAND CXX=${GCC_TOOL} CXXFLAGS="${GCC_CXXFLAGS}" ${CMAKE_COMMAND}
     -DCMAKE_BUILD_TYPE=Debug -GNinja
     -DTPH_BuildTests=ON -DTPH_BuildExamples=ON
-    -S${PROJECT_SOURCE_DIR} -B${PROJECT_BINARY_DIR}/build_gcc
-  COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR}/build_gcc
-  COMMAND cd ${PROJECT_BINARY_DIR}/build_gcc && ${CMAKE_CTEST_COMMAND} --parallel ${N} --output-on-failure
+    -S${PROJECT_SOURCE_DIR} -B${PROJECT_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR}
+  COMMAND cd ${PROJECT_BINARY_DIR} && ${CMAKE_CTEST_COMMAND} --parallel ${N} --output-on-failure
   COMMENT "Compile and test with GCC using maximal warning flags"
 )
 
