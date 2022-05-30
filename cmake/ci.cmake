@@ -90,22 +90,22 @@ set(GCC_CXXFLAGS
   -Wanalyzer-shift-count-negative
   -Wanalyzer-shift-count-overflow
   -Wanalyzer-stale-setjmp-buffer
-  -Wanalyzer-tainted-allocation-size
+  #-Wanalyzer-tainted-allocation-size
   -Wanalyzer-tainted-array-index
-  -Wanalyzer-tainted-divisor
-  -Wanalyzer-tainted-offset
-  -Wanalyzer-tainted-size
+  #-Wanalyzer-tainted-divisor
+  #-Wanalyzer-tainted-offset
+  #-Wanalyzer-tainted-size
   -Wanalyzer-too-complex
   -Wanalyzer-unsafe-call-within-signal-handler
   -Wanalyzer-use-after-free
   -Wanalyzer-use-of-pointer-in-stale-stack-frame
-  -Wanalyzer-use-of-uninitialized-value
+  #-Wanalyzer-use-of-uninitialized-value
   -Wanalyzer-write-to-const
   -Wanalyzer-write-to-string-literal
   -Warith-conversion
   -Warray-bounds
   -Warray-bounds=2
-  -Warray-compare
+  #-Warray-compare
   -Warray-parameter=2
   -Wattribute-alias=2
   -Wattribute-warning
@@ -116,15 +116,15 @@ set(GCC_CXXFLAGS
   -Wbuiltin-macro-redefined
   -Wc++0x-compat
   -Wc++11-compat
-  -Wc++11-extensions
+  #-Wc++11-extensions
   -Wc++14-compat
-  -Wc++14-extensions
+  #-Wc++14-extensions
   -Wc++17-compat
-  -Wc++17-extensions
+  #-Wc++17-extensions
   -Wc++1z-compat
   -Wc++20-compat
-  -Wc++20-extensions
-  -Wc++23-extensions
+  #-Wc++20-extensions
+  #-Wc++23-extensions
   -Wc++2a-compat
   -Wcannot-profile
   -Wcast-align
@@ -142,7 +142,7 @@ set(GCC_CXXFLAGS
   -Wconditionally-supported
   -Wconversion
   -Wconversion-null
-  -Wcoverage-invalid-line-number
+  #-Wcoverage-invalid-line-number
   -Wcoverage-mismatch
   -Wcpp
   -Wctad-maybe-unsupported
@@ -187,14 +187,14 @@ set(GCC_CXXFLAGS
   -Wignored-qualifiers
   -Wimplicit-fallthrough=5
   -Winaccessible-base
-  -Winfinite-recursion
+  #-Winfinite-recursion
   -Winherited-variadic-ctor
   -Winit-list-lifetime
   -Winit-self
   -Winline
   -Wint-in-bool-context
   -Wint-to-pointer-cast
-  -Winterference-size
+  #-Winterference-size
   -Winvalid-imported-macros
   -Winvalid-memory-model
   -Winvalid-offsetof
@@ -218,7 +218,7 @@ set(GCC_CXXFLAGS
   -Wmissing-field-initializers
   -Wmissing-include-dirs
   -Wmissing-profile
-  -Wmissing-requires
+  #-Wmissing-requires
   -Wmultichar
   -Wmultiple-inheritance
   -Wmultistatement-macros
@@ -234,7 +234,7 @@ set(GCC_CXXFLAGS
   -Wnull-dereference
   -Wodr
   -Wold-style-cast
-  -Wopenacc-parallelism
+  #-Wopenacc-parallelism
   -Wopenmp-simd
   -Woverflow
   -Woverlength-strings
