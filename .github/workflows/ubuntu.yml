@@ -26,6 +26,11 @@ jobs:
     # container: ghcr.io/nlohmann/json-ci:v2.3.0
     steps:
       - uses: actions/checkout@v3
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: latest
+          platform: x64      
       - uses: seanmiddleditch/gha-setup-ninja@master
       - name: cmake
         run: cmake -S . -B build -DTPH_CI=On
