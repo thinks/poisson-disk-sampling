@@ -58,6 +58,7 @@ set(CLANG_CXXFLAGS
 # -Wno-padded                     We do not care about padding warnings.
 # -Wno-system-headers             We do not care about warnings in system headers.
 # -Wno-templates                  The library uses templates.
+# -Wno-form                       Don't warn for unrecognized command line options. 
 
 set(GCC_CXXFLAGS
   -pedantic
@@ -172,6 +173,7 @@ set(GCC_CXXFLAGS
   -Wextra-semi
   -Wfloat-conversion
   -Wfloat-equal
+  -Wno-form
   -Wformat-diag
   -Wformat-overflow=2
   -Wformat-signedness
