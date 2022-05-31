@@ -6,6 +6,7 @@
 ## Catch2
 ##
 
+# TODO: option(TPH_BuildCatch2, "...", ON)
 option(ENABLE_CATCH2_BUILD "Enable reconfiguring and rerunning the Catch2 build." ON)
 
 FetchContent_Declare(catch2

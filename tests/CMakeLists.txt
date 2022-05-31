@@ -36,13 +36,10 @@ endif()
 ##
 ## test_main library with shared code to speed up build and common settings.
 ##
-add_library(test_main OBJECT src/unit.cpp)
-# target_compile_definitions(test_main PUBLIC
-#     DOCTEST_CONFIG_SUPER_FAST_ASSERTS
-#     JSON_TEST_KEEP_MACROS
-# )
-target_compile_features(test_main PRIVATE cxx_std_11)
-target_compile_options(test_main 
+
+add_executable(unit_tests_main "src/unit_tests.cpp")
+target_compile_features(unit_tests_main PRIVATE cxx_std_11)
+target_compile_options(unit_tests_main 
   PUBLIC
     $<$<CXX_COMPILER_ID:MSVC>:/EHsc;$<$<CONFIG:Release>:/Od>>
     # MSVC: Force to always compile with W4
@@ -51,19 +48,35 @@ target_compile_options(test_main
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-deprecated;-Wno-float-equal>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
 )
-target_include_directories(test_main 
-  PUBLIC
-    ${PROJECT_BINARY_DIR}/include # ???
-)
-target_link_libraries(test_main 
-  PUBLIC 
+# target_include_directories(test_main 
+#   PUBLIC
+#     ${PROJECT_BINARY_DIR}/include # ???
+# )
+
+target_link_libraries(unit_tests_main 
+  PRIVATE 
     Catch2::Catch2WithMain
     ${TPH_PDS_TARGET_NAME}
 )
 
+# Set and require C++ standard.
+set_target_properties(unit_tests_main PROPERTIES
+  CXX_STANDARD ${CMAKE_CXX_STANDARD}
+  CXX_STANDARD_REQUIRED ON
+)
+
+add_test(NAME unit_tests_main COMMAND unit_tests_main)
+
+# target_compile_definitions(test_main PUBLIC
+#     DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+#     JSON_TEST_KEEP_MACROS
+# )
+
+
 ##
 ## Define test- and standard-specific build settings.
 ##
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8.0
     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0 AND NOT MINGW)
@@ -81,7 +94,7 @@ endif()
 # endif()
 
 ##
-## Add unit tests
+## Add unit tests.
 ##
 
 if("${TPH_TestStandards}" STREQUAL "")
@@ -117,17 +130,21 @@ endforeach()
 
 # *DO NOT* use tph_test_set_test_options() below this line
 
+
+
+
+
 ##
 ## Test the generated build configs.
 ##
 
-# these tests depend on the generated file nlohmann_jsonConfig.cmake
-if (TPH_Install)
-    #add_subdirectory(cmake_import)
-    #add_subdirectory(cmake_import_minver)
-endif()
+# These tests depend on the generated file nlohmann_jsonConfig.cmake.
+# if (TPH_Install)
+#  add_subdirectory(cmake_import)
+#  add_subdirectory(cmake_import_minver)
+# endif()
 
-add_subdirectory(cmake_add_subdirectory)
+# TODO(tohi): Enable!
+#add_subdirectory(cmake_add_subdirectory)
 #add_subdirectory(cmake_fetch_content)
-add_subdirectory(cmake_fetch_content)
-add_subdirectory(cmake_target_include_directories)
+#add_subdirectory(cmake_target_include_directories)

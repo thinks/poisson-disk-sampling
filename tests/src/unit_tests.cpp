@@ -5,7 +5,7 @@
 #include <catch2/catch_all.hpp>
 
 #include <tph/poisson_disk_sampling.hpp>
-#include "all_impl.hpp"
+#include "test_impl.hpp"
 
 namespace {
 

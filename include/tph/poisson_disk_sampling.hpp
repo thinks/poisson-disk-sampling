@@ -47,6 +47,7 @@ template <typename FloatT, std::size_t N>
     return {};
   }
 
+  (void)seed;
 
   std::vector<FloatT> res;
   res.push_back(42);
