@@ -57,7 +57,7 @@
                 "TPH_CI": "ON",
                 "TPH_BuildTests": "ON",
                 "TPH_BuildExamples": "OFF",
-                "CMAKE_CXX_FLAGS": "-Werror -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-deprecated-declarations -Wno-extra-semi-stmt -Wno-padded -Wno-covered-switch-default -Wno-weak-vtables -Wno-reserved-identifier"
+                "CMAKE_CXX_FLAGS": "-Werror -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-deprecated-declarations -Wno-extra-semi-stmt -Wno-padded -Wno-covered-switch-default -Wno-weak-vtables"
             },
             "environment": {},
             "vendor": {}
