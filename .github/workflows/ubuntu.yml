@@ -19,7 +19,7 @@ jobs:
       - name: cmake
         run: cmake --preset=clang-ci -S .
       - name: build
-        run: cmake --build build_clang_ci --target all
+        run: cmake --build build --target all
 
   # ci_test_gcc:
   #   runs-on: ubuntu-latest
@@ -42,15 +42,16 @@ jobs:
         run: cmake --preset=gcc-ci S . 
       - name: Build
         #run: cmake --build build/gcc_ci --target ci_test_gcc
-        run: cmake --build build/gcc_ci --target all
+        run: cmake --build build --target all
 
   ci_test_standards:
     runs-on: ubuntu-latest
     #container: ghcr.io/nlohmann/json-ci:v2.3.0
     strategy:
       matrix:
-        standard: [11, 14, 17, 20]
+        #standard: [11, 14, 17, 20]
         # compiler: [gcc, clang]
+        standard: [11, 14, 17]
         compiler: [gcc]
     steps:
       - uses: actions/checkout@v3
