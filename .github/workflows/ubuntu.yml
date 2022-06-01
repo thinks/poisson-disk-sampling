@@ -97,6 +97,25 @@ jobs:
       - name: Build
         run: cmake --build --preset=clang
 
+  ci_clang_sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Use clang-12
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+          sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
+      - name: CMake
+        run: cmake --preset=clang -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=address -fsanitize=undefined -fsanitize=integer -fsanitize=nullability -fno-omit-frame-pointer -fno-sanitize-recover=all -fno-sanitize=unsigned-integer-overflow -fno-sanitize=unsigned-shift-base" -DTPH_BuildTests=ON -DTPH_BuildExamples=OFF -S .
+      - name: Build
+        run: cmake --build --preset=clang
+      - name: Test
+        run: ctest --preset=clang
+
   ci_cppcheck:
     runs-on: ubuntu-latest
     steps:
@@ -107,7 +126,7 @@ jobs:
           sudo apt-get install cppcheck
       - name: Test
         run: cppcheck --enable=warning --suppress=missingReturn --inline-suppr --inconclusive --force --std=c++11 ./include/tph/poisson_disk_sampling.hpp --error-exitcode=1
-
+    
 
   # ci_static_analysis:
   #   runs-on: ubuntu-latest
@@ -121,51 +140,3 @@ jobs:
   #       run: cmake -S . -B build -DTPH_CI=On
   #     - name: build
   #       run: cmake --build build --target ${{ matrix.target }}
-
-  # ci_cmake_options:
-  #   runs-on: ubuntu-latest
-  #   container: ghcr.io/nlohmann/json-ci:v2.3.0
-  #   strategy:
-  #     matrix:
-  #       target: [ci_test_diagnostics, ci_test_noexceptions, ci_test_noimplicitconversions]
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: cmake
-  #       run: cmake -S . -B build -DTPH_CI=On
-  #     - name: build
-  #       run: cmake --build build --target ${{ matrix.target }}
-
-  # ci_test_coverage:
-  #   runs-on: ubuntu-latest
-  #   container: ghcr.io/nlohmann/json-ci:v2.3.0
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: cmake
-  #       run: cmake -S . -B build -DTPH_CI=On
-  #     - name: build
-  #       run: cmake --build build --target ci_test_coverage
-  #     - name: archive coverage report
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: code-coverage-report
-  #         path: /__w/json/json/build/html
-  #     - name: Coveralls
-  #       uses: coverallsapp/github-action@master
-  #       with:
-  #         github-token: ${{ secrets.GITHUB_TOKEN }}
-  #         path-to-lcov: /__w/json/json/build/json.info.filtered.noexcept
-
-  # ci_test_compilers:
-  #   runs-on: ubuntu-latest
-  #   container: ghcr.io/nlohmann/json-ci:v2.3.0
-  #   strategy:
-  #     matrix:
-  #       compiler: [g++-4.8, g++-4.9, g++-5, g++-6, g++-7, g++-8, g++-9, g++-10, clang++-3.5, clang++-3.6, clang++-3.7, clang++-3.8, clang++-3.9, clang++-4.0, clang++-5.0, clang++-6.0, clang++-7, clang++-8, clang++-9, clang++-10, clang++-11, clang++-12, clang++-13, clang++-14]
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: cmake
-  #       run: cmake -S . -B build -DTPH_CI=On
-  #     - name: build
-  #       run: cmake --build build --target ci_test_compiler_${{ matrix.compiler }}
-
-
