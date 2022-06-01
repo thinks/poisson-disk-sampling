@@ -105,8 +105,8 @@ jobs:
         run: |
           sudo apt-get update 
           sudo apt-get install cppcheck
-      -name: Test
-       run: cppcheck --enable=warning --suppress=missingReturn --inline-suppr --inconclusive --force --std=c++11 ./include/tph/poisson_disk_sampling.hpp --error-exitcode=1
+      - name: Test
+        run: cppcheck --enable=warning --suppress=missingReturn --inline-suppr --inconclusive --force --std=c++11 ./include/tph/poisson_disk_sampling.hpp --error-exitcode=1
 
 
   # ci_static_analysis:
