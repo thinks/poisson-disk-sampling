@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <vector>
 
-#if __cplusplus >= 201402L  // C++14 or later.
+#if __cplusplus >= 201402L // C++14 or later.
 #define TPH_CONSTEXPR constexpr
 #else
 #define TPH_CONSTEXPR inline
@@ -18,7 +18,7 @@
 #if __cplusplus >= 201703L // C++17 or later.
 #define TPH_NODISCARD [[nodiscard]]
 #else
-#define TPH_NODISCARD 
+#define TPH_NODISCARD
 #endif
 
 namespace tph {
@@ -36,11 +36,11 @@ namespace tph {
 // - x_min[i] >= x_max[i], or
 // - max_sample_attempts == 0.
 template <typename FloatT, std::size_t N>
-TPH_NODISCARD constexpr auto PoissonDiskSampling(const FloatT radius,
-                                                 const std::array<FloatT, N>& x_min,
-                                                 const std::array<FloatT, N>& x_max,
-                                                 const std::uint32_t max_sample_attempts = 30,
-                                                 const std::uint32_t seed = 0) noexcept
+TPH_NODISCARD TPH_CONSTEXPR auto PoissonDiskSampling(const FloatT radius,
+                                                     const std::array<FloatT, N>& x_min,
+                                                     const std::array<FloatT, N>& x_max,
+                                                     const std::uint32_t max_sample_attempts = 30,
+                                                     const std::uint32_t seed = 0) noexcept
     -> std::vector<FloatT> {
   static_assert(std::is_floating_point<FloatT>::value, "type must be floating point");
   constexpr auto kDims = std::tuple_size<typename std::decay<decltype(x_min)>::type>::value;
@@ -69,7 +69,7 @@ TPH_NODISCARD constexpr auto PoissonDiskSampling(const FloatT radius,
   return res;
 }
 
-} // namespace tph 
+} // namespace tph
 
 #if 0
 
@@ -83,7 +83,7 @@ TPH_NODISCARD constexpr auto PoissonDiskSampling(const FloatT radius,
 #include <type_traits>
 #include <vector>
 
-#if __cplusplus >= 201402L  // C++14 or later.
+#if __cplusplus >= 201402L // C++14 or later.
 #define CONSTEXPR14 constexpr
 #else
 #define CONSTEXPR14 inline

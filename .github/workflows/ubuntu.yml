@@ -83,8 +83,8 @@ jobs:
       - uses: seanmiddleditch/gha-setup-ninja@master
       - name: Install clang-tidy-9
         run: |
-            sudo apt-get install -y clang-tidy-9
-            sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-9 100      
+          sudo apt-get install -y clang-tidy-9
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-9 100      
       - name: Use clang-12
         run: |
           sudo apt install clang-12
@@ -97,6 +97,16 @@ jobs:
       - name: Build
         run: cmake --build --preset=clang
 
+  ci_cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update 
+          sudo apt-get install cppcheck
+      -name: Test
+       run: cppcheck --enable=warning --suppress=missingReturn --inline-suppr --inconclusive --force --std=c++11 ./include/tph/poisson_disk_sampling.hpp --error-exitcode=1
 
 
   # ci_static_analysis:
