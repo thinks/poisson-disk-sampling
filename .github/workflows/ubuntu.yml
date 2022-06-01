@@ -55,7 +55,7 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
-        standard: [11, 14, 17]
+        standard: [11, 14, 17, 20]
         #standard: [11, 14, 17, 20]
     steps:
       - uses: actions/checkout@v3
