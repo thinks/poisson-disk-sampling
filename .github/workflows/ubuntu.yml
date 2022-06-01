@@ -38,16 +38,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
-      # - name: Latest GCC
-      #   uses: egor-tensin/setup-gcc@v1
-      #   with:
-      #     version: latest
-      #     platform: x64     
-      # - name: Install gcc-11
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install gcc-11 g++-11
-      #   shell: bash 
       - name: Use gcc-10
         run: |
           sudo apt install gcc-10 g++-10
@@ -70,6 +60,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: [gcc] Use gcc-10 
+        if: matrix.compiler == "gcc"
+        run: |
+          sudo apt install gcc-10 g++-10
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+          sudo update-alternatives --set gcc /usr/bin/gcc-10        
       - name: CMake
         run: cmake --preset=${{ matrix.compiler }}-ci -S . -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
       - name: Build
