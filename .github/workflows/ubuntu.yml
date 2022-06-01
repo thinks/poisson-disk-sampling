@@ -35,7 +35,7 @@ jobs:
       - name: CMake
         run: cmake --preset=gcc-ci S .
       - name: Build
-        run: cmake --build build --preset=gcc-ci
+        run: cmake --build --preset=gcc-ci
       - name: Test
         run: cd build && ctest --preset=gcc-ci
 
@@ -58,7 +58,7 @@ jobs:
       - name: CMake
         run: cmake --preset=${{ matrix.compiler }}-ci -S . -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
       - name: Build
-        run: cmake --build build --preset=${{ matrix.compiler }}-ci
+        run: cmake --build --preset=${{ matrix.compiler }}-ci
       - name: Test
         run: cd build && ctest --preset=${{ matrix.compiler }}-ci
 
