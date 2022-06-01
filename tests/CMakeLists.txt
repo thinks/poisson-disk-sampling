@@ -34,6 +34,7 @@ target_link_libraries(unit_tests_main
 set_target_properties(unit_tests_main PROPERTIES
   CXX_STANDARD ${CMAKE_CXX_STANDARD}
   CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
 )
 
 add_test(NAME unit_tests_main COMMAND unit_tests_main)

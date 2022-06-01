@@ -15,6 +15,11 @@ target_link_libraries(json_example
      nlohmann_json::nlohmann_json
      tph_poisson_disk_sampling::tph_poisson_disk_sampling
 )
+set_target_properties(json_example PROPERTIES
+  CXX_STANDARD ${CMAKE_CXX_STANDARD}
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+)
 
 ##
 ## periodogram_example
@@ -26,6 +31,11 @@ target_link_libraries(periodogram_example
     nothings::stb
     tph_poisson_disk_sampling::tph_poisson_disk_sampling
 )
+set_target_properties(periodogram_example PROPERTIES
+  CXX_STANDARD ${CMAKE_CXX_STANDARD}
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+)
 
 ##
 ## simple_example
@@ -34,4 +44,9 @@ add_executable(simple_example simple_example.cc)
 target_link_libraries(simple_example
   PRIVATE
     tph_poisson_disk_sampling::tph_poisson_disk_sampling
+)
+set_target_properties(simple_example PROPERTIES
+  CXX_STANDARD ${CMAKE_CXX_STANDARD}
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
 )
