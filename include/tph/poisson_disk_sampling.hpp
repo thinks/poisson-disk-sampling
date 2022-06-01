@@ -43,13 +43,13 @@ TPH_NODISCARD constexpr auto Squared(const ArithT x) noexcept -> ArithT {
 template <typename FloatT, std::size_t N>
 class Grid {
 public:
+  static_assert(std::is_floating_point<FloatT>::value, "FloatT must be floating point");
+  static_assert(N >= 1, "N must be >= 1");
+
   using CellType = std::int32_t;
   using IndexType = std::array<std::int32_t, N>;
 
   static constexpr auto kDims = std::tuple_size<IndexType>::value;
-
-  static_assert(kDims >= 1, "grid dimensionality must be >= 1");
-  static_assert(std::is_floating_point<FloatT>::value, "FloatT must be floating point");
 
   Grid(const FloatT sample_radius,
        const std::array<FloatT, N>& x_min,
@@ -58,11 +58,11 @@ public:
         x_min_(x_min), x_max_(x_max), size_(GetGridSize_(x_min_, x_max_, dx_inv_)),
         cells_(GetCells_(size_)) {}
 
-  auto sample_radius() const noexcept -> FloatT { // NOLINT
+  auto sample_radius() const noexcept -> FloatT { 
     return sample_radius_;
   }
 
-  auto size() const noexcept -> IndexType { return size_; } // NOLINT
+  auto size() const noexcept -> IndexType { return size_; } 
 
   // Returns the index for a position along the i'th axis.
   // Note that the returned index may be negative.
@@ -193,6 +193,7 @@ TPH_NODISCARD auto PoissonDiskSampling(const FloatT radius,
   for (std::size_t i = 0; i < kDims; ++i) {
     if (!(x_max[i] > x_min[i])) {
       valid_bounds = false;
+      break;
     }
   }
   if (!(radius > FloatT{0}) || !(max_sample_attempts > 0) || !valid_bounds) {
