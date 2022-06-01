@@ -21,8 +21,6 @@
 #define TPH_NODISCARD 
 #endif
 
-using std::size_t;
-
 namespace tph {
 
 // Returns a list of samples with the guarantees:
