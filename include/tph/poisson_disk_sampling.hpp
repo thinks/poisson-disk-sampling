@@ -17,6 +17,7 @@
 #endif
 
 #include <array>       // std::array
+#include <cmath>       // std::sqrt, std::ceil
 #include <cstdint>     // std::uint32_t, etc
 #include <type_traits> // std::is_arithmetic
 #include <vector>      // std::vector
@@ -26,7 +27,7 @@ namespace pds_internal {
 
 // Assumes min_value <= max_value.
 template <typename ArithT>
-TPH_NODISCARD TPH_CONSTEXPR auto
+TPH_NODISCARD constexpr auto
 Clamped(const ArithT min_value, const ArithT max_value, const ArithT value) noexcept -> ArithT {
   static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
   return value < min_value ? min_value : (value > max_value ? max_value : value);
@@ -34,9 +35,130 @@ Clamped(const ArithT min_value, const ArithT max_value, const ArithT value) noex
 
 // Returns x squared (not checking for overflow).
 template <typename ArithT>
-TPH_NODISCARD TPH_CONSTEXPR auto Squared(const ArithT x) noexcept -> ArithT {
+TPH_NODISCARD constexpr auto Squared(const ArithT x) noexcept -> ArithT {
   static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
   return x * x;
+}
+
+template <typename FloatT, std::size_t N>
+class Grid {
+public:
+  using CellType = std::int32_t;
+  using IndexType = std::array<std::int32_t, N>;
+
+  static constexpr auto kDims = std::tuple_size<IndexType>::value;
+
+  static_assert(kDims >= 1, "grid dimensionality must be >= 1");
+  static_assert(std::is_floating_point<FloatT>::value, "FloatT must be floating point");
+
+  Grid(const FloatT sample_radius,
+       const std::array<FloatT, N>& x_min,
+       const std::array<FloatT, N>& x_max) noexcept
+      : sample_radius_(sample_radius), dx_(GetDx_(sample_radius_)), dx_inv_(FloatT{1} / dx_),
+        x_min_(x_min), x_max_(x_max), size_(GetGridSize_(x_min_, x_max_, dx_inv_)),
+        cells_(GetCells_(size_)) {}
+
+  auto sample_radius() const noexcept -> FloatT { // NOLINT
+    return sample_radius_;
+  }
+
+  auto size() const noexcept -> IndexType { return size_; } // NOLINT
+
+  // Returns the index for a position along the i'th axis.
+  // Note that the returned index may be negative.
+  template <typename FloatT2>
+  // NOLINTNEXTLINE
+  auto AxisIndex(const std::size_t i, const FloatT2 pos) const noexcept ->
+      typename IndexType::value_type {
+    using IndexValueType = typename IndexType::value_type;
+
+    return static_cast<IndexValueType>((static_cast<FloatT>(pos) - x_min_[i]) * dx_inv_);
+  }
+
+  // Note that the returned index elements may be negative.
+  template <typename VecTraitsT, typename VecT>
+  // NOLINTNEXTLINE
+  auto IndexFromSample(const VecT& sample) const noexcept -> IndexType {
+    static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
+
+    IndexType index = {};
+    for (std::size_t i = 0; i < kDims; ++i) {
+      index[i] = AxisIndex(i, VecTraitsT::Get(sample, i));
+    }
+    return index;
+  }
+
+  // NOLINTNEXTLINE
+  auto Cell(const IndexType& index) const noexcept -> CellType {
+    return cells_[LinearIndex_(index)];
+  }
+
+  // NOLINTNEXTLINE
+  auto Cell(const IndexType& index) noexcept -> CellType& { return cells_[LinearIndex_(index)]; }
+
+private:
+  FloatT sample_radius_;
+  FloatT dx_;
+  FloatT dx_inv_;
+  std::array<FloatT, N> x_min_;
+  std::array<FloatT, N> x_max_;
+  IndexType size_;
+  std::vector<CellType> cells_;
+
+  // Assumes that all elements in index are >= 0.
+  // NOLINTNEXTLINE
+  auto LinearIndex_(const IndexType& index) const noexcept -> std::size_t {
+    auto k = static_cast<std::size_t>(index[0]);
+    auto d = std::size_t{1};
+    for (auto i = std::size_t{1}; i < kDims; ++i) {
+      // Note: Not checking for "overflow".
+      d *= static_cast<std::size_t>(size_[i - 1]);
+      k += static_cast<std::size_t>(index[i]) * d;
+    }
+    return k;
+  }
+
+  // Assumes sample_radius is > 0.
+  static auto GetDx_(const FloatT sample_radius) noexcept -> FloatT {
+    // The grid cell size should be such that each cell can only
+    // contain one sample. We apply a scaling factor to avoid
+    // numerical issues.
+    constexpr auto kEps = static_cast<FloatT>(0.001);
+    constexpr auto kScale = FloatT{1} - kEps;
+    return kScale * sample_radius / std::sqrt(static_cast<FloatT>(N));
+  }
+
+  // Assumes that x_min is element-wise less than x_max.
+  // Assumes dx_inv > 0.
+  static auto GetGridSize_(const std::array<FloatT, N>& x_min,
+                           const std::array<FloatT, N>& x_max,
+                           const FloatT dx_inv) noexcept -> IndexType {
+    // Compute size in each dimension using grid cell size (dx).
+    auto grid_size = IndexType{};
+    for (auto i = std::size_t{0}; i < kDims; ++i) {
+      grid_size[i] =
+          static_cast<typename IndexType::value_type>(std::ceil((x_max[i] - x_min[i]) * dx_inv));
+    }
+    return grid_size;
+  }
+
+  static auto GetCells_(const IndexType& size) noexcept -> std::vector<std::int32_t> {
+    // Initialize cells with value -1, indicating no sample there.
+    // Cell values are later set to indices of samples.
+    auto linear_size = std::size_t{1};
+    for (auto i = std::size_t{0}; i < std::tuple_size<IndexType>::value; ++i) {
+      linear_size *= static_cast<std::size_t>(size[i]);
+    }
+    return std::vector<CellType>(linear_size, -1);
+  }
+};
+
+// Named contructor to help with type deduction.
+template <typename FloatT, std::size_t N>
+TPH_NODISCARD auto MakeGrid(const FloatT sample_radius,
+                            const std::array<FloatT, N>& x_min,
+                            const std::array<FloatT, N>& x_max) noexcept -> Grid<FloatT, N> {
+  return Grid<FloatT, N>(sample_radius, x_min, x_max);
 }
 
 } // namespace pds_internal
@@ -77,7 +199,12 @@ TPH_NODISCARD TPH_CONSTEXPR auto PoissonDiskSampling(const FloatT radius,
     return {};
   }
 
-  (void)seed;
+  // Acceleration grid.
+  auto grid = pds_internal::MakeGrid(radius, x_min, x_max);
+
+  auto samples = std::vector<FloatT>{};
+  auto active_indices = std::vector<std::uint32_t>{};
+  auto local_seed = seed;
 
   std::vector<FloatT> res;
   res.push_back(42);
@@ -109,24 +236,6 @@ TPH_NODISCARD TPH_CONSTEXPR auto PoissonDiskSampling(const FloatT radius,
 
 namespace thinks {
 namespace poisson_disk_sampling_internal {
-
-// Assumes min_value <= max_value.
-template <typename ArithT>
-// NOLINTNEXTLINE
-CONSTEXPR14 auto clamped(const ArithT min_value, const ArithT max_value,
-                         const ArithT value) noexcept -> ArithT {
-  static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
-  return value < min_value ? min_value
-                           : (value > max_value ? max_value : value);
-}
-
-// Returns x squared (not checking for overflow).
-template <typename ArithT>
-// NOLINTNEXTLINE
-CONSTEXPR14 auto squared(const ArithT x) noexcept -> ArithT {
-  static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
-  return x * x;
-}
 
 // Returns the squared magnitude of x (not checking for overflow).
 template <typename ArithT, std::size_t N>
