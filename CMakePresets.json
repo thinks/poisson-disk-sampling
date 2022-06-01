@@ -129,6 +129,18 @@
             }
         },
         {
+            "name": "clang",
+            "configurePreset": "clang",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 14,
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
             "name": "gcc-ci",
             "configurePreset": "gcc-ci",
             "output": {
