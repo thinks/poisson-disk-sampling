@@ -93,7 +93,7 @@ jobs:
           sudo update-alternatives --set clang /usr/bin/clang-12        
           sudo update-alternatives --set clang++ /usr/bin/clang++-12        
       - name: CMake
-        run: cmake --preset=clang -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_CLANG_TIDY=clang-tidy -DTPH_BuildTests=ON -DTPH_BuildExamples=OFF
+        run: cmake --preset=clang -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_CLANG_TIDY=clang-tidy -DTPH_BuildTests=ON -DTPH_BuildExamples=OFF -S .
       - name: Build
         run: cmake --build --preset=clang
 
