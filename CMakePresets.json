@@ -91,7 +91,7 @@
             "configurePreset": "clang-ci",
             "jobs": 14,
             "targets": [
-                "ci_test_clang"
+                "all"
             ]
         }
     ],
@@ -111,6 +111,18 @@
         {
             "name": "gcc-ci",
             "configurePreset": "gcc-ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 14,
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "gcc-clang",
+            "configurePreset": "gcc-clang",
             "output": {
                 "outputOnFailure": true
             },

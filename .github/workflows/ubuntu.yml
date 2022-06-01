@@ -18,9 +18,9 @@ jobs:
       - name: cmake
         run: cmake --preset=clang-ci -S .
       - name: build
-        run: cmake --build build --target all
+        run: cmake --build build --preset=clang-ci
       - name: Test
-        run: cd build && ctest --parallel 10 --output-on-failure
+        run: ctest --preset=clang-ci
 
   ci_test_gcc:
     runs-on: ubuntu-latest
@@ -41,7 +41,6 @@ jobs:
 
   ci_test_standards:
     runs-on: ubuntu-latest
-    #container: ghcr.io/nlohmann/json-ci:v2.3.0
     strategy:
       matrix:
         compiler: [gcc, clang]
@@ -60,7 +59,7 @@ jobs:
       - name: Build
         run: cmake --build --preset=${{ matrix.compiler }}-ci
       - name: Test
-        run: cd build && ctest --preset=${{ matrix.compiler }}-ci
+        run: ctest --preset=${{ matrix.compiler }}-ci
 
   # ci_static_analysis:
   #   runs-on: ubuntu-latest
