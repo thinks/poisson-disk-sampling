@@ -4,11 +4,6 @@
 
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <type_traits>
-#include <vector>
-
 #if __cplusplus >= 201402L // C++14 or later.
 #define TPH_CONSTEXPR constexpr
 #else
@@ -21,7 +16,30 @@
 #define TPH_NODISCARD
 #endif
 
+#include <array>       // std::array
+#include <cstdint>     // std::uint32_t, etc
+#include <type_traits> // std::is_arithmetic
+#include <vector>      // std::vector
+
 namespace tph {
+namespace pds_internal {
+
+// Assumes min_value <= max_value.
+template <typename ArithT>
+TPH_NODISCARD TPH_CONSTEXPR auto
+Clamped(const ArithT min_value, const ArithT max_value, const ArithT value) noexcept -> ArithT {
+  static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
+  return value < min_value ? min_value : (value > max_value ? max_value : value);
+}
+
+// Returns x squared (not checking for overflow).
+template <typename ArithT>
+TPH_NODISCARD TPH_CONSTEXPR auto Squared(const ArithT x) noexcept -> ArithT {
+  static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
+  return x * x;
+}
+
+} // namespace pds_internal
 
 // Returns a list of samples with the guarantees:
 // - No two samples are closer to each other than radius.
