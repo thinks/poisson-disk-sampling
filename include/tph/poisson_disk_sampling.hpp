@@ -176,11 +176,11 @@ TPH_NODISCARD auto MakeGrid(const FloatT sample_radius,
 // - x_min[i] >= x_max[i], or
 // - max_sample_attempts == 0.
 template <typename FloatT, std::size_t N>
-TPH_NODISCARD TPH_CONSTEXPR auto PoissonDiskSampling(const FloatT radius,
-                                                     const std::array<FloatT, N>& x_min,
-                                                     const std::array<FloatT, N>& x_max,
-                                                     const std::uint32_t max_sample_attempts = 30,
-                                                     const std::uint32_t seed = 0) noexcept
+TPH_NODISCARD auto PoissonDiskSampling(const FloatT radius,
+                                       const std::array<FloatT, N>& x_min,
+                                       const std::array<FloatT, N>& x_max,
+                                       const std::uint32_t max_sample_attempts = 30,
+                                       const std::uint32_t seed = 0) noexcept
     -> std::vector<FloatT> {
   static_assert(std::is_floating_point<FloatT>::value, "type must be floating point");
   constexpr auto kDims = std::tuple_size<typename std::decay<decltype(x_min)>::type>::value;
@@ -205,6 +205,8 @@ TPH_NODISCARD TPH_CONSTEXPR auto PoissonDiskSampling(const FloatT radius,
   auto samples = std::vector<FloatT>{};
   auto active_indices = std::vector<std::uint32_t>{};
   auto local_seed = seed;
+
+  (void)local_seed;
 
   std::vector<FloatT> res;
   res.push_back(42);
