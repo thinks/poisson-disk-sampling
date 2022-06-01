@@ -9,6 +9,18 @@
 #include <type_traits>
 #include <vector>
 
+#if __cplusplus >= 201402L  // C++14 or later.
+#define TPH_CONSTEXPR constexpr
+#else
+#define TPH_CONSTEXPR inline
+#endif
+
+#if __cplusplus >= 201703L // C++17 or later.
+#define TPH_NODISCARD [[nodiscard]]
+#else
+#define TPH_NODISCARD 
+#endif
+
 namespace tph {
 
 // Returns a list of samples with the guarantees:
@@ -24,7 +36,7 @@ namespace tph {
 // - x_min[i] >= x_max[i], or
 // - max_sample_attempts == 0.
 template <typename FloatT, std::size_t N>
-[[nodiscard]] constexpr auto PoissonDiskSampling(const FloatT radius,
+TPH_NODISCARD constexpr auto PoissonDiskSampling(const FloatT radius,
                                                  const std::array<FloatT, N>& x_min,
                                                  const std::array<FloatT, N>& x_max,
                                                  const std::uint32_t max_sample_attempts = 30,
