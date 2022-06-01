@@ -52,4 +52,4 @@ CheckOptions:
 
 WarningsAsErrors: '*'
 
-HeaderFilterRegex: '.*hpp$'
+HeaderFilterRegex: 'include/tph/*.hpp'
