@@ -18,8 +18,10 @@ jobs:
       - name: Use clang-12
         run: |
           sudo apt install clang-12
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
           sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
       - name: CMake
         run: cmake --preset=clang-ci -S .
       - name: Build
@@ -63,8 +65,10 @@ jobs:
         if: matrix.compiler == 'clang'
         run: |
           sudo apt install clang-12
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
           sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
       - name: CMake
         run: cmake --preset=${{ matrix.compiler }}-ci -S . -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
       - name: Build
