@@ -81,6 +81,16 @@
             ]
         },
         {
+            "name": "clang",
+            "description": "",
+            "displayName": "clang",
+            "configurePreset": "clang",
+            "jobs": 14,
+            "targets": [
+                "all"
+            ]
+        },
+        {
             "name": "gcc-ci",
             "description": "",
             "displayName": "gcc-ci",

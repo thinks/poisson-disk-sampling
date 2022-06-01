@@ -51,5 +51,4 @@ CheckOptions:
 
 WarningsAsErrors: '*'
 
-#HeaderFilterRegex: '.*nlohmann.*'
 HeaderFilterRegex: '.*hpp$'
