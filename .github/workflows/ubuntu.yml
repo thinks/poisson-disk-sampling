@@ -21,17 +21,6 @@ jobs:
       - name: build
         run: cmake --build build --target all
 
-  # ci_test_gcc:
-  #   runs-on: ubuntu-latest
-  #   # container: ghcr.io/nlohmann/json-ci:v2.3.0
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: seanmiddleditch/gha-setup-ninja@master
-  #     - name: CMake
-  #       run: cmake -S . -B build_gcc_ci -DTPH_CI=On
-  #     - name: Build
-  #       run: cmake --build build_gcc_ci --target ci_test_gcc
-
   ci_test_gcc:
     runs-on: ubuntu-latest
     # container: ghcr.io/nlohmann/json-ci:v2.3.0
@@ -56,7 +45,6 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         standard: [11, 14, 17, 20]
-        #standard: [11, 14, 17, 20]
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
