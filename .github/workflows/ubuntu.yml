@@ -38,13 +38,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
-      - name: Latest GCC
-        uses: egor-tensin/setup-gcc@v1
-        with:
-          version: latest
-          platform: x64      
+      # - name: Latest GCC
+      #   uses: egor-tensin/setup-gcc@v1
+      #   with:
+      #     version: latest
+      #     platform: x64     
+      - name: Install GCC-11
+      - run:   |
+         sudo apt update
+         sudo apt install gcc-11 g++-11
+        shell: bash 
       - name: CMake
-        run: cmake --preset=gcc-ci S . 
+        run: cmake --preset=gcc-ci S .
+        env:
+          CC:   gcc-11
+          CXX:  g++-11
       - name: Build
         #run: cmake --build build/gcc_ci --target ci_test_gcc
         run: cmake --build build --target all
