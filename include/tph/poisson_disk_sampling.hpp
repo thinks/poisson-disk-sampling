@@ -23,6 +23,8 @@
 
 namespace tph {
 
+using std::size_t;
+
 // Returns a list of samples with the guarantees:
 // - No two samples are closer to each other than radius.
 // - No sample is outside the region [x_min, x_max].
