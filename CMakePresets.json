@@ -121,8 +121,8 @@
             }
         },
         {
-            "name": "gcc-clang",
-            "configurePreset": "gcc-clang",
+            "name": "clang-ci",
+            "configurePreset": "clang-ci",
             "output": {
                 "outputOnFailure": true
             },
