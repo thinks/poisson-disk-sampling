@@ -110,11 +110,11 @@ jobs:
           sudo update-alternatives --set clang /usr/bin/clang-12        
           sudo update-alternatives --set clang++ /usr/bin/clang++-12        
       - name: CMake
-        run: cmake --preset=clang -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=address -fsanitize=undefined -fsanitize=integer -fsanitize=nullability -fno-omit-frame-pointer -fno-sanitize-recover=all -fno-sanitize=unsigned-integer-overflow -fno-sanitize=unsigned-shift-base" -DTPH_BuildTests=ON -DTPH_BuildExamples=OFF -S .
+        run: cmake --preset=clang-sanitizers -S .
       - name: Build
-        run: cmake --build --preset=clang
+        run: cmake --build --preset=clang-sanitizers
       - name: Test
-        run: ctest --preset=clang
+        run: ctest --preset=clang-sanitizers
 
   ci_cppcheck:
     runs-on: ubuntu-latest
