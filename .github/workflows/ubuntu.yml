@@ -44,9 +44,9 @@ jobs:
       #     version: latest
       #     platform: x64     
       - name: Install GCC-11
-      - run:   |
-         sudo apt update
-         sudo apt install gcc-11 g++-11
+        run: |
+          sudo apt update
+          sudo apt install gcc-11 g++-11
         shell: bash 
       - name: CMake
         run: cmake --preset=gcc-ci S .
