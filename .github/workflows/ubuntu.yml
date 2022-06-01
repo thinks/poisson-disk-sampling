@@ -76,6 +76,29 @@ jobs:
       - name: Test
         run: ctest --preset=${{ matrix.compiler }}-ci
 
+  ci_clang_tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install clang-tidy-9
+        run: |
+            sudo apt-get install -y clang-tidy-9
+            sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-9 100      
+      - name: Use clang-12
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+          sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
+      - name: CMake
+        run: cmake --preset=clang -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_CLANG_TIDY=clang-tidy -DTPH_BuildTests=ON
+      - name: Build
+        run: cmake --build --preset=clang
+
+
+
   # ci_static_analysis:
   #   runs-on: ubuntu-latest
   #   container: ghcr.io/nlohmann/json-ci:v2.3.0
