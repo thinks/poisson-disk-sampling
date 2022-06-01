@@ -43,13 +43,18 @@ jobs:
       #   with:
       #     version: latest
       #     platform: x64     
-      - name: Install gcc-11
+      # - name: Install gcc-11
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install gcc-11 g++-11
+      #   shell: bash 
+      - name: Use gcc-10
         run: |
-          sudo apt update
-          sudo apt install gcc-11 g++-11
-        shell: bash 
+          sudo apt install gcc-10 g++-10
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+          sudo update-alternatives --set gcc /usr/bin/gcc-10        
       - name: CMake
-        run: cmake --preset=gcc-ci S . -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11
+        run: cmake --preset=gcc-ci S .
       - name: Build
         #run: cmake --build build/gcc_ci --target ci_test_gcc
         run: cmake --build build --target all
