@@ -8,7 +8,7 @@
     "configurePresets": [
         {
             "name": "gcc",
-            "displayName": "GCC",
+            "displayName": "gcc",
             "description": "GCC",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build",
@@ -17,7 +17,7 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++",
-                "TPH_CI": "ON"
+                "CMAKE_CXX_STANDARD": "17"
             },
             "environment": {},
             "vendor": {}
@@ -65,6 +65,16 @@
     ],
     "buildPresets": [
         {
+            "name": "gcc",
+            "description": "",
+            "displayName": "gcc",
+            "configurePreset": "gcc",
+            "jobs": 14,
+            "targets": [
+                "all"
+            ]
+        },
+        {
             "name": "gcc-ci",
             "description": "",
             "displayName": "gcc-ci",
@@ -93,6 +103,7 @@
                 "outputOnFailure": true
             },
             "execution": {
+                "jobs": 14,
                 "noTestsAction": "error",
                 "stopOnFailure": true
             }

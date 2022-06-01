@@ -12,7 +12,6 @@ on:
 jobs:
   ci_test_clang:
     runs-on: ubuntu-latest
-    # container: ghcr.io/nlohmann/json-ci:v2.3.0
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
@@ -20,10 +19,11 @@ jobs:
         run: cmake --preset=clang-ci -S .
       - name: build
         run: cmake --build build --target all
+      - name: Test
+        run: cd build && ctest --parallel 10 --output-on-failure
 
   ci_test_gcc:
     runs-on: ubuntu-latest
-    # container: ghcr.io/nlohmann/json-ci:v2.3.0
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
@@ -35,8 +35,9 @@ jobs:
       - name: CMake
         run: cmake --preset=gcc-ci S .
       - name: Build
-        #run: cmake --build build/gcc_ci --target ci_test_gcc
-        run: cmake --build build --target all
+        run: cmake --preset=gcc-ci --build build
+      - name: Test
+        run: cd build && ctest --preset=gcc-ci
 
   ci_test_standards:
     runs-on: ubuntu-latest
@@ -57,9 +58,9 @@ jobs:
       - name: CMake
         run: cmake --preset=${{ matrix.compiler }}-ci -S . -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
       - name: Build
-        run: cmake --build build --target all
+        run: cmake --preset=${{ matrix.compiler }}-ci --build build --target all
       - name: Test
-        run: cd build && ctest --parallel 10 --output-on-failure
+        run: cd build && ctest --preset=${{ matrix.compiler }}-ci
 
   # ci_static_analysis:
   #   runs-on: ubuntu-latest
