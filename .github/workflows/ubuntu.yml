@@ -15,10 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
-      - name: cmake
+      - name: Use clang-12
+        run: |
+          sudo apt install clang-12 clang++-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-12
+          sudo update-alternatives --set clang /usr/bin/clang-10        
+      - name: CMake
         run: cmake --preset=clang-ci -S .
-      - name: build
-        run: cmake --build build --preset=clang-ci
+      - name: Build
+        run: cmake --build --preset=clang-ci
       - name: Test
         run: ctest --preset=clang-ci
 
