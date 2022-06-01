@@ -21,9 +21,9 @@
 #define TPH_NODISCARD 
 #endif
 
-namespace tph {
-
 using std::size_t;
+
+namespace tph {
 
 // Returns a list of samples with the guarantees:
 // - No two samples are closer to each other than radius.
