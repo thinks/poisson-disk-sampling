@@ -17,7 +17,7 @@ jobs:
       - uses: seanmiddleditch/gha-setup-ninja@master
       - name: Use clang-12
         run: |
-          sudo apt install clang-12 clang++-12
+          sudo apt install clang-12
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-12
           sudo update-alternatives --set clang /usr/bin/clang-10        
       - name: CMake
@@ -59,6 +59,12 @@ jobs:
           sudo apt install gcc-10 g++-10
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
           sudo update-alternatives --set gcc /usr/bin/gcc-10        
+      - name: Use clang-12
+        if: ${{ matrix.compiler }} == "clang"
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-12
+          sudo update-alternatives --set clang /usr/bin/clang-10        
       - name: CMake
         run: cmake --preset=${{ matrix.compiler }}-ci -S . -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
       - name: Build
