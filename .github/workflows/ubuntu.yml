@@ -33,11 +33,11 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
           sudo update-alternatives --set gcc /usr/bin/gcc-10        
       - name: CMake
-        run: cmake --preset=gcc-ci S .
+        run: cmake --preset=gcc-ci -S .
       - name: Build
         run: cmake --build --preset=gcc-ci
       - name: Test
-        run: cd build && ctest --preset=gcc-ci
+        run: ctest --preset=gcc-ci
 
   ci_test_standards:
     runs-on: ubuntu-latest
