@@ -23,17 +23,27 @@
             "vendor": {}
         },
         {
-            "name": "gcc-ci",
-            "displayName": "gcc-ci",
-            "description": "GCC CI",
-            "binaryDir": "${sourceDir}/build",
+            "name": "clang",
+            "displayName": "clang",
+            "description": "clang",
             "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_CXX_STANDARD": "17"
+            },
+            "environment": {},
+            "vendor": {}
+        },
+        {
+            "name": "gcc-ci",
+            "inherits": "gcc",
+            "displayName": "gcc-ci",
+            "description": "GCC CI",
+            "cacheVariables": {
                 "TPH_CI": "ON",
                 "TPH_BuildTests": "ON",
                 "TPH_BuildExamples": "OFF",
@@ -44,16 +54,12 @@
         },
         {
             "name": "clang-ci",
+            "inherits": "clang",
             "displayName": "clang-ci",
             "description": "GCC CI",
             "binaryDir": "${sourceDir}/build",
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_CXX_STANDARD": "17",
                 "TPH_CI": "ON",
                 "TPH_BuildTests": "ON",
                 "TPH_BuildExamples": "OFF",
