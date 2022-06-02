@@ -17,6 +17,7 @@
 #endif
 
 #include <array>       // std::array
+//#include <cassert>     // assert
 #include <cmath>       // std::sqrt, std::ceil
 #include <cstdint>     // std::uint32_t, etc
 #include <type_traits> // std::is_arithmetic
@@ -26,75 +27,69 @@ namespace tph {
 namespace pds_internal {
 
 // Assumes min_value <= max_value.
-template <typename ArithT>
+template <typename T>
 TPH_NODISCARD constexpr auto
-Clamped(const ArithT min_value, const ArithT max_value, const ArithT value) noexcept -> ArithT {
-  static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
-  return value < min_value ? min_value : (value > max_value ? max_value : value);
+Clamp(const T v, const T lo, const T hi) noexcept -> T {
+  return v < lo ? lo : hi < v ? hi : v;
 }
+static_assert(Clamp(2, 0, 4) == 2);
+static_assert(Clamp(-2, 0, 4) == 0);
+static_assert(Clamp(6, 0, 4) == 4);
 
 // Returns x squared (not checking for overflow).
-template <typename ArithT>
-TPH_NODISCARD constexpr auto Squared(const ArithT x) noexcept -> ArithT {
-  static_assert(std::is_arithmetic<ArithT>::value, "ArithT must be arithmetic");
+template <typename T>
+TPH_NODISCARD constexpr auto Squared(const T x) noexcept -> T {
   return x * x;
 }
+static_assert(Squared(4) == 16);
 
 template <typename FloatT, std::size_t N>
 class Grid {
 public:
-  static_assert(std::is_floating_point<FloatT>::value, "FloatT must be floating point");
-  static_assert(N >= 1, "N must be >= 1");
-
   using CellType = std::int32_t;
   using IndexType = std::array<std::int32_t, N>;
 
-  static constexpr auto kDims = std::tuple_size<IndexType>::value;
+  static_assert(std::is_floating_point<FloatT>::value, "FloatT must be floating point");
+  static_assert(N >= 1, "N must be >= 1");
+  static_assert(std::tuple_size<IndexType>::value == N, "size(array) == N");
 
   Grid(const FloatT sample_radius,
        const std::array<FloatT, N>& x_min,
        const std::array<FloatT, N>& x_max) noexcept
-      : sample_radius_(sample_radius), dx_(GetDx_(sample_radius_)), dx_inv_(FloatT{1} / dx_),
-        x_min_(x_min), x_max_(x_max), size_(GetGridSize_(x_min_, x_max_, dx_inv_)),
-        cells_(GetCells_(size_)) {}
+      : sample_radius_(sample_radius), dx_(_GetDx(sample_radius_)), dx_inv_(FloatT{1} / dx_),
+        x_min_(x_min), x_max_(x_max), size_(_GetGridSize(x_min_, x_max_, dx_inv_)),
+        cells_(_MakeCells(size_)) {}
 
-  auto sample_radius() const noexcept -> FloatT { 
-    return sample_radius_;
-  }
+  TPH_NODISCARD auto sample_radius() const noexcept -> FloatT { return sample_radius_; }
 
-  auto size() const noexcept -> IndexType { return size_; } 
+  TPH_NODISCARD auto size() const noexcept -> IndexType { return size_; }
 
   // Returns the index for a position along the i'th axis.
   // Note that the returned index may be negative.
   template <typename FloatT2>
-  // NOLINTNEXTLINE
-  auto AxisIndex(const std::size_t i, const FloatT2 pos) const noexcept ->
+  TPH_NODISCARD auto AxisIndex(const std::size_t i, const FloatT2 pos) const noexcept ->
       typename IndexType::value_type {
+    static_assert(std::is_floating_point<FloatT2>::value, "FloatT2 must be floating point");
     using IndexValueType = typename IndexType::value_type;
 
     return static_cast<IndexValueType>((static_cast<FloatT>(pos) - x_min_[i]) * dx_inv_);
   }
 
   // Note that the returned index elements may be negative.
-  template <typename VecTraitsT, typename VecT>
-  // NOLINTNEXTLINE
-  auto IndexFromSample(const VecT& sample) const noexcept -> IndexType {
-    static_assert(VecTraitsT::kSize == kDims, "dimensionality mismatch");
-
+  template <typename FloatT2>
+  TPH_NODISCARD auto IndexFromSample(const FloatT2* const sample) const noexcept -> IndexType {
     IndexType index = {};
-    for (std::size_t i = 0; i < kDims; ++i) {
-      index[i] = AxisIndex(i, VecTraitsT::Get(sample, i));
+    for (std::size_t i = 0; i < N; ++i) {
+      index[i] = AxisIndex(i, sample[i]);
     }
     return index;
   }
 
-  // NOLINTNEXTLINE
   auto Cell(const IndexType& index) const noexcept -> CellType {
-    return cells_[LinearIndex_(index)];
+    return cells_[_LinearIndex(index)];
   }
 
-  // NOLINTNEXTLINE
-  auto Cell(const IndexType& index) noexcept -> CellType& { return cells_[LinearIndex_(index)]; }
+  auto Cell(const IndexType& index) noexcept -> CellType& { return cells_[_LinearIndex(index)]; }
 
 private:
   FloatT sample_radius_;
@@ -106,11 +101,11 @@ private:
   std::vector<CellType> cells_;
 
   // Assumes that all elements in index are >= 0.
-  // NOLINTNEXTLINE
-  auto LinearIndex_(const IndexType& index) const noexcept -> std::size_t {
+  TPH_NODISCARD
+  constexpr auto _LinearIndex(const IndexType& index) const noexcept -> std::size_t {
     auto k = static_cast<std::size_t>(index[0]);
     auto d = std::size_t{1};
-    for (auto i = std::size_t{1}; i < kDims; ++i) {
+    for (std::size_t i = 1; i < N; ++i) {
       // Note: Not checking for "overflow".
       d *= static_cast<std::size_t>(size_[i - 1]);
       k += static_cast<std::size_t>(index[i]) * d;
@@ -119,34 +114,36 @@ private:
   }
 
   // Assumes sample_radius is > 0.
-  static auto GetDx_(const FloatT sample_radius) noexcept -> FloatT {
+  TPH_NODISCARD
+  static auto _GetDx(const FloatT sample_radius) noexcept -> FloatT {
     // The grid cell size should be such that each cell can only
     // contain one sample. We apply a scaling factor to avoid
     // numerical issues.
-    constexpr auto kEps = static_cast<FloatT>(0.001);
-    constexpr auto kScale = FloatT{1} - kEps;
+    static constexpr auto kEps = static_cast<FloatT>(0.001);
+    static constexpr auto kScale = FloatT{1} - kEps;
     return kScale * sample_radius / std::sqrt(static_cast<FloatT>(N));
   }
 
   // Assumes that x_min is element-wise less than x_max.
   // Assumes dx_inv > 0.
-  static auto GetGridSize_(const std::array<FloatT, N>& x_min,
+  TPH_NODISCARD
+  static auto _GetGridSize(const std::array<FloatT, N>& x_min,
                            const std::array<FloatT, N>& x_max,
                            const FloatT dx_inv) noexcept -> IndexType {
     // Compute size in each dimension using grid cell size (dx).
     auto grid_size = IndexType{};
-    for (auto i = std::size_t{0}; i < kDims; ++i) {
+    for (std::size_t i = 0; i < N; ++i) {
       grid_size[i] =
           static_cast<typename IndexType::value_type>(std::ceil((x_max[i] - x_min[i]) * dx_inv));
     }
     return grid_size;
   }
 
-  static auto GetCells_(const IndexType& size) noexcept -> std::vector<std::int32_t> {
+  static auto _MakeCells(const IndexType& size) noexcept -> std::vector<std::int32_t> {
     // Initialize cells with value -1, indicating no sample there.
     // Cell values are later set to indices of samples.
     auto linear_size = std::size_t{1};
-    for (auto i = std::size_t{0}; i < std::tuple_size<IndexType>::value; ++i) {
+    for (std::size_t i = 0; i < N; ++i) {
       linear_size *= static_cast<std::size_t>(size[i]);
     }
     return std::vector<CellType>(linear_size, -1);
