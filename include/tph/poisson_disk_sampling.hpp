@@ -32,16 +32,16 @@ TPH_NODISCARD constexpr auto
 Clamp(const T v, const T lo, const T hi) noexcept -> T {
   return v < lo ? lo : hi < v ? hi : v;
 }
-static_assert(Clamp(2, 0, 4) == 2);
-static_assert(Clamp(-2, 0, 4) == 0);
-static_assert(Clamp(6, 0, 4) == 4);
+static_assert(Clamp(2, 0, 4) == 2, "");
+static_assert(Clamp(-2, 0, 4) == 0, "");
+static_assert(Clamp(6, 0, 4) == 4, "");
 
 // Returns x squared (not checking for overflow).
 template <typename T>
 TPH_NODISCARD constexpr auto Squared(const T x) noexcept -> T {
   return x * x;
 }
-static_assert(Squared(4) == 16);
+static_assert(Squared(4) == 16, "");
 
 template <typename FloatT, std::size_t N>
 class Grid {
