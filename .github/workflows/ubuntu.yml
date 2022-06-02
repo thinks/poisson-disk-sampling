@@ -1,0 +1,142 @@
+name: ubuntu
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - release/*
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci_test_clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Use clang-12
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+          sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
+      - name: CMake
+        run: cmake --preset=clang-ci -S .
+      - name: Build
+        run: cmake --build --preset=clang-ci
+      - name: Test
+        run: ctest --preset=clang-ci
+
+  ci_test_gcc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Use gcc-10
+        run: |
+          sudo apt install gcc-10 g++-10
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+          sudo update-alternatives --set gcc /usr/bin/gcc-10        
+      - name: CMake
+        run: cmake --preset=gcc-ci -S .
+      - name: Build
+        run: cmake --build --preset=gcc-ci
+      - name: Test
+        run: ctest --preset=gcc-ci
+
+  ci_test_standards:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        standard: [11, 14, 17, 20]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: (gcc) Use gcc-10 
+        if: matrix.compiler == 'gcc'
+        run: |
+          sudo apt install gcc-10 g++-10
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+          sudo update-alternatives --set gcc /usr/bin/gcc-10        
+      - name: Use clang-12
+        if: matrix.compiler == 'clang'
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+          sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
+      - name: CMake
+        run: cmake --preset=${{ matrix.compiler }}-ci -S . -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
+      - name: Build
+        run: cmake --build --preset=${{ matrix.compiler }}-ci
+      - name: Test
+        run: ctest --preset=${{ matrix.compiler }}-ci
+
+  ci_clang_tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install clang-tidy-9
+        run: |
+          sudo apt-get install -y clang-tidy-9
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-9 100      
+      - name: Use clang-12
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+          sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
+      - name: CMake
+        run: cmake --preset=clang -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_CLANG_TIDY=clang-tidy -DTPH_BuildTests=ON -DTPH_BuildExamples=OFF -S .
+      - name: Build
+        run: cmake --build --preset=clang
+
+  ci_clang_sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Use clang-12
+        run: |
+          sudo apt install clang-12
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+          sudo update-alternatives --set clang /usr/bin/clang-12        
+          sudo update-alternatives --set clang++ /usr/bin/clang++-12        
+      - name: CMake
+        run: cmake --preset=clang-sanitizers -S .
+      - name: Build
+        run: cmake --build --preset=clang-sanitizers
+      - name: Test
+        run: ctest --preset=clang-sanitizers
+
+  ci_cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update 
+          sudo apt-get install cppcheck
+      - name: Test
+        run: cppcheck --enable=warning --suppress=missingReturn --inline-suppr --inconclusive --force --std=c++11 ./include/tph/poisson_disk_sampling.hpp --error-exitcode=1
+    
+
+  # ci_static_analysis:
+  #   runs-on: ubuntu-latest
+  #   container: ghcr.io/nlohmann/json-ci:v2.3.0
+  #   strategy:
+  #     matrix:
+  #       target: [ci_clang_tidy, ci_cppcheck, ci_test_valgrind, ci_test_clang_sanitizer, ci_test_amalgamation, ci_clang_analyze, ci_cpplint, ci_cmake_flags, ci_single_binaries, ci_reproducible_tests, ci_non_git_tests, ci_offline_testdata, ci_infer]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: cmake
+  #       run: cmake -S . -B build -DTPH_CI=On
+  #     - name: build
+  #       run: cmake --build build --target ${{ matrix.target }}
