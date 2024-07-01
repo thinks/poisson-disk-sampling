@@ -1,11 +1,27 @@
-# Copyright (C) Tommy Hinks <tommy.hinks@gmail.com>
-# This file is subject to the license terms in the LICENSE file
-# found in the top-level directory of this distribution.
-
 cmake_minimum_required(VERSION 3.5)
-project(poisson_disk_sampling CXX)
-
 message(STATUS "CMake version: ${CMAKE_VERSION}")
+
+# Only set the cxx_standard if it is not set by someone else.
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 20)
+endif()
+
+# strongly encouraged to enable this globally to avoid conflicts between
+# -Wpedantic being enabled and -std=c++20 and -std=gnu++20 for example
+# when compiling with PCH enabled
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
+
+# Set the project name and language
+project(
+  tph_poisson_disk_sampling
+  VERSION 0.0.1
+  DESCRIPTION ""
+  # HOMEPAGE_URL "%%myurl%%"
+  LANGUAGES CXX C)
+
+include(cmake/PreventInSourceBuilds.cmake)
 
 # if command can use IN_LIST
 cmake_policy(SET CMP0057 NEW)
