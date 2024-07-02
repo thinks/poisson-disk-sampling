@@ -1,17 +1,39 @@
 cmake_minimum_required(VERSION 3.5)
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-# Set the project name and language
+# Look for the TPH version.
+file(STRINGS
+     "include/tph/poisson.h"
+     _ver_tmp
+     REGEX "#define TPH_MAJOR_VERSION .*$")
+string(REGEX MATCHALL "[0-9]+" TPH_MAJOR_VERSION ${_ver_tmp})
+file(STRINGS
+     "include/tph/poisson.h"
+     _ver_tmp
+     REGEX "#define TPH_MINOR_VERSION .*$")
+string(REGEX MATCHALL "[0-9]+" TPH_MINOR_VERSION ${_ver_tmp})
+file(STRINGS
+     "include/tph/poisson.h"
+     _ver_tmp
+     REGEX "#define TPH_PATCH_VERSION .*$")
+string(REGEX MATCHALL "[0-9]+" TPH_PATCH_VERSION ${_ver_tmp})
+unset(_ver_tmp)
+
+# Set the project name, version, language, etc.
 project(
-  poisson_disk_sampling
-  VERSION 0.0.1
+  tph_poisson
+  VERSION "${TPH_MAJOR_VERSION}.${TPH_MINOR_VERSION}.${TPH_PATCH_VERSION}"
   DESCRIPTION ""
   # HOMEPAGE_URL "%%myurl%%"
   LANGUAGES CXX C)
 
-add_library(poisson_disk_sampling INTERFACE)
-target_include_directories(poisson_disk_sampling
+message(STATUS "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}")
+
+add_library(tph_poisson INTERFACE)
+add_library(thinks::tph_poisson ALIAS tph_poisson)
+target_include_directories(tph_poisson
   INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 # Project includes for building against.
@@ -20,59 +42,103 @@ target_include_directories(poisson_disk_sampling
 #     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}>
 # )
 
-add_library(thinks::poisson_disk_sampling ALIAS poisson_disk_sampling)
+# 
+# Install.
+# 
+if(CMAKE_SKIP_INSTALL_RULES)
+  return()
+endif()
 
+include(CMakePackageConfigHelpers)
 # To gain access to standard install directory variables, such as CMAKE_INSTALL_LIBDIR.
 include(GNUInstallDirs)
 
-# Install public headers.
-install(
-  FILES "include/tph/poisson_disk_sampling.h"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tph
-)
-
-# Install the library and export it as a public target.
-install(
-  TARGETS poisson_disk_sampling
-  EXPORT ${CMAKE_PROJECT_NAME}-targets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-# This module is for exporting targets and installing CMake package
-# files which are used to import _this_ project into _other_ projects
-# in a robust manner.
-
-# Install exported library targets.
-install(
-    EXPORT ${CMAKE_PROJECT_NAME}-targets
-    NAMESPACE thinks::
-    FILE ${CMAKE_PROJECT_NAME}Targets.cmake
-    DESTINATION cmake
-)
-
-# Configure and write <Project>Config.cmake to provide package import entry point.
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake
-    @ONLY
+  "cmake/tph_poissonConfigVersion.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+  @ONLY
+)
+configure_file(
+  "cmake/config.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  @ONLY
 )
 
-# Configure and write  <Project>ConfigVersion.cmake for version compatibility management.
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}ConfigVersion.cmake
-    VERSION ${CMAKE_PROJECT_VERSION}
-    COMPATIBILITY SameMinorVersion
-)
-
-# Install the package configuration files.
 install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+  DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
+install(
+  FILES 
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" 
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
+)
+export(
+  TARGETS ${PROJECT_NAME}
+  NAMESPACE thinks::
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
+)
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT "${PROJECT_NAME}Targets"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+install(
+  EXPORT "${PROJECT_NAME}Targets"
+  NAMESPACE thinks::
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
+)
+
+
+# Install public headers.
+# install(
+#   FILES "include/tph/poisson.h"
+#   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tph
+# )
+
+# # Install the library and export it as a public target.
+# install(
+#   TARGETS tph_poisson
+#   EXPORT ${CMAKE_PROJECT_NAME}-targets
+#   #LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   #RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# )
+
+# # This module is for exporting targets and installing CMake package
+# # files which are used to import _this_ project into _other_ projects
+# # in a robust manner.
+
+# # Install exported library targets.
+# install(
+#     EXPORT ${CMAKE_PROJECT_NAME}-targets
+#     NAMESPACE thinks::
+#     FILE ${CMAKE_PROJECT_NAME}Targets.cmake
+#     DESTINATION cmake
+# )
+
+# # Configure and write <Project>Config.cmake to provide package import entry point.
+# configure_file(
+#     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
+#     ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake
+#     @ONLY
+# )
+
+# # Configure and write <Project>ConfigVersion.cmake for version compatibility management.
+# include(CMakePackageConfigHelpers)
+# write_basic_package_version_file(
+#     ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}ConfigVersion.cmake
+#     VERSION ${CMAKE_PROJECT_VERSION}
+#     COMPATIBILITY SameMinorVersion
+# )
+
+# # Install the package configuration files.
+# install(
+#     FILES
+#         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake
+#         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}ConfigVersion.cmake
+#     DESTINATION ${CMAKE_INSTALL_PREFIX}
+# )
 
 
 
@@ -158,9 +224,8 @@ endif()
 
 # Adding the tests:
 include(CTest)
-
 if(BUILD_TESTING)
   # message(AUTHOR_WARNING "Building Tests. Be sure to check out test/constexpr_tests.cpp for constexpr testing")
-  enable_testing()
+  # enable_testing()
   add_subdirectory(test)
 endif()

@@ -39,4 +39,5 @@
 .vscode/
 ipch/
 build/
+INSTALL/
 CMakeSettings.json

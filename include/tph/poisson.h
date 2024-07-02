@@ -1,6 +1,10 @@
 #ifndef TPH_POISSON_H
 #define TPH_POISSON_H
 
+#define TPH_MAJOR_VERSION 0
+#define TPH_MINOR_VERSION 4
+#define TPH_PATCH_VERSION 0
+
 #include <stddef.h>// size_t, NULL
 #include <stdint.h>// uint32_t, etc
 
