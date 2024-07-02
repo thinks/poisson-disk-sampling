@@ -29,27 +29,27 @@ typedef struct tph_poisson_context_internal_ tph_poisson_context_internal;
 
 struct tph_poisson_points_
 {
-  const tph_real *pos = NULL;
+  const tph_real *pos;
 };
 
 struct tph_poisson_args_
 {
-  tph_real radius = 0.F;
-  uint32_t dims = 0;
+  tph_real radius;
+  uint32_t dims;
   struct
   {
-    tph_real *min = NULL;
-    tph_real *max = NULL;
+    tph_real *min;
+    tph_real *max;
   } bbox;
-  uint32_t max_sample_attempts = 30;
-  uint32_t seed = 0;
+  uint32_t max_sample_attempts;
+  uint32_t seed;
 };
 
 struct tph_poisson_sampling_
 {
-  tph_poisson_context_internal *internal = NULL;
-  uint32_t dims = 0;
-  uint32_t numpoints = 0;
+  tph_poisson_context_internal *internal;
+  uint32_t dims;
+  uint32_t numpoints;
 };
 
 #pragma pack(pop)

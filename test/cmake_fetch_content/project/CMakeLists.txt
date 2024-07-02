@@ -23,7 +23,7 @@ endif()
 # when compiling with PCH enabled
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(poisson_test main.cpp)
+add_executable(poisson_test main.c)
 target_link_libraries(poisson_test
 PRIVATE 
   thinks::tph_poisson
