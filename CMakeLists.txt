@@ -1,23 +1,28 @@
 cmake_minimum_required(VERSION 3.5)
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-# Look for the TPH version.
+
+##
+## Project
+##
+set(_tph_poisson_hdr "include/tph/poisson.h")
 file(STRINGS
-     "include/tph/poisson.h"
+     ${_tph_poisson_hdr}
      _ver_tmp
      REGEX "#define TPH_MAJOR_VERSION .*$")
 string(REGEX MATCHALL "[0-9]+" TPH_MAJOR_VERSION ${_ver_tmp})
 file(STRINGS
-     "include/tph/poisson.h"
+     ${_tph_poisson_hdr}
      _ver_tmp
      REGEX "#define TPH_MINOR_VERSION .*$")
 string(REGEX MATCHALL "[0-9]+" TPH_MINOR_VERSION ${_ver_tmp})
 file(STRINGS
-     "include/tph/poisson.h"
+     ${_tph_poisson_hdr}
      _ver_tmp
      REGEX "#define TPH_PATCH_VERSION .*$")
 string(REGEX MATCHALL "[0-9]+" TPH_PATCH_VERSION ${_ver_tmp})
 unset(_ver_tmp)
+unset(_tph_poisson_hdr)
 
 # Set the project name, version, language, etc.
 project(
@@ -26,9 +31,12 @@ project(
   DESCRIPTION ""
   # HOMEPAGE_URL "%%myurl%%"
   LANGUAGES CXX C)
+message(STATUS "${PROJECT_NAME}-${PROJECT_VERSION}")
 
-message(STATUS "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}")
 
+##
+## Target
+##
 add_library(tph_poisson INTERFACE)
 add_library(thinks::tph_poisson ALIAS tph_poisson)
 target_include_directories(tph_poisson
@@ -36,22 +44,54 @@ target_include_directories(tph_poisson
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-# Project includes for building against.
-# target_include_directories(${TARGET_NAME}
-#   PRIVATE
-#     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}>
-# )
 
-# 
-# Install.
-# 
+
+##
+## Options
+##
+# Determine if building as a subproject (using add_subdirectory) or 
+# if it is the main project.
+set(_main_project OFF)
+set(_sub_project ON)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(_main_project ON)
+    set(_sub_project OFF)
+endif()
+
+option(TPH_POISSON_BUILD_TESTS    "Enable test build targets when BUILD_TESTING is enabled." ${_main_project})
+option(TPH_POISSON_BUILD_EXAMPLES "Enable example build targets." ${_main_project})
+
+unset(_main_project)
+unset(_sub_project)
+
+
+##
+## Examples
+##
+if(TPH_POISSON_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif() 
+
+
+##
+## Tests
+##
+if(TPH_POISSON_BUILD_TESTS)
+  include(CTest)
+  enable_testing()
+  add_subdirectory(test)
+endif()
+
+
+## 
+## Install.
+## 
 if(CMAKE_SKIP_INSTALL_RULES)
   return()
 endif()
 
 include(CMakePackageConfigHelpers)
-# To gain access to standard install directory variables, such as CMAKE_INSTALL_LIBDIR.
-include(GNUInstallDirs)
+include(GNUInstallDirs) # Standard install variables, e.g. CMAKE_INSTALL_INCLUDEDIR.
 
 configure_file(
   "cmake/tph_poissonConfigVersion.cmake.in"
@@ -142,7 +182,7 @@ install(
 
 
 
-include(cmake/PreventInSourceBuilds.cmake)
+#include(cmake/PreventInSourceBuilds.cmake)
 
 # if command can use IN_LIST
 cmake_policy(SET CMP0057 NEW)
@@ -223,9 +263,3 @@ endif()
 # add_subdirectory(thinks)
 
 # Adding the tests:
-include(CTest)
-if(BUILD_TESTING)
-  # message(AUTHOR_WARNING "Building Tests. Be sure to check out test/constexpr_tests.cpp for constexpr testing")
-  # enable_testing()
-  add_subdirectory(test)
-endif()

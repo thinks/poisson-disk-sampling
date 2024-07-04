@@ -2,8 +2,7 @@ if (${CMAKE_VERSION} VERSION_GREATER "3.11.0")
   add_test(NAME cmake_fetch_content_configure
     COMMAND ${CMAKE_COMMAND}
     -G "${CMAKE_GENERATOR}"
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -Dtph_poisson_source=${PROJECT_SOURCE_DIR}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     ${CMAKE_CURRENT_SOURCE_DIR}/project
   )
   add_test(NAME cmake_fetch_content_build
