@@ -149,132 +149,136 @@ extern tph_poisson_points tph_poisson_get_points(const tph_poisson_sampling *sam
  *
  * void free_int(void *p) { free(*(int **)p); }
  */
-typedef void (*cvector_elem_destructor_t)(void *elem_ptr);
+typedef void (*tph_elem_destructor_t)(void *elem_ptr);
 
-typedef struct cvector_metadata_t
+typedef struct tph_metadata_t
 {
   size_t size;
   size_t capacity;
-  cvector_elem_destructor_t elem_destructor;
-} cvector_metadata_t;
+  tph_elem_destructor_t elem_destructor;
+} tph_metadata_t;
 
 /**
- * @brief cvector_vector_type - The vector type used in this library
+ * @brief tph_vector_type - The vector type used in this library.
  */
-#define cvector_vector_type(type) type *
+#define tph_vector_type(type) type *
 
 /**
- * @brief cvector - Syntactic sugar to retrieve a vector type
+ * @brief tph_vector - Syntactic sugar to retrieve a vector type.
  *
  * @param type The type of vector to act on.
  */
-#define cvector(type) cvector_vector_type(type)
-
-/*
- * @brief cvector_iterator - The iterator type used for cvector
- */
-#define cvector_iterator(type) cvector_vector_type(type)
+#define tph_vector(type) tph_vector_type(type)
 
 /**
- * @brief cvector_vec_to_base - For internal use, converts a vector pointer to a metadata pointer
- * @param vec - the vector
- * @return the metadata pointer of the vector
+ * @brief tph_vector_iterator - The iterator type used for tph_vector.
+ */
+#define tph_vector_iterator(type) tph_vector_type(type)
+
+/**
+ * @brief tph_vector_vec_to_base - For internal use, converts a vector pointer to a metadata
+ * pointer.
+ * @param vec - the vector.
+ * @return the metadata pointer of the vector.
  * @internal
  */
-#define cvector_vec_to_base(vec) (&((cvector_metadata_t *)(vec))[-1])
+#define tph_vector_vec_to_base(vec) (&((tph_vector_metadata_t *)(vec))[-1])
 
 /**
- * @brief cvector_base_to_vec - For internal use, converts a metadata pointer to a vector pointer
- * @param ptr - pointer to the metadata
- * @return the vector
+ * @brief tph_vector_base_to_vec - For internal use, converts a metadata pointer to a vector
+ * pointer.
+ * @param ptr - pointer to the metadata.
+ * @return the vector.
  * @internal
  */
-#define cvector_base_to_vec(ptr) ((void *)&((cvector_metadata_t *)(ptr))[1])
+#define tph_vector_base_to_vec(ptr) ((void *)&((tph_vector_metadata_t *)(ptr))[1])
 
 /**
- * @brief cvector_capacity - gets the current capacity of the vector
- * @param vec - the vector
- * @return the capacity as a size_t
+ * @brief tph_vector_capacity - gets the current capacity of the vector.
+ * @param vec - the vector.
+ * @return the capacity as a size_t.
  */
-#define cvector_capacity(vec) ((vec) ? cvector_vec_to_base(vec)->capacity : (size_t)0)
+#define tph_vector_capacity(vec) ((vec) ? tph_vector_vec_to_base(vec)->capacity : (size_t)0)
 
 /**
- * @brief cvector_size - gets the current size of the vector
- * @param vec - the vector
- * @return the size as a size_t
+ * @brief tph_vector_size - gets the current size of the vector.
+ * @param vec - the vector.
+ * @return the size as a size_t.
  */
-#define cvector_size(vec) ((vec) ? cvector_vec_to_base(vec)->size : (size_t)0)
+#define tph_vector_size(vec) ((vec) ? tph_vector_vec_to_base(vec)->size : (size_t)0)
 
 /**
- * @brief cvector_elem_destructor - get the element destructor function used
- * to clean up elements
- * @param vec - the vector
- * @return the function pointer as cvector_elem_destructor_t
+ * @brief tph_vector_elem_destructor - get the element destructor function used
+ * to clean up elements.
+ * @param vec - the vector.
+ * @return the function pointer as tph_vector_elem_destructor_t.
  */
-#define cvector_elem_destructor(vec) ((vec) ? cvector_vec_to_base(vec)->elem_destructor : NULL)
+#define tph_vector_elem_destructor(vec) \
+  ((vec) ? tph_vector_vec_to_base(vec)->elem_destructor : NULL)
 
 /**
- * @brief cvector_empty - returns non-zero if the vector is empty
- * @param vec - the vector
- * @return non-zero if empty, zero if non-empty
+ * @brief tph_vector_empty - returns non-zero if the vector is empty.
+ * @param vec - the vector.
+ * @return non-zero if empty, zero if non-empty.
  */
-#define cvector_empty(vec) (cvector_size(vec) == 0)
+#define tph_vector_empty(vec) (tph_vector_size(vec) == 0)
 
 /**
- * @brief cvector_reserve - Requests that the vector capacity be at least enough
+ * @brief tph_vector_reserve - Requests that the vector capacity be at least enough
  * to contain n elements. If n is greater than the current vector capacity, the
  * function causes the container to reallocate its storage increasing its
  * capacity to n (or greater).
- * @param vec - the vector
+ * @param vec - the vector.
  * @param n - Minimum capacity for the vector.
  * @return void
  */
-#define cvector_reserve(vec, n)                       \
+#define tph_vector_reserve(vec, n)                    \
   do {                                                \
-    size_t cv_cap__ = cvector_capacity(vec);          \
+    const size_t cv_cap__ = cvector_capacity(vec);    \
     if (cv_cap__ < (n)) { cvector_grow((vec), (n)); } \
   } while (0)
 
-/*
- * @brief cvector_init - Initialize a vector.  The vector must be NULL for this to do anything.
- * @param vec - the vector
- * @param capacity - vector capacity to reserve
- * @param elem_destructor_fn - element destructor function
+/**
+ * @brief tph_vector_init - Initialize a vector. The vector must be NULL for this to do anything.
+ * @param vec - the vector.
+ * @param capacity - vector capacity to reserve.
+ * @param elem_destructor_fn - element destructor function.
  * @return void
  */
-#define cvector_init(vec, capacity, elem_destructor_fn)         \
-  do {                                                          \
-    if (!(vec)) {                                               \
-      cvector_reserve((vec), capacity);                         \
-      cvector_set_elem_destructor((vec), (elem_destructor_fn)); \
-    }                                                           \
+#define tph_vector_init(vec, capacity, elem_destructor_fn)         \
+  do {                                                             \
+    if (!(vec)) {                                                  \
+      tph_vector_reserve((vec), capacity);                         \
+      tph_vector_set_elem_destructor((vec), (elem_destructor_fn)); \
+    }                                                              \
   } while (0)
 
 /**
- * @brief cvector_erase - removes the element at index i from the vector
- * @param vec - the vector
- * @param i - index of element to remove
+ * @brief tph_vector_erase - removes the element at index i from the vector.
+ * @param vec - the vector.
+ * @param i - index of element to remove.
  * @return void
  */
-#define cvector_erase(vec, i)                                                                     \
-  do {                                                                                            \
-    if (vec) {                                                                                    \
-      const size_t cv_sz__ = cvector_size(vec);                                                   \
-      if ((i) < cv_sz__) {                                                                        \
-        cvector_elem_destructor_t elem_destructor__ = cvector_elem_destructor(vec);               \
-        if (elem_destructor__) { elem_destructor__(&(vec)[i]); }                                  \
-        cvector_set_size((vec), cv_sz__ - 1);                                                     \
-        cvector_clib_memmove((vec) + (i), (vec) + (i) + 1, sizeof(*(vec)) * (cv_sz__ - 1 - (i))); \
-      }                                                                                           \
-    }                                                                                             \
+#define tph_vector_erase(vec, i)                                                          \
+  do {                                                                                    \
+    if (vec) {                                                                            \
+      const size_t cv_sz__ = tph_vector_size(vec);                                        \
+      if ((i) < cv_sz__) {                                                                \
+        tph_vector_elem_destructor_t elem_destructor__ = tph_vector_elem_destructor(vec); \
+        if (elem_destructor__) { elem_destructor__(&(vec)[i]); }                          \
+        tph_vector_set_size((vec), cv_sz__ - 1);                                          \
+        tph_vector_clib_memmove(                                                          \
+          (vec) + (i), (vec) + (i) + 1, sizeof(*(vec)) * (cv_sz__ - 1 - (i)));            \
+      }                                                                                   \
+    }                                                                                     \
   } while (0)
 
 /**
- * @brief cvector_clear - erase all of the elements in the vector
+ * @brief tph_vector_clear - erase all of the elements in the vector.
  * @param vec - the vector
  * @return void
  */
-#define cvector_clear(vec)                                                                \
+#define tph_vector_clear(vec)                                                             \
   do {                                                                                    \
     if (vec) {                                                                            \
       cvector_elem_destructor_t elem_destructor__ = cvector_elem_destructor(vec);         \
@@ -287,75 +291,45 @@ typedef struct cvector_metadata_t
   } while (0)
 
 /**
- * @brief cvector_free - frees all memory associated with the vector
- * @param vec - the vector
+ * @brief tph_vector_free - frees all memory associated with the vector.
+ * @param vec - the vector.
  * @return void
  */
-#define cvector_free(vec)                                                                 \
-  do {                                                                                    \
-    if (vec) {                                                                            \
-      void *p1__ = cvector_vec_to_base(vec);                                              \
-      cvector_elem_destructor_t elem_destructor__ = cvector_elem_destructor(vec);         \
-      if (elem_destructor__) {                                                            \
-        size_t i__;                                                                       \
-        for (i__ = 0; i__ < cvector_size(vec); ++i__) { elem_destructor__(&(vec)[i__]); } \
-      }                                                                                   \
-      cvector_clib_free(p1__);                                                            \
-    }                                                                                     \
+#define tph_vector_free(vec)                                                                 \
+  do {                                                                                       \
+    if (vec) {                                                                               \
+      void *p1__ = tph_vector_vec_to_base(vec);                                              \
+      tph_vector_elem_destructor_t elem_destructor__ = tph_vector_elem_destructor(vec);      \
+      if (elem_destructor__) {                                                               \
+        size_t i__;                                                                          \
+        for (i__ = 0; i__ < tph_vector_size(vec); ++i__) { elem_destructor__(&(vec)[i__]); } \
+      }                                                                                      \
+      tph_vector_clib_free(p1__);                                                            \
+    }                                                                                        \
   } while (0)
 
 /**
- * @brief cvector_begin - returns an iterator to first element of the vector
- * @param vec - the vector
- * @return a pointer to the first element (or NULL)
- */
-#define cvector_begin(vec) (vec)
-
-/**
- * @brief cvector_end - returns an iterator to one past the last element of the vector
- * @param vec - the vector
- * @return a pointer to one past the last element (or NULL)
- */
-#define cvector_end(vec) ((vec) ? &((vec)[cvector_size(vec)]) : NULL)
-
-/* user request to use logarithmic growth algorithm */
-#define CVECTOR_LOGARITHMIC_GROWTH
-#ifdef CVECTOR_LOGARITHMIC_GROWTH
-
-/**
- * @brief cvector_compute_next_grow - returns an the computed size in next vector grow
- * size is increased by multiplication of 2
+ * @brief tph_vector_compute_next_grow - returns an the computed size in next vector grow
+ * size is increased by multiplication of 2.
  * @param size - current size
  * @return size after next vector grow
  */
-#define cvector_compute_next_grow(size) ((size) ? ((size) << 1) : 1)
-
-#else
+#define tph_vector_compute_next_grow(size) ((size) ? ((size) << 1) : 1)
 
 /**
- * @brief cvector_compute_next_grow - returns an the computed size in next vector grow
- * size is increased by 1
- * @param size - current size
- * @return size after next vector grow
- */
-#define cvector_compute_next_grow(size) ((size) + 1)
-
-#endif /* CVECTOR_LOGARITHMIC_GROWTH */
-
-/**
- * @brief cvector_push_back - adds an element to the end of the vector
- * @param vec - the vector
- * @param value - the value to add
+ * @brief tph_vector_push_back - adds an element to the end of the vector.
+ * @param vec - the vector.
+ * @param value - the value to add.
  * @return void
  */
-#define cvector_push_back(vec, value)                           \
-  do {                                                          \
-    size_t cv_cap__ = cvector_capacity(vec);                    \
-    if (cv_cap__ <= cvector_size(vec)) {                        \
-      cvector_grow((vec), cvector_compute_next_grow(cv_cap__)); \
-    }                                                           \
-    (vec)[cvector_size(vec)] = (value);                         \
-    cvector_set_size((vec), cvector_size(vec) + 1);             \
+#define tph_vector_push_back(vec, value)                              \
+  do {                                                                \
+    const size_t cv_cap__ = tph_vector_capacity(vec);                 \
+    if (cv_cap__ <= tph_vector_size(vec)) {                           \
+      tph_vector_grow((vec), tph_vector_compute_next_grow(cv_cap__)); \
+    }                                                                 \
+    (vec)[tph_vector_size(vec)] = (value);                            \
+    tph_vector_set_size((vec), tph_vector_size(vec) + 1);             \
   } while (0)
 
 /**
@@ -424,27 +398,27 @@ typedef struct cvector_metadata_t
   } while (0)
 
 /**
- * @brief cvector_set_capacity - For internal use, sets the capacity variable of the vector
- * @param vec - the vector
- * @param size - the new capacity to set
+ * @brief tph_vector_set_capacity - For internal use, sets the capacity variable of the vector.
+ * @param vec - the vector.
+ * @param size - the new capacity to set.
  * @return void
  * @internal
  */
-#define cvector_set_capacity(vec, size)                       \
-  do {                                                        \
-    if (vec) { cvector_vec_to_base(vec)->capacity = (size); } \
+#define tph_vector_set_capacity(vec, size)                       \
+  do {                                                           \
+    if (vec) { tph_vector_vec_to_base(vec)->capacity = (size); } \
   } while (0)
 
 /**
- * @brief cvector_set_size - For internal use, sets the size variable of the vector
- * @param vec - the vector
- * @param size - the new capacity to set
+ * @brief tph_vector_set_size - For internal use, sets the size variable of the vector.
+ * @param vec - the vector.
+ * @param size - the new capacity to set.
  * @return void
  * @internal
  */
-#define cvector_set_size(vec, _size)                       \
-  do {                                                     \
-    if (vec) { cvector_vec_to_base(vec)->size = (_size); } \
+#define tph_vector_set_size(vec, _size)                       \
+  do {                                                        \
+    if (vec) { tph_vector_vec_to_base(vec)->size = (_size); } \
   } while (0)
 
 /**
@@ -564,8 +538,8 @@ typedef struct tph_poisson_grid_
   tph_real dx;
   tph_real dx_inv;
   uint32_t dims;
-  const tph_real* bounds_min;
-  const tph_real* bounds_max;
+  const tph_real *bounds_min;
+  const tph_real *bounds_max;
   int32_t *size;
   uint32_t *cells;
 } tph_poisson_grid;
@@ -656,13 +630,12 @@ static void tph_poisson_grid_sample_to_index(const tph_poisson_grid *grid,
   const tph_real *sample,
   int32_t *index)
 {
-  for (uint32_t i = 0; i < grid->dims; ++i) { 
+  for (uint32_t i = 0; i < grid->dims; ++i) {
     index[i] = (int32_t)TPH_FLOOR((sample[i] - grid->bounds_min[i]) * grid->dx_inv);
   }
 }
 
-static uint32_t
-  tph_poisson_grid_linear_index(const tph_poisson_grid *grid, const int32_t *index)
+static uint32_t tph_poisson_grid_linear_index(const tph_poisson_grid *grid, const int32_t *index)
 {
   assert(0 <= index[0] && index[0] < grid->size[0]);
   uint32_t k = (size_t)index[0];
@@ -709,9 +682,10 @@ static int32_t tph_valid_args(const tph_poisson_args *args)
 static void tph_poisson_add_sample(const tph_real *sample,
   tph_real *samples,
   uint32_t *active_indices,
-  tph_poisson_grid* grid,
-  int32_t* index)
+  tph_poisson_grid *grid,
+  int32_t *index)
 {
+#if 0  
   for (uint32_t i = 0; i < grid->dims; ++i) { cvector_push_back(samples, sample[i]); }
   const uint32_t sample_index = cvector_size(samples) / grid->dims - 1;
   cvector_push_back(active_indices, sample_index);
@@ -720,6 +694,7 @@ static void tph_poisson_add_sample(const tph_real *sample,
   uint32_t *cell = tph_poisson_grid_cell(grid, lin_index);
   assert(sample_index != 0xFFFFFFFF);
   *cell = sample_index;
+#endif
 }
 
 int32_t tph_poisson_generate(const tph_poisson_args *args, tph_poisson_sampling *s)
@@ -759,12 +734,12 @@ int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
     return ret;
   }
 
-  cvector_vector_type(tph_real) samples = NULL;
-  cvector_vector_type(uint32_t) active_indices = NULL;
+  //cvector_vector_type(tph_real) samples = NULL;
+  //cvector_vector_type(uint32_t) active_indices = NULL;
 
   tph_real *rand_pos = (tph_real *)alloc_fn(internal->mem_ctx, args->dims * sizeof(tph_real));
 
-  tph_poisson_add_sample(rand_pos, );
+  //tph_poisson_add_sample(rand_pos, );
 
 #if 1// TMP TEST!!
   internal->pos = (tph_real *)internal->alloc(internal->mem_ctx, 5 * args->dims * sizeof(tph_real));
@@ -776,8 +751,8 @@ int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
 #endif
 
   tph_poisson_grid_free(&grid, internal);
-  cvector_free(samples);
-  cvector_free(active_indices);
+  //cvector_free(samples);
+  //cvector_free(active_indices);
 
   s->internal = internal;
   s->dims = args->dims;

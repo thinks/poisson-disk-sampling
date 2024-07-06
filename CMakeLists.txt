@@ -185,46 +185,46 @@ install(
 #include(cmake/PreventInSourceBuilds.cmake)
 
 # if command can use IN_LIST
-cmake_policy(SET CMP0057 NEW)
+# cmake_policy(SET CMP0057 NEW)
 
 # For cmake > 3.15 don't add warning levels by default.
 # Probably a little early to enable this for now.
 # cmake_policy(SET CMP0092 NEW)
 
-list(APPEND CMAKE_MODULE_PATH
-  ${CMAKE_CURRENT_LIST_DIR}/CMake
-)
+# list(APPEND CMAKE_MODULE_PATH
+#   ${CMAKE_CURRENT_LIST_DIR}/CMake
+# )
 
-include(ThinksHelpers)
+# include(ThinksHelpers)
 
 # Include current path
-list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+# list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
-option(THINKS_CLANG_TIDY "If ON, clang-tidy is used." OFF)
+# option(THINKS_CLANG_TIDY "If ON, clang-tidy is used." OFF)
 
-if (${THINKS_CLANG_TIDY})
-  find_program(CLANG_TIDY NAMES clang-tidy clang-tidy-9)
-  if (NOT CLANG_TIDY)
-    message(FATAL_ERROR "clang-tidy not found")
-  else()
-    message(STATUS "clang-tidy = ${CLANG_TIDY}")
-    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
-  endif()
-endif()
+# if (${THINKS_CLANG_TIDY})
+#   find_program(CLANG_TIDY NAMES clang-tidy clang-tidy-9)
+#   if (NOT CLANG_TIDY)
+#     message(FATAL_ERROR "clang-tidy not found")
+#   else()
+#     message(STATUS "clang-tidy = ${CLANG_TIDY}")
+#     set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+#   endif()
+# endif()
 
 # Find dependencies
 ## pthread
-find_package(Threads REQUIRED)
+# find_package(Threads REQUIRED)
 
-option(THINKS_RUN_TESTS "If ON, tests will be run." OFF)
+# option(THINKS_RUN_TESTS "If ON, tests will be run." OFF)
 
-if(${THINKS_RUN_TESTS})
-  # Enable CTest. This will set BUILD_TESTING to ON unless otherwise specified
-  # on the command line.
-  include(CTest)
-  enable_testing()
-  message(STATUS "BUILD_TESTING = ${BUILD_TESTING}")
-endif()
+# if(${THINKS_RUN_TESTS})
+#   # Enable CTest. This will set BUILD_TESTING to ON unless otherwise specified
+#   # on the command line.
+#   include(CTest)
+#   enable_testing()
+#   message(STATUS "BUILD_TESTING = ${BUILD_TESTING}")
+# endif()
 
 # Build tests and examples only when NOT included as subproject.
 # if (BUILD_TESTING)
