@@ -1,24 +1,45 @@
 
-/* -------------------------- */
-/*
- * Copyright (c) 2015 Evan Teran
- *
- * License: The MIT License (MIT)
- */
-
-/* cvector heap implemented using C library malloc() */
-
 /**
  * - The first call to tphvec_reserve() determines which allocator the
  *   vector uses for its entire life-span.
+ *
+ * - TODO : tphvec_set_allocator(), must be called before any function that
+ *          potentially allocs/reallocs the vector, e.g. tphvec_reserve(),
+ *          tphvec_append(), tphvec_resize(), etc.
+ *          This will allocate the header (using the custom allocator), and
+ *          set size = capacity = 0. The provided allocator is stored in the
+ *          header.
+ *          A call to tphvec_set_allocator(void** vec_ptr, tphvec_allocator_t *allocator)
+ *          must assume that *vec_ptr == null, otherwise the call is a no-op. (A more
+ *          sophisticated version could first allocate space using the custom allocator and
+ *          memcpy the contents, then free the current vector using the old allocator. This
+ *          would, however, cause a memory spike, since the vector needs to be duplicated
+ *          in memory during this operation.)
+ *
+ * - [MACRO] tphvec(type) -> type *
+ * - [???]   tphvec_assign()
+ * -         tphvec_get_allocator()
+ * - [???]   tphvec_front()
+ * - [???]   tphvec_back()
+ * -         tphvec_empty()
+ * -         tphvec_size()
+ * -         tphvec_capacity()
+ * -         tphvec_reserve()
+ * -         tphvec_shrink_to_fit()
+ * -         tphvec_clear()
+ * -         tphvec_append()
+ * -         tphvec_resize()
+ * -         tphvec_unordered_erase()
+ * - [???]   tphvec_pop_back()
+ * -         tphvec_free()
  */
 
 #include <stddef.h> /* size_t */
+#include <stdint.h> /* SIZE_MAX */
 #include <stdlib.h> /* malloc, realloc, free */
 #include <string.h> /* memcpy, memmove */
 
 #include <inttypes.h>
-#include <stdint.h>
 #include <stdio.h>
 
 #if 0
@@ -55,28 +76,29 @@
 #endif
 #endif /*0*/
 
-typedef void *(*tphvec_alloc_t)(void *user_ctx, size_t size);
-typedef void *(*tphvec_realloc_t)(void *user_ctx, void *p, size_t size);
-typedef void (*tphvec_free_t)(void *user_ctx, void *p);
+typedef void *(*tphvec_alloc_fn)(void *user_ctx, size_t size);
+typedef void *(*tphvec_realloc_fn)(void *user_ctx, void *p, size_t size);
+typedef void (*tphvec_free_fn)(void *user_ctx, void *p);
 
 /* clang-format off */
 typedef struct tphvec_allocator_t_ {
     void            *mem_ctx;
-    tphvec_alloc_t   alloc;
-    tphvec_realloc_t realloc;
-    tphvec_free_t    free;
+    tphvec_alloc_fn   alloc;
+    tphvec_realloc_fn realloc;
+    tphvec_free_fn    free;
 } tphvec_allocator_t;
 
 typedef struct tphvec_header_t_ {
-    size_t              size;
     size_t              capacity;
+    size_t              size;
     tphvec_allocator_t *allocator;
 } tphvec_header_t;
-/* clang-format on */
 
-#define TPHVEC_SUCCESS 0
-#define TPHVEC_BAD_ALLOC 1
+#define TPHVEC_SUCCESS       0
+#define TPHVEC_BAD_ALLOC     1
 #define TPHVEC_BAD_ALLOCATOR 2
+#define TPHVEC_INVALID_ARG   3
+/* clang-format on */
 
 
 #ifndef tphvec_assert
@@ -92,57 +114,83 @@ typedef struct tphvec_header_t_ {
 #define tphvec(type) type *
 
 /**
- * @brief _tphvec_vec_to_base - For internal use, converts a vector pointer to a
- * metadata pointer. Assumes that the vector pointer is not NULL.
- * @param vec - The vector.
- * @return The metadata pointer of the vector as a <tphvec_header_t*>.
+ * @brief _tphvec_vec_to_hdr - For internal use, converts a vector to a
+ * header pointer. Assumes that the vector is not NULL.
+ * @param vec - A vector.
+ * @return A header pointer.
  * @internal
  */
-// #define _tphvec_vec_to_base(vec) (&((tphvec_header_t *)(vec))[-1])
-tphvec_header_t *_tphvec_vec_to_hdr(void *vec) { return &((tphvec_header_t *)vec)[-1]; }
+static inline tphvec_header_t *_tphvec_vec_to_hdr(const void *vec)
+{
+  tphvec_assert(vec);
+  return &((tphvec_header_t *)vec)[-1];
+}
 
 /**
- * @brief _tphvec_base_to_vec - For internal use, converts a metadata pointer to
- * a vector pointer. Assumes that the metadata pointer is not NULL.
- * @param ptr - Pointer to the metadata.
+ * @brief _tphvec_hdr_to_vec - For internal use, converts a header pointer to
+ * a vector. Assumes that the header pointer is not NULL.
+ * @param hdr - A pointer to a header.
  * @return The vector as a <void*>.
  * @internal
  */
-// #define _tphvec_base_to_vec(ptr) ((void *)&((tphvec_header_t *)(ptr))[1])
-/*inline*/ void *_tphvec_hdr_to_vec(void *ptr) { return (void *)&((tphvec_header_t *)(ptr))[1]; }
+static inline void *_tphvec_hdr_to_vec(const tphvec_header_t *hdr)
+{
+  tphvec_assert(hdr);
+  return (void *)&(hdr[1]);
+}
+
+static inline size_t _tphvec_next_capacity(size_t cap, size_t req_cap)
+{
+  cap = cap ? cap : (size_t)1;
+  while (cap < req_cap) { cap = cap <= (SIZE_MAX >> 1) ? cap << 1 : SIZE_MAX; }
+  return cap;
+}
+
 
 /**
- * @brief tphvec_capacity - Gets the current capacity of the vector in bytes.
- * @param vec - The vector.
- * @return Vector capacity in bytes as <size_t>.
+ * @brief _tphvec_capacity - Returns the number of bytes that the container has currently allocated
+ * space for.
+ * @param vec - A vector.
+ * @return Capacity of the currently allocated storage in bytes.
  */
-static inline size_t _tphvec_capacity(void *vec)
+static inline size_t _tphvec_capacity(const void *vec)
 {
   return vec ? _tphvec_vec_to_hdr(vec)->capacity : (size_t)0;
 }
 
+/**
+ * @brief tphvec_capacity - Returns the number of elements that the container has currently
+ * allocated space for.
+ * @param vec - A vector.
+ * @return Capacity of the currently allocated storage as a <size_t>.
+ */
 #define tphvec_capacity(vec) (_tphvec_capacity((vec)) / sizeof(*(vec)))
 
 
 /**
- * @brief tphvec_size - Gets the current size of the vector in bytes.
- * @param vec - The vector.
- * @return Vector size in bytes as <size_t>.
+ * @brief _tphvec_size - Returns the number of bytes in the container.
+ * @param vec - A vector.
+ * @return The number of bytes in the container.
  */
-static inline size_t _tphvec_size(void *vec)
+static inline size_t _tphvec_size(const void *vec)
 {
   return vec ? _tphvec_vec_to_hdr(vec)->size : (size_t)0;
 }
 
+/**
+ * @brief tphvec_size - Returns the number of elements in the container.
+ * @param vec - A vector.
+ * @return The number of bytes in the container.
+ */
 #define tphvec_size(vec) (_tphvec_size((vec)) / sizeof(*(vec)))
 
+
 /**
- * @brief tphvec_allocator - Gets the current allocator.
- * @param vec - The vector.
- * @return Vector allocator as <tphvec_allocator_t*>, or NULL.
+ * @brief tphvec_get_allocator - Returns the allocator associated with the container.
+ * @param vec - A vector.
+ * @return The associated allocator, or NULL if none has been set.
  */
-// #define tphvec_allocator(vec) ((vec) ? _tphvec_vec_to_base((vec))->allocator : NULL)
-tphvec_allocator_t *tphvec_allocator(void *vec)
+static inline tphvec_allocator_t *tphvec_get_allocator(const void *vec)
 {
   return vec ? _tphvec_vec_to_hdr(vec)->allocator : (tphvec_allocator_t *)NULL;
 }
@@ -150,127 +198,63 @@ tphvec_allocator_t *tphvec_allocator(void *vec)
 
 /**
  * @brief tphvec_empty - Returns non-zero if the vector is empty.
- * @param vec - The vector.
- * @return non-zero if empty, zero if non-empty.
+ * @param vec - A vector.
+ * @return Non-zero if empty, zero if non-empty.
  */
-// #define tphvec_empty(vec) (tphvec_size((vec)) == 0)
-int tphvec_empty(void *vec) { return tphvec_size(vec) == 0; }
+static inline int tphvec_empty(const void *vec) { return _tphvec_size(vec) == 0; }
 
-#if 0
-/**
- * @brief tphvec_init - Initialize a vector. The vector must be NULL for this to do anything.
- * @param vec        - The vector.
- * @param cap        - Capacity to reserve.
- * @param _allocator - Custom allocator <tphvec_allocator_t*>, if NULL use malloc.
- * @return void
- */
-#if 0
-#define tphvec_init(vec, cap, _allocator)                                                        \
-  do {                                                                                           \
-    if (!(vec)) {                                                                                \
-      tphvec_header_t *tphvec_init__b = NULL;                                                    \
-      if ((_allocator)) {                                                                        \
-        tphvec_allocator_t *tphvec_init__a = (tphvec_allocator_t *)(_allocator);                 \
-        tphvec_assert(tphvec_init__a->alloc && tphvec_init__a->realloc && tphvec_init__a->free); \
-        tphvec_init__b = (tphvec_header_t *)tphvec_init__a->alloc(                               \
-          tphvec_init__a->mem_ctx, sizeof(tphvec_header_t) + (size_t)(cap) * sizeof(*(vec)));    \
-        tphvec_assert(tphvec_init__b);                                                           \
-        tphvec_init__b->allocator = tphvec_init__a;                                              \
-      } else {                                                                                   \
-        tphvec_init__b =                                                                         \
-          (tphvec_header_t *)malloc(sizeof(tphvec_header_t) + (size_t)(cap) * sizeof(*(vec)));   \
-        tphvec_assert(tphvec_init__b);                                                           \
-        tphvec_init__b->allocator = NULL;                                                        \
-      }                                                                                          \
-      tphvec_init__b->size = 0;                                                                  \
-      tphvec_init__b->capacity = (size_t)(cap);                                                  \
-      (vec) = _tphvec_base_to_vec(tphvec_init__b);                                               \
-    }                                                                                            \
-  } while (0)
-#endif
-int tphvec_init(void **vec, size_t cap, tphvec_allocator_t *allocator)
-{
-  if (*vec) {
-    // BAD_INIT
-    return 1;
-  }
-
-  tphvec_assert(
-    !allocator || (allocator && allocator->alloc && allocator->realloc && allocator->free));
-  tphvec_header_t *base = (tphvec_header_t *)(allocator ? allocator->alloc(allocator->mem_ctx,
-                                                            sizeof(tphvec_header_t) + cap)
-                                                        : malloc(sizeof(tphvec_header_t) + cap));
-  if (!base) {
-    return 2;// BAD_ALLOC
-  }
-  base->size = 0;
-  base->capacity = cap;
-  base->allocator = allocator;
-  *vec = _tphvec_hdr_to_vec(base);
-}
-#endif
 
 /**
  * @brief tphvec_reserve - Requests that the vector capacity be at least
  * enough to contain <cap> elements. If <cap> is greater than the current vector
  * capacity, the function causes the container to reallocate its storage
  * increasing its capacity to <cap> (or greater).
- * @param vec - The vector.
- * @param cap - New minimum capacity for the vector.
- * @return void
+ * @param vec     - A vector.
+ * @param new_cap - New capacity of the vector, in bytes.
+ * @param allocator - Custom allocator, if NULL malloc/realloc are used.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
  */
-#if 0
-#define tphvec_reserve(vec, cap)                                                         \
-  do {                                                                                   \
-    if (tphvec_capacity((vec)) < (size_t)(cap)) { _tphvec_grow_capacity((vec), (cap)); } \
-    tphvec_assert(tphvec_capacity((vec)) >= (size_t)(cap));                              \
-  } while (0)
-#endif
-int _tphvec_reserve(void **vec, size_t cap, tphvec_allocator_t *allocator)
+int _tphvec_reserve(void **vec, size_t new_cap, tphvec_allocator_t *allocator)
 {
-  tphvec_header_t *hdr = NULL;
   if (*vec) {
     /* Existing vector. */
-    hdr = _tphvec_vec_to_hdr(*vec);
-    if (hdr->allocator != allocator) { return TPHVEC_BAD_ALLOCATOR; }
-    if (hdr->capacity >= cap) { return TPHVEC_SUCCESS; }
-
+    tphvec_header_t *hdr = _tphvec_vec_to_hdr(*vec);
+    if (hdr->capacity >= new_cap) { return TPHVEC_SUCCESS; }
+    tphvec_allocator_t *a = hdr->allocator;
     tphvec_header_t *new_hdr =
-      (tphvec_header_t *)(allocator ? allocator->realloc(
-                                        allocator->mem_ctx, hdr, sizeof(tphvec_header_t) + cap)
-                                    : realloc(hdr, sizeof(tphvec_header_t) + cap));
+      (tphvec_header_t *)(a ? a->realloc(a->mem_ctx, hdr, sizeof(tphvec_header_t) + new_cap)
+                            : realloc(hdr, sizeof(tphvec_header_t) + new_cap));
     if (!new_hdr) { return TPHVEC_BAD_ALLOC; }
-
-    new_hdr->capacity = cap;
-    /*new_hdr->allocator = allocator;*/
+    new_hdr->capacity = new_cap;
     *vec = _tphvec_hdr_to_vec(new_hdr);
   } else {
     /* Initialize new vector. */
     if (allocator && !(allocator->alloc && allocator->realloc && allocator->free)) {
       return TPHVEC_BAD_ALLOCATOR;
     }
-
-    hdr = (tphvec_header_t *)(allocator ? allocator->alloc(
-                                            allocator->mem_ctx, sizeof(tphvec_header_t) + cap)
-                                        : malloc(sizeof(tphvec_header_t) + cap));
+    tphvec_header_t *hdr =
+      (tphvec_header_t *)(allocator ? allocator->alloc(
+                                        allocator->mem_ctx, sizeof(tphvec_header_t) + new_cap)
+                                    : malloc(sizeof(tphvec_header_t) + new_cap));
     if (!hdr) { return TPHVEC_BAD_ALLOC; }
-
+    hdr->capacity = new_cap;
     hdr->size = 0;
-    hdr->capacity = cap;
     hdr->allocator = allocator;
     *vec = _tphvec_hdr_to_vec(hdr);
   }
-  return 0; /* SUCCESS */
+  return TPHVEC_SUCCESS;
 }
 
 /**
  * @brief tphvec_reserve - Convenience macro.
- * @param vec       - The vector.
- * @param cap       - Minimum capacity to reserve.
- * @param allocator - Custom allocator.
+ * @param vec       - A vector.
+ * @param new_cap   - Minimum number of elements to reserve memory for.
+ * @param allocator - Custom allocator, if NULL malloc/realloc are used.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
  */
-#define tphvec_reserve(vec, cap, allocator) \
-  _tphvec_reserve((void **)&(vec), (cap) * sizeof(*(vec)), (allocator))
+#define tphvec_reserve(vec, new_cap, allocator) \
+  _tphvec_reserve((void **)&(vec), (new_cap) * sizeof(*(vec)), (allocator))
+
 
 #if 0
 /**
@@ -293,43 +277,24 @@ int _tphvec_reserve(void **vec, size_t cap, tphvec_allocator_t *allocator)
   } while (0)
 #endif
 
+
 /**
  * @brief tphvec_clear - Erase all the elements in the vector, capacity is unchanged.
  * @param vec - The vector.
  * @return void
  */
-#if 0
-#define tphvec_clear(vec)                                \
-  do {                                                   \
-    if ((vec)) { _tphvec_vec_to_base((vec))->size = 0; } \
-  } while (0)
-#endif
-void tphvec_clear(void *vec)
+static inline void tphvec_clear(void *vec)
 {
   if (vec) { _tphvec_vec_to_hdr(vec)->size = 0; }
 }
 
+
 /**
  * @brief tphvec_free - Frees all memory associated with the vector.
- * @param vec - The vector.
+ * @param vec - A vector.
  * @return void
  */
-#if 0
-#define tphvec_free(vec)                                                       \
-  do {                                                                         \
-    if ((vec)) {                                                               \
-      tphvec_header_t *tphvec_free__b = _tphvec_vec_to_base((vec));            \
-      tphvec_allocator_t *tphvec_free__a = tphvec_free__b->allocator;          \
-      if (tphvec_free__a) {                                                    \
-        tphvec_assert(tphvec_free__a->free);                                   \
-        tphvec_free__a->free(tphvec_free__a->mem_ctx, (void *)tphvec_free__b); \
-      } else {                                                                 \
-        free((void *)tphvec_free__b);                                          \
-      }                                                                        \
-    }                                                                          \
-  } while (0)
-#endif
-void tphvec_free(void *vec)
+static inline void tphvec_free(void *vec)
 {
   if (vec) {
     tphvec_header_t *hdr = _tphvec_vec_to_hdr(vec);
@@ -342,65 +307,46 @@ void tphvec_free(void *vec)
   }
 }
 
-#if 0
-/**
- * @brief tphvec_next_grow - Returns the computed size of next
- * vector grow. Size is increased by multiplication of 2.
- * Not checking for overflow here!
- * @param size - Current size.
- * @return Size after next vector grow as a <size_t>.
- * @internal
- */
-#define _tphvec_next_grow(size) ((size) ? (size_t)((size) << 1) : (size_t)1)
-#endif
 
 /**
- * @brief tphvec_push_back - adds an element to the end of the vector.
- * @param vec   - the vector.
- * @param value - the value to add.
- * @return void
+ * @brief _tphvec_append - Add elements to the end of the vector.
+ * @param vec_ptr - Pointer to a vector.
+ * @param values  - Pointer to values to be added.
+ * @param nbytes  - Number of bytes to copy from <values> to vector.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
  */
-int _tphvec_push_back(void **vec, void *values, size_t nbytes)
+int _tphvec_append(void **vec_ptr, void *values, size_t nbytes)
 {
-  if (*vec) {
-    tphvec_header_t *hdr = _tphvec_vec_to_hdr(*vec);
+  if (*vec_ptr) {
+    tphvec_header_t *hdr = _tphvec_vec_to_hdr(*vec_ptr);
     const size_t req_cap = hdr->size + nbytes;
     if (hdr->capacity < req_cap) {
-      size_t new_cap = hdr->capacity ? hdr->capacity : (size_t)1;
-      while (new_cap < req_cap) { new_cap <<= 1; }
-      // CHECK new_cap OVERFLOW!!
-
-      int ret = _tphvec_reserve(vec, new_cap, hdr->allocator);
-      if (ret != 0) { return ret; }
-      hdr = _tphvec_vec_to_hdr(*vec);
+      const size_t new_cap = _tphvec_next_capacity(hdr->capacity, req_cap);
+      tphvec_allocator_t *a = hdr->allocator;
+      tphvec_header_t *new_hdr =
+        (tphvec_header_t *)(a ? a->realloc(a->mem_ctx, hdr, sizeof(tphvec_header_t) + new_cap)
+                              : realloc(hdr, sizeof(tphvec_header_t) + new_cap));
+      if (!new_hdr) { return TPHVEC_BAD_ALLOC; }
+      hdr = new_hdr;
+      hdr->capacity = new_cap;
+      *vec_ptr = _tphvec_hdr_to_vec(hdr);
     }
-    memcpy(*vec + hdr->size, values, nbytes);
+    memcpy(*vec_ptr + hdr->size, values, nbytes);
     hdr->size += nbytes;
   } else {
+    tphvec_header_t *hdr = (tphvec_header_t *)(malloc(sizeof(tphvec_header_t) + nbytes));
+    if (!hdr) { return TPHVEC_BAD_ALLOC; }
+    hdr->capacity = nbytes;
+    hdr->size = nbytes;
+    *vec_ptr = _tphvec_hdr_to_vec(hdr);
+    memcpy(*vec_ptr, values, nbytes);
   }
-  return 0;
+  return TPHVEC_SUCCESS;
 }
 
-#define tphvec_push_back(vec, values, n) \
-  _tphvec_push_back((void**)&(vec), (values), (n) * sizeof(*(values)))
+#define tphvec_append(vec, values, count) \
+  _tphvec_append((void **)&(vec), (values), (count) * sizeof(*(values)))
 
-#if 0
-/**
- * @brief tphvec_push_back_range - adds <n> elements to the end of the vector.
- * @param vec    - The vector.
- * @param values - The values to add.
- * @param n      - The number of elements to add.
- * @return void
- */
-#define tphvec_push_back_range(vec, values, n)                         \
-  do {                                                                 \
-    while (tphvec_capacity((vec)) < tphvec_size((vec)) + (n)) {        \
-      _tphvec_grow((vec), _tphvec_next_grow(tphvec_capacity((vec))));  \
-    }                                                                  \
-    memcpy(&(vec)[tphvec_size((vec))], (values), (n) * sizeof *(vec)); \
-    tphvec_set_size((vec), tphvec_size(vec) + (n));                    \
-  } while (0)
-#endif
 
 #if 0
 /**
@@ -416,83 +362,114 @@ int _tphvec_push_back(void **vec, void *values, size_t nbytes)
   } while (0)
 #endif
 
+/**
+ * @brief _tphvec_shrink_to_fit - Requests the removal of unused capacity.
+ * @param vec_ptr - Pointer to a vector.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
+ */
+int _tphvec_shrink_to_fit(void **vec_ptr)
+{
+  if (*vec_ptr) {
+    tphvec_header_t *hdr = _tphvec_vec_to_hdr(*vec_ptr);
+    tphvec_assert(hdr->size <= hdr->capacity);
+    if (hdr->size == hdr->capacity) { return TPHVEC_SUCCESS; }
+    tphvec_allocator_t *a = hdr->allocator;
+    tphvec_header_t *new_hdr =
+      (tphvec_header_t *)(a ? a->realloc(a->mem_ctx, hdr, sizeof(tphvec_header_t) + hdr->size)
+                            : realloc(hdr, sizeof(tphvec_header_t) + hdr->size));
+    if (!new_hdr) { return TPHVEC_BAD_ALLOC; }
+    new_hdr->capacity = new_hdr->size;
+    *vec_ptr = _tphvec_hdr_to_vec(new_hdr);
+  }
+  tphvec_assert(_tphvec_capacity(*vec_ptr) == _tphvec_size(*vec_ptr));
+  return TPHVEC_SUCCESS;
+}
+
+/**
+ * @brief tphvec_shrink_to_fit - Requests the removal of unused capacity.
+ * @param vec - A vector.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
+ */
+#define tphvec_shrink_to_fit(vec) _tphvec_shrink_to_fit((void **)&(vec))
+
+
+/**
+ * @brief _tphvec_resize - Changes the number of elements stored.
+ * @param vec_ptr - Pointer to a vector.
+ * @param count   - New size of the vector in bytes.
+ * @param value   - The value to initialize the new elements with.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
+ */
+int _tphvec_resize(void **vec_ptr, size_t count, void *value, size_t sizeof_value)
+{
+  if (*vec_ptr) {
+    /* Existing vector. */
+    tphvec_header_t *hdr = _tphvec_vec_to_hdr(*vec_ptr);
+    if (count < hdr->size) {
+      /* Shrink vector, no new elements added! */
+      hdr->size = count;
+    } else if (count > hdr->size) {
+      if (hdr->capacity < count) {
+        /* Grow capacity. */
+        tphvec_allocator_t *a = hdr->allocator;
+        tphvec_header_t *new_hdr =
+          (tphvec_header_t *)(a ? a->realloc(a->mem_ctx, hdr, sizeof(tphvec_header_t) + count)
+                                : realloc(hdr, sizeof(tphvec_header_t) + count));
+        if (!new_hdr) { return TPHVEC_BAD_ALLOC; }
+        hdr = new_hdr;
+        hdr->capacity = count;
+      }
+      /* Initialize the first new element of the vector by copying the
+         provided value. The following elements are copied in increasingly
+         large chunks in order to minimize the number of function calls. */
+      memcpy(*vec_ptr + hdr->size, value, sizeof_value);
+      void* src = *vec_ptr + hdr->size;
+      hdr->size += sizeof_value;
+      size_t n = sizeof_value;
+      printf("count = %zu\n", count);
+      while (hdr->size < count) {
+        printf("w = %zu, n = %zu\n", hdr->size, n);
+        memcpy(*vec_ptr + hdr->size, src, n);
+        hdr->size += n;
+        n = ((hdr->size << 1) > count ? count - hdr->size : hdr->size);
+        /* CHECK OVERFLOW??? */
+      }
+    }
+    /* else: hdr->size == count, nothing to do! */
+  } else {
+    /* Initialize a new vector. */
+    tphvec_header_t *hdr = (tphvec_header_t *)(malloc(sizeof(tphvec_header_t) + count));
+    if (!hdr) { return TPHVEC_BAD_ALLOC; }
+    hdr->capacity = count;
+    hdr->allocator = NULL;
+    *vec_ptr = _tphvec_hdr_to_vec(hdr);
+    if (count < sizeof_value) {
+      /* Not enough capacity to initialize an element. */
+      hdr->size = 0;
+    } else {
+      /* Initialize the first element of the vector by copying the
+         provided value. The following elements are copied in increasingly
+         large chunks in order to minimize the number of function calls. */
+      memcpy(*vec_ptr, value, sizeof_value);
+      hdr->size = sizeof_value;
+      size_t n = sizeof_value;
+      printf("count = %zu\n", count);
+      while (hdr->size < count) {
+        printf("w = %zu, n = %zu\n", hdr->size, n);
+        memcpy(*vec_ptr + hdr->size, *vec_ptr, n);
+        hdr->size += n;
+        n = ((hdr->size << 1) > count ? count - hdr->size : hdr->size);
+        /* CHECK OVERFLOW??? */
+      }
+    }
+  }
+  return TPHVEC_SUCCESS;
+}
+
+#define tphvec_resize(vec, count, value) \
+  (_tphvec_resize((void **)&(vec), (count) * sizeof(*(vec)), &(value), sizeof((value))))
 
 #if 0
-/**
- * @brief cvector_set_elem_destructor - set the element destructor function
- * used to clean up removed elements. The vector must NOT be NULL for this to do
- * anything.
- * @param vec - the vector
- * @param elem_destructor_fn - function pointer of type
- * cvector_elem_destructor_t used to destroy elements
- * @return void
- */
-#define cvector_set_elem_destructor(vec, elem_destructor_fn)                       \
-  do {                                                                             \
-    if (vec) { cvector_vec_to_base(vec)->elem_destructor = (elem_destructor_fn); } \
-  } while (0)
-#endif
-
-/**
- * @brief _tphvec_grow - For internal use, ensures that the vector capacity is at least <cap>.
- * @param vec - The vector.
- * @param cap - The new capacity <size_t> to set.
- * @return void
- * @internal
- */
-#define _tphvec_grow_capacity(vec, cap)                                                           \
-  do {                                                                                            \
-    if ((vec)) {                                                                                  \
-      /* Re-allocate existing vector. */                                                          \
-      tphvec_header_t *_tphvec_grow_capacity__b1 = _tphvec_vec_to_base((vec));                    \
-      tphvec_header_t *_tphvec_grow_capacity__b2 = NULL;                                          \
-      if (_tphvec_grow_capacity__b1->allocator) {                                                 \
-        tphvec_assert(_tphvec_grow_capacity__b1->allocator->alloc                                 \
-                      && _tphvec_grow_capacity__b1->allocator->realloc                            \
-                      && _tphvec_grow_capacity__b1->allocator->free);                             \
-        _tphvec_grow_capacity__b2 =                                                               \
-          (tphvec_header_t *)_tphvec_grow_capacity__b1->allocator->realloc(                       \
-            _tphvec_grow_capacity__b1->allocator->mem_ctx,                                        \
-            (void *)_tphvec_grow_capacity__b1,                                                    \
-            sizeof(tphvec_header_t) + (size_t)(cap) * sizeof(*(vec)));                            \
-        tphvec_assert(_tphvec_grow_capacity__b2);                                                 \
-      } else {                                                                                    \
-        _tphvec_grow_capacity__b2 = (tphvec_header_t *)realloc((void *)_tphvec_grow_capacity__b1, \
-          sizeof(tphvec_header_t) + (size_t)(cap) * sizeof(*(vec)));                              \
-      }                                                                                           \
-      tphvec_assert(_tphvec_grow_capacity__b2);                                                   \
-      _tphvec_grow_capacity__b2->capacity = (size_t)(cap);                                        \
-      (vec) = _tphvec_base_to_vec(_tphvec_grow_capacity__b2);                                     \
-    } else {                                                                                      \
-      /* Initialize a new vector. */                                                              \
-      tphvec_header_t *_tphvec_grow_capacity__b0 =                                                \
-        (tphvec_header_t *)malloc(sizeof(tphvec_header_t) + (size_t)(cap) * sizeof(*(vec)));      \
-      tphvec_assert(_tphvec_grow_capacity__b0);                                                   \
-      _tphvec_grow_capacity__b0->size = 0;                                                        \
-      _tphvec_grow_capacity__b0->capacity = (size_t)(cap);                                        \
-      _tphvec_grow_capacity__b0->allocator = NULL;                                                \
-      (vec) = _tphvec_base_to_vec(_tphvec_grow_capacity__b0);                                     \
-    }                                                                                             \
-  } while (0)
-
-/**
- * @brief tphvec_shrink_to_fit - requests the container to reduce its capacity
- * to fit its size.
- * @param vec - The vector.
- * @return void
- */
-#define tphvec_shrink_to_fit(vec)                                                  \
-  do {                                                                             \
-    if ((vec)) { _tphvec_grow_capacity((vec), _tphvec_vec_to_base((vec))->size); } \
-  } while (0)
-
-/**
- * @brief tphvec_resize - Resizes the container to contain count elements.
- * @param vec      - The vector.
- * @param new_size - New size <size_t> of the vector.
- * @param value    - New elements are initialized to this value.
- * @return void
- */
 #define tphvec_resize(vec, new_size, value)                                  \
   do {                                                                       \
     const size_t tphvec_resize__new_size = (size_t)(new_size);               \
@@ -522,6 +499,7 @@ int _tphvec_push_back(void **vec, void *values, size_t nbytes)
       } while (tphvec_resize__size < tphvec_resize__new_size);               \
     }                                                                        \
   } while (0)
+#endif
 
 /* -------------------------- */
 
@@ -545,9 +523,10 @@ static void tph_free_fn(void *mem_ctx, void *p)
 
 static void print_vecf(float *vec)
 {
-  printf("size = %" PRIu32 "\ncap = %" PRIu32 "\n",
+  printf("cap = %" PRIu32 "\nsize = %" PRIu32 "\nalloc = %p\n",
+    (uint32_t)tphvec_capacity(vec),
     (uint32_t)tphvec_size(vec),
-    (uint32_t)tphvec_capacity(vec));
+    (void *)tphvec_get_allocator(vec));
   const size_t sz = tphvec_size(vec);
   printf("v = { ");
   for (size_t i = 0; i < tphvec_size(vec); ++i) {
@@ -558,28 +537,59 @@ static void print_vecf(float *vec)
 
 int main(int argc, char *argv[])
 {
+  printf("cap: %zu, next_cap: %zu\n", 0, _tphvec_next_capacity(0, 0));
+  printf("cap: %zu, next_cap: %zu\n", 5, _tphvec_next_capacity(5, 13));
+  printf("cap: %zu, next_cap: %zu\n", 5, _tphvec_next_capacity(5, SIZE_MAX - 10));
+
   tphvec(float) v = NULL;
   tphvec_reserve(v, 10, NULL);
   print_vecf(v);
   printf("\n");
 
   float vals[] = { 41.F, 42.F, 43.F };
-  tphvec_push_back(v, vals, 3);
-  tphvec_push_back(v, vals, 3);
-  tphvec_push_back(v, vals, 3);
-  tphvec_push_back(v, vals, 3);
-  tphvec_push_back(v, vals, 3);
-  tphvec_push_back(v, vals, 3);
+  tphvec_append(v, vals, 3);
+  tphvec_append(v, vals, 3);
+  tphvec_append(v, vals, 3);
+  tphvec_append(v, vals, 3);
+  tphvec_append(v, vals, 3);
+  tphvec_append(v, vals, 3);
   print_vecf(v);
   printf("\n");
 
-#if 0
-  tphvec_resize(v, 16, 42.F);
+  tphvec_shrink_to_fit(v);
   print_vecf(v);
   printf("\n");
 
   tphvec_free(v);
 
+  {
+    tphvec(float) v2 = NULL;
+    float value = 333.F;
+    tphvec_resize(v2, 13, value);
+    print_vecf(v2);
+    printf("\n");
+  }
+  {
+    tphvec(float) v2 = NULL;
+    float value = 333.F;
+    tphvec_resize(v2, 1, value);
+    print_vecf(v2);
+    printf("\n");
+    float value2 = 44.F;
+    tphvec_resize(v2, 4, value2);
+    print_vecf(v2);
+    printf("\n");
+  }
+  {
+    tphvec(float) v2 = NULL;
+    float value = 333.F;
+    tphvec_resize(v2, 0, value);
+    print_vecf(v2);
+    printf("\n");
+  }
+
+
+#if 0
   float *v2 = NULL;
   tphvec_resize(v2, 16, 42.F);
   tphvec_free(v2);
