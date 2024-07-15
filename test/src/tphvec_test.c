@@ -34,9 +34,9 @@ static void print_vecf(float *vec)
 
 int main(int argc, char *argv[])
 {
-  printf("cap: %zu, next_cap: %zu\n", 0, _tphvec_next_capacity(0, 0));
-  printf("cap: %zu, next_cap: %zu\n", 5, _tphvec_next_capacity(5, 13));
-  printf("cap: %zu, next_cap: %zu\n", 5, _tphvec_next_capacity(5, SIZE_MAX - 10));
+  // printf("cap: %zu, next_cap: %zu\n", 0, _tphvec_next_capacity(0, 0));
+  // printf("cap: %zu, next_cap: %zu\n", 5, _tphvec_next_capacity(5, 13));
+  // printf("cap: %zu, next_cap: %zu\n", 5, _tphvec_next_capacity(5, SIZE_MAX - 10));
 
   tphvec(float) v = NULL;
   tphvec_reserve(v, 10);

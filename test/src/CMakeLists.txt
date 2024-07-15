@@ -11,7 +11,7 @@ else()
   set(_cxx_standard 20)
 endif()
 
-# Default to c++20.
+# Default to c11.
 if (DEFINED CMAKE_C_STANDARD)
   set(_c_standard ${CMAKE_C_STANDARD})
 else()
@@ -27,7 +27,10 @@ set_target_properties(tph_poisson_test PROPERTIES
 )
 # add_test(NAME tph_poisson_test COMMAND tph_poisson_test)
 
-add_executable(tphvec_test tphvec_test.c)
+add_executable(tphvec_test 
+  "tphvec.h" 
+  "tphvec.c" 
+  "tphvec_test.c")
 # target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson)
 set_target_properties(tph_poisson_test PROPERTIES
   C_STANDARD ${_c_standard}
