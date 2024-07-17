@@ -48,18 +48,18 @@ struct tph_poisson_points_
 struct tph_poisson_args_
 {
   tph_real radius;
-  uint32_t dims;
+  int32_t ndims;
   const tph_real *bounds_min;
   const tph_real *bounds_max;
   uint32_t max_sample_attempts;
-  uint32_t seed;
+  uint64_t seed;
 };
 
 struct tph_poisson_sampling_
 {
   tph_poisson_context_internal *internal;
-  uint32_t dims;
-  uint32_t numpoints;
+  int32_t dims;
+  ptrdiff_t numpoints;
 };
 
 #pragma pack(pop)
@@ -95,437 +95,6 @@ extern tph_poisson_points tph_poisson_get_points(const tph_poisson_sampling *sam
 #ifdef TPH_POISSON_IMPLEMENTATION
 #undef TPH_POISSON_IMPLEMENTATION
 
-/* -------------------------- */
-/*
- * Copyright (c) 2015 Evan Teran
- *
- * License: The MIT License (MIT)
- */
-
-#ifndef CVECTOR_H_
-#define CVECTOR_H_
-
-/* cvector heap implemented using C library malloc() */
-
-/* in case C library malloc() needs extra protection,
- * allow these defines to be overridden.
- */
-#ifndef cvector_clib_free
-#include <stdlib.h> /* for free */
-#define cvector_clib_free free
-#endif
-#ifndef cvector_clib_malloc
-#include <stdlib.h> /* for malloc */
-#define cvector_clib_malloc malloc
-#endif
-#ifndef cvector_clib_calloc
-#include <stdlib.h> /* for calloc */
-#define cvector_clib_calloc calloc
-#endif
-#ifndef cvector_clib_realloc
-#include <stdlib.h> /* for realloc */
-#define cvector_clib_realloc realloc
-#endif
-#ifndef cvector_clib_assert
-#include <assert.h> /* for assert */
-#define cvector_clib_assert assert
-#endif
-#ifndef cvector_clib_memcpy
-#include <string.h> /* for memcpy */
-#define cvector_clib_memcpy memcpy
-#endif
-#ifndef cvector_clib_memmove
-#include <string.h> /* for memmove */
-#define cvector_clib_memmove memmove
-#endif
-
-/* NOTE: Similar to C's qsort and bsearch, you will receive a T*
- * for a vector of Ts. This means that you cannot use `free` directly
- * as a destructor. Instead if you have for example a cvector_vector_type(int *)
- * you will need to supply a function which casts `elem_ptr` to an `int**`
- * and then does a free on what that pointer points to:
- *
- * ex:
- *
- * void free_int(void *p) { free(*(int **)p); }
- */
-typedef void (*tph_elem_destructor_t)(void *elem_ptr);
-
-typedef struct tph_metadata_t
-{
-  size_t size;
-  size_t capacity;
-  tph_elem_destructor_t elem_destructor;
-} tph_metadata_t;
-
-/**
- * @brief tph_vector_type - The vector type used in this library.
- */
-#define tph_vector_type(type) type *
-
-/**
- * @brief tph_vector - Syntactic sugar to retrieve a vector type.
- *
- * @param type The type of vector to act on.
- */
-#define tph_vector(type) tph_vector_type(type)
-
-/**
- * @brief tph_vector_iterator - The iterator type used for tph_vector.
- */
-#define tph_vector_iterator(type) tph_vector_type(type)
-
-/**
- * @brief tph_vector_vec_to_base - For internal use, converts a vector pointer to a metadata
- * pointer.
- * @param vec - the vector.
- * @return the metadata pointer of the vector.
- * @internal
- */
-#define tph_vector_vec_to_base(vec) (&((tph_vector_metadata_t *)(vec))[-1])
-
-/**
- * @brief tph_vector_base_to_vec - For internal use, converts a metadata pointer to a vector
- * pointer.
- * @param ptr - pointer to the metadata.
- * @return the vector.
- * @internal
- */
-#define tph_vector_base_to_vec(ptr) ((void *)&((tph_vector_metadata_t *)(ptr))[1])
-
-/**
- * @brief tph_vector_capacity - gets the current capacity of the vector.
- * @param vec - the vector.
- * @return the capacity as a size_t.
- */
-#define tph_vector_capacity(vec) ((vec) ? tph_vector_vec_to_base(vec)->capacity : (size_t)0)
-
-/**
- * @brief tph_vector_size - gets the current size of the vector.
- * @param vec - the vector.
- * @return the size as a size_t.
- */
-#define tph_vector_size(vec) ((vec) ? tph_vector_vec_to_base(vec)->size : (size_t)0)
-
-/**
- * @brief tph_vector_elem_destructor - get the element destructor function used
- * to clean up elements.
- * @param vec - the vector.
- * @return the function pointer as tph_vector_elem_destructor_t.
- */
-#define tph_vector_elem_destructor(vec) \
-  ((vec) ? tph_vector_vec_to_base(vec)->elem_destructor : NULL)
-
-/**
- * @brief tph_vector_empty - returns non-zero if the vector is empty.
- * @param vec - the vector.
- * @return non-zero if empty, zero if non-empty.
- */
-#define tph_vector_empty(vec) (tph_vector_size(vec) == 0)
-
-/**
- * @brief tph_vector_reserve - Requests that the vector capacity be at least enough
- * to contain n elements. If n is greater than the current vector capacity, the
- * function causes the container to reallocate its storage increasing its
- * capacity to n (or greater).
- * @param vec - the vector.
- * @param n - Minimum capacity for the vector.
- * @return void
- */
-#define tph_vector_reserve(vec, n)                    \
-  do {                                                \
-    const size_t cv_cap__ = cvector_capacity(vec);    \
-    if (cv_cap__ < (n)) { cvector_grow((vec), (n)); } \
-  } while (0)
-
-/**
- * @brief tph_vector_init - Initialize a vector. The vector must be NULL for this to do anything.
- * @param vec - the vector.
- * @param capacity - vector capacity to reserve.
- * @param elem_destructor_fn - element destructor function.
- * @return void
- */
-#define tph_vector_init(vec, capacity, elem_destructor_fn)         \
-  do {                                                             \
-    if (!(vec)) {                                                  \
-      tph_vector_reserve((vec), capacity);                         \
-      tph_vector_set_elem_destructor((vec), (elem_destructor_fn)); \
-    }                                                              \
-  } while (0)
-
-/**
- * @brief tph_vector_erase - removes the element at index i from the vector.
- * @param vec - the vector.
- * @param i - index of element to remove.
- * @return void
- */
-#define tph_vector_erase(vec, i)                                                          \
-  do {                                                                                    \
-    if (vec) {                                                                            \
-      const size_t cv_sz__ = tph_vector_size(vec);                                        \
-      if ((i) < cv_sz__) {                                                                \
-        tph_vector_elem_destructor_t elem_destructor__ = tph_vector_elem_destructor(vec); \
-        if (elem_destructor__) { elem_destructor__(&(vec)[i]); }                          \
-        tph_vector_set_size((vec), cv_sz__ - 1);                                          \
-        tph_vector_clib_memmove(                                                          \
-          (vec) + (i), (vec) + (i) + 1, sizeof(*(vec)) * (cv_sz__ - 1 - (i)));            \
-      }                                                                                   \
-    }                                                                                     \
-  } while (0)
-
-/**
- * @brief tph_vector_clear - erase all of the elements in the vector.
- * @param vec - the vector
- * @return void
- */
-#define tph_vector_clear(vec)                                                             \
-  do {                                                                                    \
-    if (vec) {                                                                            \
-      cvector_elem_destructor_t elem_destructor__ = cvector_elem_destructor(vec);         \
-      if (elem_destructor__) {                                                            \
-        size_t i__;                                                                       \
-        for (i__ = 0; i__ < cvector_size(vec); ++i__) { elem_destructor__(&(vec)[i__]); } \
-      }                                                                                   \
-      cvector_set_size(vec, 0);                                                           \
-    }                                                                                     \
-  } while (0)
-
-/**
- * @brief tph_vector_free - frees all memory associated with the vector.
- * @param vec - the vector.
- * @return void
- */
-#define tph_vector_free(vec)                                                                 \
-  do {                                                                                       \
-    if (vec) {                                                                               \
-      void *p1__ = tph_vector_vec_to_base(vec);                                              \
-      tph_vector_elem_destructor_t elem_destructor__ = tph_vector_elem_destructor(vec);      \
-      if (elem_destructor__) {                                                               \
-        size_t i__;                                                                          \
-        for (i__ = 0; i__ < tph_vector_size(vec); ++i__) { elem_destructor__(&(vec)[i__]); } \
-      }                                                                                      \
-      tph_vector_clib_free(p1__);                                                            \
-    }                                                                                        \
-  } while (0)
-
-/**
- * @brief tph_vector_compute_next_grow - returns an the computed size in next vector grow
- * size is increased by multiplication of 2.
- * @param size - current size
- * @return size after next vector grow
- */
-#define tph_vector_compute_next_grow(size) ((size) ? ((size) << 1) : 1)
-
-/**
- * @brief tph_vector_push_back - adds an element to the end of the vector.
- * @param vec - the vector.
- * @param value - the value to add.
- * @return void
- */
-#define tph_vector_push_back(vec, value)                              \
-  do {                                                                \
-    const size_t cv_cap__ = tph_vector_capacity(vec);                 \
-    if (cv_cap__ <= tph_vector_size(vec)) {                           \
-      tph_vector_grow((vec), tph_vector_compute_next_grow(cv_cap__)); \
-    }                                                                 \
-    (vec)[tph_vector_size(vec)] = (value);                            \
-    tph_vector_set_size((vec), tph_vector_size(vec) + 1);             \
-  } while (0)
-
-/**
- * @brief cvector_insert - insert element at position pos to the vector
- * @param vec - the vector
- * @param pos - position in the vector where the new elements are inserted.
- * @param val - value to be copied (or moved) to the inserted elements.
- * @return void
- */
-#define cvector_insert(vec, pos, val)                                                      \
-  do {                                                                                     \
-    size_t cv_cap__ = cvector_capacity(vec);                                               \
-    if (cv_cap__ <= cvector_size(vec)) {                                                   \
-      cvector_grow((vec), cvector_compute_next_grow(cv_cap__));                            \
-    }                                                                                      \
-    if ((pos) < cvector_size(vec)) {                                                       \
-      cvector_clib_memmove(                                                                \
-        (vec) + (pos) + 1, (vec) + (pos), sizeof(*(vec)) * ((cvector_size(vec)) - (pos))); \
-    }                                                                                      \
-    (vec)[(pos)] = (val);                                                                  \
-    cvector_set_size((vec), cvector_size(vec) + 1);                                        \
-  } while (0)
-
-/**
- * @brief cvector_pop_back - removes the last element from the vector
- * @param vec - the vector
- * @return void
- */
-#define cvector_pop_back(vec)                                                    \
-  do {                                                                           \
-    cvector_elem_destructor_t elem_destructor__ = cvector_elem_destructor(vec);  \
-    if (elem_destructor__) { elem_destructor__(&(vec)[cvector_size(vec) - 1]); } \
-    cvector_set_size((vec), cvector_size(vec) - 1);                              \
-  } while (0)
-
-/**
- * @brief cvector_copy - copy a vector
- * @param from - the original vector
- * @param to - destination to which the function copy to
- * @return void
- */
-#define cvector_copy(from, to)                                                 \
-  do {                                                                         \
-    if ((from)) {                                                              \
-      cvector_grow(to, cvector_size(from));                                    \
-      cvector_set_size(to, cvector_size(from));                                \
-      cvector_clib_memcpy((to), (from), cvector_size(from) * sizeof(*(from))); \
-    }                                                                          \
-  } while (0)
-
-/**
- * @brief cvector_swap - exchanges the content of the vector by the content of another vector of the
- * same type
- * @param vec - the original vector
- * @param other - the other vector to swap content with
- * @param type - the type of both vectors
- * @return void
- */
-#define cvector_swap(vec, other, type)           \
-  do {                                           \
-    if (vec && other) {                          \
-      cvector_vector_type(type) cv_swap__ = vec; \
-      vec = other;                               \
-      other = cv_swap__;                         \
-    }                                            \
-  } while (0)
-
-/**
- * @brief tph_vector_set_capacity - For internal use, sets the capacity variable of the vector.
- * @param vec - the vector.
- * @param size - the new capacity to set.
- * @return void
- * @internal
- */
-#define tph_vector_set_capacity(vec, size)                       \
-  do {                                                           \
-    if (vec) { tph_vector_vec_to_base(vec)->capacity = (size); } \
-  } while (0)
-
-/**
- * @brief tph_vector_set_size - For internal use, sets the size variable of the vector.
- * @param vec - the vector.
- * @param size - the new capacity to set.
- * @return void
- * @internal
- */
-#define tph_vector_set_size(vec, _size)                       \
-  do {                                                        \
-    if (vec) { tph_vector_vec_to_base(vec)->size = (_size); } \
-  } while (0)
-
-/**
- * @brief cvector_set_elem_destructor - set the element destructor function
- * used to clean up removed elements. The vector must NOT be NULL for this to do anything.
- * @param vec - the vector
- * @param elem_destructor_fn - function pointer of type cvector_elem_destructor_t used to destroy
- * elements
- * @return void
- */
-#define cvector_set_elem_destructor(vec, elem_destructor_fn)                       \
-  do {                                                                             \
-    if (vec) { cvector_vec_to_base(vec)->elem_destructor = (elem_destructor_fn); } \
-  } while (0)
-
-/**
- * @brief cvector_grow - For internal use, ensures that the vector is at least <count> elements big
- * @param vec - the vector
- * @param count - the new capacity to set
- * @return void
- * @internal
- */
-#define cvector_grow(vec, count)                                                  \
-  do {                                                                            \
-    const size_t cv_sz__ = (count) * sizeof(*(vec)) + sizeof(cvector_metadata_t); \
-    if (vec) {                                                                    \
-      void *cv_p1__ = cvector_vec_to_base(vec);                                   \
-      void *cv_p2__ = cvector_clib_realloc(cv_p1__, cv_sz__);                     \
-      cvector_clib_assert(cv_p2__);                                               \
-      (vec) = cvector_base_to_vec(cv_p2__);                                       \
-    } else {                                                                      \
-      void *cv_p__ = cvector_clib_malloc(cv_sz__);                                \
-      cvector_clib_assert(cv_p__);                                                \
-      (vec) = cvector_base_to_vec(cv_p__);                                        \
-      cvector_set_size((vec), 0);                                                 \
-      cvector_set_elem_destructor((vec), NULL);                                   \
-    }                                                                             \
-    cvector_set_capacity((vec), (count));                                         \
-  } while (0)
-
-/**
- * @brief cvector_shrink_to_fit - requests the container to reduce its capacity to fit its size
- * @param vec - the vector
- * @return void
- */
-#define cvector_shrink_to_fit(vec)               \
-  do {                                           \
-    if (vec) {                                   \
-      const size_t cv_sz___ = cvector_size(vec); \
-      cvector_grow(vec, cv_sz___);               \
-    }                                            \
-  } while (0)
-
-/**
- * @brief cvector_at - returns a reference to the element at position n in the vector.
- * @param vec - the vector
- * @param n - position of an element in the vector.
- * @return the element at the specified position in the vector.
- */
-#define cvector_at(vec, n) \
-  ((vec) ? (((int)(n) < 0 || (size_t)(n) >= cvector_size(vec)) ? NULL : &(vec)[n]) : NULL)
-
-/**
- * @brief cvector_front - returns a reference to the first element in the vector. Unlike member
- * cvector_begin, which returns an iterator to this same element, this function returns a direct
- * reference.
- * @return a reference to the first element in the vector container.
- */
-#define cvector_front(vec) ((vec) ? ((cvector_size(vec) > 0) ? cvector_at(vec, 0) : NULL) : NULL)
-
-/**
- * @brief cvector_back - returns a reference to the last element in the vector.Unlike member
- * cvector_end, which returns an iterator just past this element, this function returns a direct
- * reference.
- * @return a reference to the last element in the vector.
- */
-#define cvector_back(vec) \
-  ((vec) ? ((cvector_size(vec) > 0) ? cvector_at(vec, cvector_size(vec) - 1) : NULL) : NULL)
-
-/**
- * @brief cvector_resize - resizes the container to contain count elements.
- * @param vec - the vector
- * @param count - new size of the vector
- * @param value - the value to initialize new elements with
- * @return void
- */
-#define cvector_resize(vec, count, value)                            \
-  do {                                                               \
-    if (vec) {                                                       \
-      size_t cv_sz_count__ = (size_t)(count);                        \
-      size_t cv_sz__ = cvector_vec_to_base(vec)->size;               \
-      if (cv_sz_count__ > cv_sz__) {                                 \
-        cvector_reserve((vec), cv_sz_count__);                       \
-        cvector_set_size((vec), cv_sz_count__);                      \
-        do {                                                         \
-          (vec)[cv_sz__++] = (value);                                \
-        } while (cv_sz__ < cv_sz_count__);                           \
-      } else {                                                       \
-        while (cv_sz_count__ < cv_sz__--) { cvector_pop_back(vec); } \
-      }                                                              \
-    }                                                                \
-  } while (0)
-
-#endif /* CVECTOR_H_ */
-
-/* -------------------------- */
-
 #include <assert.h>// assert
 #include <stdlib.h>// malloc, realloc, free
 
@@ -537,10 +106,10 @@ typedef struct tph_poisson_grid_
 {
   tph_real dx;
   tph_real dx_inv;
-  uint32_t dims;
+  int32_t ndims;
   const tph_real *bounds_min;
   const tph_real *bounds_max;
-  int32_t *size;
+  ptrdiff_t *size;
   uint32_t *cells;
 } tph_poisson_grid;
 
@@ -585,19 +154,19 @@ static void tph_poisson_grid_free(tph_poisson_grid *grid,
 
 static int32_t tph_poisson_grid_create(tph_poisson_grid *grid,
   tph_real radius,
-  uint32_t dims,
+  int32_t ndims,
   const tph_real *bounds_min,
   const tph_real *bounds_max,
   const tph_poisson_context_internal *internal)
 {
-  const tph_real dx = ((tph_real)0.999 * radius) / TPH_SQRT((tph_real)dims);
+  const tph_real dx = ((tph_real)0.999 * radius) / TPH_SQRT((tph_real)ndims);
   const tph_real dx_inv = (tph_real)1 / dx;
 
-  int32_t *size = (int32_t *)internal->alloc(internal->mem_ctx, dims * sizeof(int32_t));
+  ptrdiff_t *size = (ptrdiff_t *)internal->alloc(internal->mem_ctx, ndims * sizeof(int32_t));
   if (size == NULL) { return TPH_POISSON_BAD_ALLOC; }
 
-  uint32_t linear_size = 1;
-  for (uint32_t i = 0; i < dims; ++i) {
+  ptrdiff_t linear_size = 1;
+  for (int32_t i = 0; i < ndims; ++i) {
     assert(bounds_max[i] > bounds_min[i]);
     size[i] = (int32_t)TPH_CEIL((bounds_max[i] - bounds_min[i]) * dx_inv);
     assert(size[i] > 0);
@@ -617,7 +186,7 @@ static int32_t tph_poisson_grid_create(tph_poisson_grid *grid,
 
   grid->dx = dx;
   grid->dx_inv = dx_inv;
-  grid->dims = dims;
+  grid->ndims = ndims;
   grid->bounds_min = bounds_min;
   grid->bounds_max = bounds_max;
   grid->size = size;
@@ -626,25 +195,29 @@ static int32_t tph_poisson_grid_create(tph_poisson_grid *grid,
   return TPH_POISSON_SUCCESS;
 }
 
-static void tph_poisson_grid_sample_to_index(const tph_poisson_grid *grid,
-  const tph_real *sample,
-  int32_t *index)
+static void tph_poisson_grid_pos_to_index(const tph_poisson_grid *grid,
+  const tph_real *pos,
+  ptrdiff_t *grid_index)
 {
-  for (uint32_t i = 0; i < grid->dims; ++i) {
-    index[i] = (int32_t)TPH_FLOOR((sample[i] - grid->bounds_min[i]) * grid->dx_inv);
+  const int32_t ndims = grid->ndims;
+  for (int32_t i = 0; i < ndims; ++i) {
+    grid_index[i] = (ptrdiff_t)TPH_FLOOR((pos[i] - grid->bounds_min[i]) * grid->dx_inv);
   }
 }
 
-static uint32_t tph_poisson_grid_linear_index(const tph_poisson_grid *grid, const int32_t *index)
+/* NOTE: Could return a value less than zero to indicate error... */
+static ptrdiff_t tph_poisson_grid_linear_index(const tph_poisson_grid *grid,
+  const ptrdiff_t *grid_index)
 {
-  assert(0 <= index[0] && index[0] < grid->size[0]);
-  uint32_t k = (size_t)index[0];
-  uint32_t d = 1;
-  for (uint32_t i = 1; i < grid->dims; ++i) {
-    assert(0 <= index[i] && index[i] < grid->size[i]);
-    // Note: Not checking for "overflow".
-    d *= (uint32_t)grid->size[i - 1];
-    k += (uint32_t)(index[i] * d);
+  assert((0 <= grid_index[0]) & (grid_index[0] < grid->size[0]));
+  ptrdiff_t k = grid_index[0];
+  ptrdiff_t d = 1;
+  const int32_t ndims = grid->ndims;
+  for (int32_t i = 1; i < ndims; ++i) {
+    assert((0 <= grid_index[i]) & (grid_index[i] < grid->size[i]));
+    /* Not checking for overflow! */
+    d *= grid->size[i - 1];
+    k += grid_index[i] * d;
   }
   return k;
 }
@@ -653,6 +226,134 @@ static uint32_t *tph_poisson_grid_cell(tph_poisson_grid *grid, size_t lin_index)
 {
   return &grid->cells[lin_index];
 }
+
+/**
+ * @brief Returns the squared magnitude of the vector u (not checking for overflow).
+ * @param u     Array of values.
+ * @param ndims Number of values in u.
+ * @return The squared magnitude of u.
+ */
+static tph_real tph_sqr_mag(const tph_real *u, ptrdiff_t ndims)
+{
+  assert(ndims > 0);
+  tph_real m = u[0] * u[0];
+  while (--ndims) { m += u[ndims] * u[ndims]; }
+  return m;
+}
+
+/**
+ * @brief Returns the squared distance between the vectors u and v.
+ * @param u     First array of values.
+ * @param v     Second array of values.
+ * @param ndims Number of values in u and v.
+ * @return The squared distance between u and v.
+ */
+static tph_real tph_sqr_dist(const tph_real *u, const tph_real *v, ptrdiff_t ndims)
+{
+  assert(ndims > 0);
+  tph_real s = u[0] - v[0];
+  tph_real d = s * s;
+  while (--ndims) {
+    s = u[ndims] - v[ndims];
+    d += s * s;
+  }
+  return d;
+}
+
+/**
+ * @brief Returns non-zero if p is element-wise inclusively inside b_min and b_max, otherwise zero.
+ * Assumes that b_min is element-wise less than b_max.
+ * @param p
+ * @param b_min
+ * @param b_max
+ * @param ndims
+ * @return
+ */
+static int tph_poisson_inside(const tph_real *p,
+  const tph_real *b_min,
+  const tph_real *b_max,
+  ptrdiff_t ndims)
+{
+  assert(ndims > 0);
+  while (ndims--) {
+    assert(b_min[ndims] < b_max[ndims]);
+    if (!((b_min[ndims] <= p[ndims]) & (p[ndims] <= b_max[ndims]))) { return 0; }
+  }
+  return 1;
+}
+
+static uint64_t tph_poisson_splitmix64(uint64_t *state)
+{
+  uint64_t result = (*state += 0x9E3779B97f4A7C15);
+  result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
+  result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
+  return result ^ (result >> 31);
+}
+
+typedef struct
+{
+  uint64_t s[4];
+} tph_poisson_xoshiro256p_state;
+
+/**
+ * @brief Initializes a xoshiro256p state.
+ * @param seed Seed value, can be zero.
+ */
+static void tph_poisson_xoshiro256p_init(tph_poisson_xoshiro256p_state *state, const uint64_t seed)
+{
+  /* As suggested at https://prng.di.unimi.it, use SplitMix64 to initialize the state of a
+   * generator starting from a 64-bit seed. It has been shown that initialization must be
+   * performed with a generator radically different in nature from the one used to avoid
+   * correlation on similar seeds. */
+  uint64_t sm_state = seed;
+  state->s[0] = tph_poisson_splitmix64(&sm_state);
+  state->s[1] = tph_poisson_splitmix64(&sm_state);
+  state->s[2] = tph_poisson_splitmix64(&sm_state);
+  state->s[3] = tph_poisson_splitmix64(&sm_state);
+}
+
+/**
+ * @brief Returns a pseudo-random number. Assumes that the value of the passed in state is not all
+ * zeros.
+ * @param state State to be mutated into the next number in the sequence.
+ * @return A pseudo-random number.
+ */
+static uint64_t tph_poisson_xoshiro256p_next(tph_poisson_xoshiro256p_state *state)
+{
+  uint64_t *s = state->s;
+  const uint64_t result = s[0] + s[3];
+  const uint64_t t = s[1] << 17;
+  s[2] ^= s[0];
+  s[3] ^= s[1];
+  s[1] ^= s[2];
+  s[0] ^= s[3];
+  s[2] ^= t;
+
+  /* s[3] = rotl(s[3], 45) */
+  s[3] = (s[3] << 45) | (s[3] >> 49);
+  return result;
+}
+
+/**
+ * @brief Returns a floating point number in [0..1).
+ * @param x Bit representation.
+ * @return A number in [0..1).
+ */
+static inline double tph_poisson_to_double(const uint64_t x)
+{
+  /* Convert to double, as suggested at https://prng.di.unimi.it
+     This conversion prefers the high bits of x (usually, a good idea). */
+  return (x >> 11) * 0x1.0p-53;
+}
+
+// Assumes min_value <= max_value.
+static inline tph_real
+  tph_poisson_clamped(const tph_real min_value, const tph_real max_value, const tph_real value)
+{
+  assert(min_value <= max_value);
+  return value < min_value ? min_value : (value > max_value ? max_value : value);
+}
+
 
 static void *tph_alloc_fn(void *mem_ctx, size_t size)
 {
@@ -666,25 +367,37 @@ static void tph_free_fn(void *mem_ctx, void *p)
   free(p);
 }
 
-static int32_t tph_valid_args(const tph_poisson_args *args)
+static int tph_valid_args(const tph_poisson_args *args)
 {
   if (args == NULL) { return 0; }
   int valid = 1;
   valid &= (args->radius > 0.F);
   valid &= (args->max_sample_attempts > 0);
-  valid &= (args->dims >= 1);
-  for (uint32_t i = 0; i < args->dims; ++i) {
+  valid &= (args->ndims > 0);
+  for (int32_t i = 0; i < args->ndims; ++i) {
     valid &= (args->bounds_max[i] > args->bounds_min[i]);
   }
   return valid;
 }
 
-static void tph_poisson_add_sample(const tph_real *sample,
-  tph_real *samples,
-  uint32_t *active_indices,
+static int tph_poisson_add_sample(const tph_real *pos,
+  tph_real *samples_vec,
+  uint32_t *active_indices_vec,
   tph_poisson_grid *grid,
-  int32_t *index)
+  ptrdiff_t *grid_index)
 {
+  /* assert(inside...) */
+  const ptrdiff_t sample_index = tph_poisson_vec_size(samples_vec);
+  int ret = TPH_POISSON_SUCCESS;
+  ret = tph_poisson_vec_append(samples_vec, pos, grid->ndims);
+  if (ret != TPH_POISSON_SUCCESS) { return ret; }
+  ret = tph_poisson_vec_push_back(active_indices_vec, sample_index);
+  if (ret != TPH_POISSON_SUCCESS) { return ret; }
+  tph_poisson_grid_pos_to_index(grid, pos, grid_index);
+  const ptrdiff_t lin_index = tph_poisson_grid_linear_index(grid, grid_index);
+  assert((0 <= lin_index) & (lin_index < grid->linear_size));
+  grid->cells[lin_index] = (uint32_t)sample_index;
+  return ret;
 #if 0  
   for (uint32_t i = 0; i < grid->dims; ++i) { cvector_push_back(samples, sample[i]); }
   const uint32_t sample_index = cvector_size(samples) / grid->dims - 1;
@@ -720,42 +433,95 @@ int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
 
   tph_poisson_context_internal *internal =
     (tph_poisson_context_internal *)alloc_fn(user_alloc_ctx, sizeof(tph_poisson_context_internal));
-  if (internal == NULL) { return TPH_POISSON_BAD_ALLOC; }
+  if (!internal) { return TPH_POISSON_BAD_ALLOC; }
   internal->mem_ctx = user_alloc_ctx;
   internal->alloc = alloc_fn;
   internal->free = free_fn;
 
-  // Acceleration grid.
+  /* Acceleration grid. */
   tph_poisson_grid grid;
-  int32_t ret = tph_poisson_grid_create(
-    &grid, args->radius, args->dims, args->bounds_min, args->bounds_max, internal);
+  int ret = tph_poisson_grid_create(
+    &grid, args->radius, args->ndims, args->bounds_min, args->bounds_max, internal);
   if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_free(s);
     return ret;
   }
+  ptrdiff_t *grid_index = (ptrdiff_t *)alloc_fn(internal->mem_ctx, args->ndims * sizeof(ptrdiff_t));
+  if (!grid_index) { return TPH_POISSON_BAD_ALLOC; }
 
-  //cvector_vector_type(tph_real) samples = NULL;
-  //cvector_vector_type(uint32_t) active_indices = NULL;
 
-  tph_real *rand_pos = (tph_real *)alloc_fn(internal->mem_ctx, args->dims * sizeof(tph_real));
+  /* Seed pseudo-random number generator. */
+  tph_poisson_xoshiro256p_state prng_state = {};
+  tph_poisson_xoshiro256p_init(&prng_state, args->seed);
 
-  //tph_poisson_add_sample(rand_pos, );
+  // cvector_vector_type(tph_real) samples = NULL;
+  // cvector_vector_type(uint32_t) active_indices = NULL;
+
+  /* Add first sample randomly within bounds.
+     No need to check (non-existing) neighbors. */
+  tph_real *pos = (tph_real *)alloc_fn(internal->mem_ctx, args->ndims * sizeof(tph_real));
+  for (int32_t i = 0; i < args->ndims; ++i) {
+    pos[i] = tph_poisson_clamped(args->bounds_min[i],
+      args->bounds_max[i],
+      args->bounds_min[i]
+        + (tph_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&prng_state)))
+            * (args->bounds_max[i] - args->bounds_min[i]));
+  }
+  assert(tph_poisson_inside(pos, args->bounds_min, args->bounds_max, args->ndims));
+
+  ret = tph_poisson_add_sample(pos, samples_vec, active_indices_vec, grid, grid_index);
+  if (ret != TPH_POISSON_SUCCESS) { return ret; }
+
+  while (!tph_poisson_vec_empty(active_indices_vec)) {
+    /* Randomly choose an active sample. A sample is considered active
+       until failed attempts have been made to generate a new sample within
+       its annulus. */
+    const ptrdiff_t active_index = (ptrdiff_t)(tph_poisson_xoshiro256p_next(&prng_state)
+                                             % (uint64_t)tph_poisson_vec_size(active_indices_vec));
+    const ptrdiff_t sample_index = active_indices_vec[active_index];
+    const tph_real sample_pos = samples_vec[args->ndims * sample_index];
+    // const auto active_sample = pds::RandActiveSample(active_indices, samples, &local_seed);
+    uint32_t attempt_count = 0;
+    while (attempt_count < args->max_sample_attempts) {
+      /* Randomly create a candidate sample inside the active sample's annulus. */
+      tph_poisson_rand_annulus_sample(sample_pos, args->radius, &prng_state, pos);
+      if (tph_poisson_inside(pos, args->bounds_min, args->bounds_max, args->ndims)) {
+
+      }
+      ++attempt_count;
+    }
+
+    if (attempt_count == args->max_sample_attempts) {
+      /* No valid sample was found on the disk of the active sample,
+         remove it from the active list. */
+      tph_poisson_vec_erase_unordered(active_indices_vec, active_index);
+      // pds::EraseUnordered(&active_indices, active_sample.active_index);
+    }
+  }
 
 #if 1// TMP TEST!!
-  internal->pos = (tph_real *)internal->alloc(internal->mem_ctx, 5 * args->dims * sizeof(tph_real));
+  internal->pos =
+    (tph_real *)internal->alloc(internal->mem_ctx, 5 * args->ndims * sizeof(tph_real));
   if (internal->pos == NULL) { return TPH_POISSON_BAD_ALLOC; }
-  for (uint32_t i = 0; i < 5; ++i) {
-    internal->pos[i * args->dims] = (tph_real)(args->dims * i);
-    internal->pos[i * args->dims + 1] = (tph_real)(args->dims * i + 1);
+  for (int32_t i = 0; i < 5; ++i) {
+    /* Generate random position within bounds. */
+    for (int32_t i = 0; i < args->ndims; ++i) {
+      pos[i] = tph_poisson_clamped(args->bounds_min[i],
+        args->bounds_max[i],
+        args->bounds_min[i]
+          + (tph_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&prng_state)))
+              * (args->bounds_max[i] - args->bounds_min[i]));
+    }
+    memcpy(&internal->pos[i * args->ndims], pos, args->ndims * sizeof(tph_real));
   }
 #endif
 
   tph_poisson_grid_free(&grid, internal);
-  //cvector_free(samples);
-  //cvector_free(active_indices);
+  // cvector_free(samples);
+  // cvector_free(active_indices);
 
   s->internal = internal;
-  s->dims = args->dims;
+  s->dims = args->ndims;
   s->numpoints = 5;
 
   return TPH_POISSON_SUCCESS;
