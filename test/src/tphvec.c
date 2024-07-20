@@ -9,7 +9,7 @@ typedef struct
 
 
 /**
- * @brief _tphvec_hdr_to_vec - For internal use, converts a header pointer to
+ * @brief For internal use, converts a header pointer to
  * a vector. Assumes that the header pointer is not NULL.
  * @param hdr - A pointer to a header.
  * @return The vector as a <void*>.
@@ -22,7 +22,7 @@ static inline void *_tphvec_hdr_to_vec(const tphvec_header_t *hdr)
 }
 
 /**
- * @brief _tphvec_vec_to_hdr - For internal use, converts a vector to a
+ * @brief For internal use, converts a vector to a
  * header pointer. Assumes that the vector is not NULL.
  * @param vec - A vector.
  * @return A header pointer.
