@@ -13,6 +13,11 @@
 extern "C" {
 #endif
 
+#ifndef tph_poisson_assert
+#include <assert.h>
+#define tph_poisson_assert(_X_) assert((_X_))
+#endif
+
 #ifndef TPH_REAL_TYPE
 #define TPH_REAL_TYPE float
 #endif
@@ -34,6 +39,7 @@ typedef TPH_REAL_TYPE tph_real;
 // clang-format off
 typedef struct tph_poisson_points_           tph_poisson_points;
 typedef struct tph_poisson_args_             tph_poisson_args;
+typedef struct tph_poisson_allocator_        tph_poisson_allocator;
 typedef struct tph_poisson_sampling_         tph_poisson_sampling;
 typedef struct tph_poisson_context_internal_ tph_poisson_context_internal;
 // clang-format on
@@ -43,6 +49,14 @@ typedef struct tph_poisson_context_internal_ tph_poisson_context_internal;
 struct tph_poisson_points_
 {
   const tph_real *pos;
+};
+
+struct tph_poisson_allocator_
+{
+  void *(*malloc)(ptrdiff_t size, void *ctx);
+  void *(*realloc)(void *ptr, ptrdiff_t old_size, ptrdiff_t new_size, void *ctx);
+  void (*free)(void *ptr, ptrdiff_t size, void *ctx);
+  void *ctx;
 };
 
 struct tph_poisson_args_
@@ -58,15 +72,18 @@ struct tph_poisson_args_
 struct tph_poisson_sampling_
 {
   tph_poisson_context_internal *internal;
-  int32_t dims;
-  ptrdiff_t numpoints;
+  int32_t ndims;
+  ptrdiff_t nsamples;
+  tph_real *samples;
 };
 
 #pragma pack(pop)
 
-#define TPH_POISSON_SUCCESS 0
-#define TPH_POISSON_BAD_ALLOC 1
+/* clang-format off */
+#define TPH_POISSON_SUCCESS      0
+#define TPH_POISSON_BAD_ALLOC    1
 #define TPH_POISSON_INVALID_ARGS 2
+/* clang-format on */
 
 /**
  * Uses malloc.
@@ -95,26 +112,150 @@ extern tph_poisson_points tph_poisson_get_points(const tph_poisson_sampling *sam
 #ifdef TPH_POISSON_IMPLEMENTATION
 #undef TPH_POISSON_IMPLEMENTATION
 
-#include <assert.h>// assert
 #include <stdlib.h>// malloc, realloc, free
 
-// Structs
+// Pseudo-random number generation.
+
+typedef struct
+{
+  uint64_t s;
+} tph_poisson_splitmix64_state;
+
+/**
+ * @brief Returns a pseudo-random number generated using the SplitMix64 algorithm and mutates the
+ * state in preparation for subsequent calls.
+ * @param state State to be mutated into the next number in the sequence.
+ * @return A pseudo-random number
+ */
+static uint64_t tph_poisson_splitmix64(tph_poisson_splitmix64_state *state)
+{
+  uint64_t result = (state->s += 0x9E3779B97f4A7C15);
+  result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
+  result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
+  return result ^ (result >> 31);
+}
+
+typedef struct
+{
+  uint64_t s[4];
+} tph_poisson_xoshiro256p_state;
+
+/**
+ * @brief Initializes a xoshiro256p state.
+ * @param state The state to initialize.
+ * @param seed  Seed value, can be zero.
+ */
+static void tph_poisson_xoshiro256p_init(tph_poisson_xoshiro256p_state *state, const uint64_t seed)
+{
+  /* As suggested at https://prng.di.unimi.it, use SplitMix64 to initialize the state of a
+   * generator starting from a 64-bit seed. It has been shown that initialization must be
+   * performed with a generator radically different in nature from the one used to avoid
+   * correlation on similar seeds. */
+  tph_poisson_splitmix64_state sm_state = { seed };
+  state->s[0] = tph_poisson_splitmix64(&sm_state);
+  state->s[1] = tph_poisson_splitmix64(&sm_state);
+  state->s[2] = tph_poisson_splitmix64(&sm_state);
+  state->s[3] = tph_poisson_splitmix64(&sm_state);
+}
+
+/**
+ * @brief Returns a pseudo-random number generated using the xoshiro256+ algorithm and mutates the
+ * state in preparation for subsequent calls. Assumes that the value of the passed in state is not
+ * all zeros.
+ * @param state State to be mutated into the next number in the sequence.
+ * @return A pseudo-random number.
+ */
+static uint64_t tph_poisson_xoshiro256p_next(tph_poisson_xoshiro256p_state *state)
+{
+  uint64_t *s = state->s;
+  const uint64_t result = s[0] + s[3];
+  const uint64_t t = s[1] << 17;
+  s[2] ^= s[0];
+  s[3] ^= s[1];
+  s[1] ^= s[2];
+  s[0] ^= s[3];
+  s[2] ^= t;
+
+  /* Hard-code: s[3] = rotl(s[3], 45) */
+  s[3] = (s[3] << 45) | (s[3] >> 49);
+  return result;
+}
+
+/**
+ * @brief Returns a floating point number in [0..1).
+ * @param x Bit representation.
+ * @return A number in [0..1).
+ */
+static inline double tph_poisson_to_double(const uint64_t x)
+{
+  /* Convert to double, as suggested at https://prng.di.unimi.it.
+     This conversion prefers the high bits of x (usually, a good idea). */
+  return (x >> 11) * 0x1.0p-53;
+}
+
+// Vector.
+
+/**
+ * @brief The vector type used in this library.
+ * @param type The type of elements in the vector, e.g. int, float, etc.
+ */
+#define tph_poisson_vec(type) type *
+
+/**
+ * @brief Frees all memory associated with the vector.
+ * @param vec - Vector.
+ * @return void
+ */
+static void tph_poisson_vec_free(void *vec, tph_poisson_allocator *alloc);
+
+/**
+ * @brief Returns the number of elements in the vector.
+ * @param vec Vector.
+ * @return The number of elements in the vector.
+ */
+#define tph_poisson_vec_size(vec) (_tph_poisson_vec_size((vec), sizeof(*(vec))))
+static ptrdiff_t _tph_poisson_vec_size(const void *vec, size_t sizeof_el);
+
+/**
+ * @brief Add elements to the end of the vector.
+ * @param vec    Vector.
+ * @param values Pointer to values to be added.
+ * @param count  Number of elements to copy from values.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
+ */
+#define tph_poisson_vec_append(vec, values, count) \
+  (_tph_poisson_vec_append((void **)&(vec), (values), (count) * sizeof(*(values))))
+static int _tph_poisson_vec_append(void **vec_ptr, const void *values, ptrdiff_t nbytes);
+
+/**
+ * @brief Add a single value to the end of the vector.
+ * @param vec   Vector.
+ * @param value Pointer to values to be added.
+ * @return TPHVEC_SUCCESS, or a non-zero error code.
+ */
+#define tph_poisson_vec_push_back(vec, value) \
+  (_tph_poisson_vec_append((void **)&(vec), &(value), sizeof((value))))
+
+/**
+ * @brief ...
+ */
+#define tph_poisson_vec_erase_unordered(vec, i, count) \
+  (_tph_poisson_vec_erase_unordered((vec), (i), (count)))
+static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t i, ptrdiff_t count);
+
+
+// Structs.
 
 #pragma pack(push, 1)
 
 typedef struct tph_poisson_grid_
 {
   tph_real dx;
-  tph_real dx_inv;
-  int32_t ndims;
-  const tph_real *bounds_min;
-  const tph_real *bounds_max;
+  tph_real dx_rcp;
+  ptrdiff_t linear_size; // ??
   ptrdiff_t *size;
+  ptrdiff_t *stride;
   uint32_t *cells;
-
-  // ptrdiff_t *strides; // TODO!
-
-
 } tph_poisson_grid;
 
 struct tph_poisson_context_internal_
@@ -146,6 +287,7 @@ struct tph_poisson_context_internal_
   FTPHAllocFn alloc;
   FTPHFreeFn free;
 
+  tph_poisson_grid grid;
   ptrdiff_t *grid_index;
   ptrdiff_t *min_grid_index;
   ptrdiff_t *max_grid_index;
@@ -155,37 +297,42 @@ struct tph_poisson_context_internal_
 
 #pragma pack(pop)
 
-static void tph_poisson_grid_free(tph_poisson_grid *grid,
-  const tph_poisson_context_internal *internal)
-{
-  internal->free(internal->mem_ctx, grid->size);
-  internal->free(internal->mem_ctx, grid->cells);
-}
-
-static int32_t tph_poisson_grid_create(tph_poisson_grid *grid,
-  tph_real radius,
-  int32_t ndims,
+/**
+ * @brief ...
+ */
+static int tph_poisson_grid_create(tph_poisson_grid *grid,
+  const tph_real radius,
+  const int32_t ndims,
   const tph_real *bounds_min,
   const tph_real *bounds_max,
   const tph_poisson_context_internal *internal)
 {
+  tph_poisson_assert(ndims > 0);
+
+  /* Use a slightly smaller radius to avoid numerical issues. */
   const tph_real dx = ((tph_real)0.999 * radius) / TPH_SQRT((tph_real)ndims);
-  const tph_real dx_inv = (tph_real)1 / dx;
+  const tph_real dx_rcp = (tph_real)1 / dx;
 
-  ptrdiff_t *size = (ptrdiff_t *)internal->alloc(internal->mem_ctx, ndims * sizeof(int32_t));
-  if (size == NULL) { return TPH_POISSON_BAD_ALLOC; }
+  ptrdiff_t *size = (ptrdiff_t *)internal->alloc(internal->mem_ctx, ndims * sizeof(ptrdiff_t));
+  ptrdiff_t *stride = (ptrdiff_t *)internal->alloc(internal->mem_ctx, ndims * sizeof(ptrdiff_t));
+  if (!(size && stride)) { return TPH_POISSON_BAD_ALLOC; }
 
+  size[0] = (ptrdiff_t)TPH_CEIL((bounds_max[0] - bounds_min[0]) * dx_rcp);
+  stride[0] = 1;
   ptrdiff_t linear_size = 1;
-  for (int32_t i = 0; i < ndims; ++i) {
-    assert(bounds_max[i] > bounds_min[i]);
-    size[i] = (int32_t)TPH_CEIL((bounds_max[i] - bounds_min[i]) * dx_inv);
-    assert(size[i] > 0);
+  for (int32_t i = 1; i < ndims; ++i) {
+    /* Not checking for overflow! */
+    tph_poisson_assert(bounds_max[i] > bounds_min[i]);
+    size[i] = (ptrdiff_t)TPH_CEIL((bounds_max[i] - bounds_min[i]) * dx_rcp);
+    tph_poisson_assert(size[i] > 0);
+    stride[i] = stride[i - 1] * size[i - 1];
     linear_size *= size[i];
   }
 
-  uint32_t *cells = (uint32_t *)internal->alloc(internal->mem_ctx, linear_size * sizeof(int32_t));
-  if (cells == NULL) {
+  uint32_t *cells = (uint32_t *)internal->alloc(internal->mem_ctx, linear_size * sizeof(uint32_t));
+  if (!cells) {
     internal->free(internal->mem_ctx, size);
+    internal->free(internal->mem_ctx, stride);
     return TPH_POISSON_BAD_ALLOC;
   }
   /* Initialize cells with value 0xFFFFFFFF, indicating no sample there.
@@ -193,37 +340,27 @@ static int32_t tph_poisson_grid_create(tph_poisson_grid *grid,
   memset(cells, 0xFF, linear_size * sizeof(uint32_t));
 
   grid->dx = dx;
-  grid->dx_inv = dx_inv;
-  grid->ndims = ndims;
-  grid->bounds_min = bounds_min;
-  grid->bounds_max = bounds_max;
+  grid->dx_rcp = dx_rcp;
+  grid->linear_size = linear_size;
   grid->size = size;
+  grid->stride = stride;
   grid->cells = cells;
 
   return TPH_POISSON_SUCCESS;
 }
 
-/* NOTE: Could return a value less than zero to indicate error... */
-static ptrdiff_t tph_poisson_grid_linear_index(const tph_poisson_grid *grid,
-  const ptrdiff_t *grid_index)
+static void tph_poisson_grid_free(tph_poisson_grid *grid,
+  const tph_poisson_context_internal *internal)
 {
-  assert((0 <= grid_index[0]) & (grid_index[0] < grid->size[0]));
-  ptrdiff_t k = grid_index[0];
-  ptrdiff_t d = 1;
-  const int32_t ndims = grid->ndims;
-  for (int32_t i = 1; i < ndims; ++i) {
-    assert((0 <= grid_index[i]) & (grid_index[i] < grid->size[i]));
-    /* Not checking for overflow! */
-    d *= grid->size[i - 1];
-    k += grid_index[i] * d;
-  }
-  return k;
+  internal->free(internal->mem_ctx, grid->size);
+  internal->free(internal->mem_ctx, grid->stride);
+  internal->free(internal->mem_ctx, grid->cells);
 }
 
 /**
  * @brief Returns non-zero if p is element-wise inclusively inside b_min and b_max; otherwise zero.
  * Assumes that b_min is element-wise less than b_max.
- * @param p     Position to test. 
+ * @param p     Position to test.
  * @param b_min Minimum bounds.
  * @param b_max Maximum bounds.
  * @param ndims Number of values in p, b_min, and b_max.
@@ -242,69 +379,6 @@ static int tph_poisson_inside(const tph_real *p,
   return 1;
 }
 
-static uint64_t tph_poisson_splitmix64(uint64_t *state)
-{
-  uint64_t result = (*state += 0x9E3779B97f4A7C15);
-  result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
-  result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
-  return result ^ (result >> 31);
-}
-
-typedef struct
-{
-  uint64_t s[4];
-} tph_poisson_xoshiro256p_state;
-
-/**
- * @brief Initializes a xoshiro256p state.
- * @param seed Seed value, can be zero.
- */
-static void tph_poisson_xoshiro256p_init(tph_poisson_xoshiro256p_state *state, const uint64_t seed)
-{
-  /* As suggested at https://prng.di.unimi.it, use SplitMix64 to initialize the state of a
-   * generator starting from a 64-bit seed. It has been shown that initialization must be
-   * performed with a generator radically different in nature from the one used to avoid
-   * correlation on similar seeds. */
-  uint64_t sm_state = seed;
-  state->s[0] = tph_poisson_splitmix64(&sm_state);
-  state->s[1] = tph_poisson_splitmix64(&sm_state);
-  state->s[2] = tph_poisson_splitmix64(&sm_state);
-  state->s[3] = tph_poisson_splitmix64(&sm_state);
-}
-
-/**
- * @brief Returns a pseudo-random number. Assumes that the value of the passed in state is not all
- * zeros.
- * @param state State to be mutated into the next number in the sequence.
- * @return A pseudo-random number.
- */
-static uint64_t tph_poisson_xoshiro256p_next(tph_poisson_xoshiro256p_state *state)
-{
-  uint64_t *s = state->s;
-  const uint64_t result = s[0] + s[3];
-  const uint64_t t = s[1] << 17;
-  s[2] ^= s[0];
-  s[3] ^= s[1];
-  s[1] ^= s[2];
-  s[0] ^= s[3];
-  s[2] ^= t;
-
-  /* s[3] = rotl(s[3], 45) */
-  s[3] = (s[3] << 45) | (s[3] >> 49);
-  return result;
-}
-
-/**
- * @brief Returns a floating point number in [0..1).
- * @param x Bit representation.
- * @return A number in [0..1).
- */
-static inline double tph_poisson_to_double(const uint64_t x)
-{
-  /* Convert to double, as suggested at https://prng.di.unimi.it
-     This conversion prefers the high bits of x (usually, a good idea). */
-  return (x >> 11) * 0x1.0p-53;
-}
 
 // Assumes min_value <= max_value.
 static inline tph_real
@@ -327,49 +401,39 @@ static void tph_free_fn(void *mem_ctx, void *p)
   free(p);
 }
 
-static int tph_valid_args(const tph_poisson_args *args)
-{
-  if (args == NULL) { return 0; }
-  int valid = 1;
-  valid &= (args->radius > 0.F);
-  valid &= (args->max_sample_attempts > 0);
-  valid &= (args->ndims > 0);
-  for (int32_t i = 0; i < args->ndims; ++i) {
-    valid &= (args->bounds_max[i] > args->bounds_min[i]);
-  }
-  return valid;
-}
-
-static int tph_poisson_add_sample(const tph_real *pos,
+static int tph_poisson_add_sample(const tph_real *sample,
+  const int32_t ndims,
+  const tph_real *bounds_min,
   tph_real *samples_vec,
   uint32_t *active_indices_vec,
-  tph_poisson_grid *grid/*,
-  ptrdiff_t *grid_index*/)
+  tph_poisson_grid *grid)
 {
   /* assert(inside...) */
-  const int32_t ndims = grid->ndims;
   const ptrdiff_t sample_index = tph_poisson_vec_size(samples_vec);
   int ret = TPH_POISSON_SUCCESS;
-  ret = tph_poisson_vec_append(samples_vec, pos, ndims);
+  ret = tph_poisson_vec_append(samples_vec, sample, ndims);
   if (ret != TPH_POISSON_SUCCESS) { return ret; }
   ret = tph_poisson_vec_push_back(active_indices_vec, sample_index);
   if (ret != TPH_POISSON_SUCCESS) { return ret; }
 
-
-  ptrdiff_t k = (ptrdiff_t)TPH_FLOOR((pos[0] - grid->bounds_min[0]) * grid->dx_inv);
-  assert((0 <= k) & (k < grid->size[0]));
-  ptrdiff_t d = 1;
+  /* Compute linear grid index. */
+  const ptrdiff_t *stride = grid->stride;
+  tph_poisson_assert(stride[0] == 1);
+  const tph_real dx_rcp = grid->dx_rcp;
+  ptrdiff_t xi = (ptrdiff_t)TPH_FLOOR((sample[0] - bounds_min[0]) * dx_rcp);
+  tph_poisson_assert((0 <= xi) & (xi < grid->size[0]));
+  ptrdiff_t k = xi;
   for (int32_t i = 1; i < ndims; ++i) {
-    // assert((0 <= grid_index[i]) & (grid_index[i] < grid->size[i]));
     /* Not checking for overflow! */
-    d *= grid->size[i - 1];
-    k += (ptrdiff_t)TPH_FLOOR((pos[i] - grid->bounds_min[i]) * grid->dx_inv) * d;
+    xi = (ptrdiff_t)TPH_FLOOR((sample[i] - bounds_min[i]) * dx_rcp);
+    tph_poisson_assert((0 <= xi) & (xi < grid->size[i]));
+    k += xi * stride[i];
   }
 
-  assert((0 <= k) & (k < grid->linear_size));
-  assert(grid->cells[k] == 0xFFFFFFFF);
+  tph_poisson_assert((0 <= k) & (k < grid->linear_size));
+  tph_poisson_assert(grid->cells[k] == 0xFFFFFFFF);
   grid->cells[k] = (uint32_t)sample_index;
-  assert(grid->cells[k] != 0xFFFFFFFF);
+  tph_poisson_assert(grid->cells[k] != 0xFFFFFFFF);
   return ret;
 }
 
@@ -413,29 +477,33 @@ static void tph_poisson_rand_annulus_sample(const tph_real *center,
   }
 }
 
+/**
+ * @brief ...
+ */
 static void tph_poisson_grid_index_bounds(const tph_real *sample,
+  const int32_t ndims,
+  const tph_real radius,
+  const tph_real *bounds_min,
   const tph_poisson_grid *grid,
   ptrdiff_t *min_grid_index,
   ptrdiff_t *max_grid_index)
 {
-  const int32_t ndims = grid->ndims;
-  const tph_real dx_inv = grid->dx_inv;
-  const tph_real r = grid->radius;
+  const tph_real dx_rcp = grid->dx_rcp;
   const ptrdiff_t *grid_size = grid->size;
-  const tph_real *grid_min = grid->bounds_min;
   for (int32_t i = 0; i < ndims; ++i) {
-    assert(grid_size[i] > 0);
+    tph_poisson_assert(grid_size[i] > 0);
     min_grid_index[i] = tph_poisson_clamped(
-      0, grid_size[i] - 1, (ptrdiff_t)TPH_FLOOR(((sample[i] - r) - grid_min[i]) * dx_inv));
+      0, grid_size[i] - 1, (ptrdiff_t)TPH_FLOOR(((sample[i] - radius) - bounds_min[i]) * dx_rcp));
     max_grid_index[i] = tph_poisson_clamped(
-      0, grid_size[i] - 1, (ptrdiff_t)TPH_FLOOR(((sample[i] + r) - grid_min[i]) * dx_inv));
+      0, grid_size[i] - 1, (ptrdiff_t)TPH_FLOOR(((sample[i] + radius) - bounds_min[i]) * dx_rcp));
   }
 }
-
 
 // Returns true if there exists another sample within the radius used to
 // construct the grid, otherwise false.
 static int tph_poisson_existing_sample_within_radius(const tph_real *sample,
+  const int32_t ndims,
+  const tph_real radius,
   const ptrdiff_t active_sample_index,
   const tph_real *samples_vec,
   const tph_poisson_grid *grid,
@@ -443,26 +511,39 @@ static int tph_poisson_existing_sample_within_radius(const tph_real *sample,
   const ptrdiff_t *min_grid_index,
   const ptrdiff_t *max_grid_index)
 {
-  const int32_t ndims = grid->ndims;
-  const tph_real r_sqr = grid->radius * grid->radius;
-  ptrdiff_t lin_index = -1;
+  tph_poisson_assert(ndims > 0);
+  const ptrdiff_t *stride = grid->stride;
+  tph_poisson_assert(stride[0] == 1);
+  tph_poisson_assert(radius > 0);
+  const tph_real r_sqr = radius * radius;
+  tph_real di = 0;
+  tph_real d_sqr = -1;
   uint32_t cell = 0xFFFFFFFF;
   const tph_real *cell_sample = NULL;
-  tph_real d_sqr = -1;
   int32_t i = -1;
-  assert(ndims > 0);
+  ptrdiff_t k = -1;
   memcpy(grid_index, min_grid_index, ndims * sizeof(ptrdiff_t));
   do {
-    cell = grid->cells[tph_poisson_grid_linear_index(grid, grid_index)];
-    if ((cell != 0xFFFFFFFF) & (cell != (uint32_t)active_sample_index)) {
-      /* Compute (squared) distance to the existing sample. */
-      cell_sample = &samples_vec[cell * ndims];
-      d_sqr = (sample[0] - cell_sample[0]) * (sample[0] - cell_sample[0]);
-      for (i = 1; i < ndims; ++i) {
-        d_sqr += (sample[i] - cell_sample[i]) * (sample[i] - cell_sample[i]);
-      }
+    /* Compute linear grid index. */
+    tph_poisson_assert((0 <= grid_index[0]) & (grid_index[0] < grid->size[0]));
+    k = grid_index[0];
+    for (i = 1; i < ndims; ++i) {
+      /* Not checking for overflow! */
+      tph_poisson_assert((0 <= grid_index[i]) & (grid_index[i] < grid->size[i]));
+      k += grid_index[i] * stride[i];
+    }
 
-      /* Check if the existing sample is closer than radius to the provided sample. */
+    cell = grid->cells[k];
+    if ((cell != 0xFFFFFFFF) & (cell != (uint32_t)active_sample_index)) {
+      /* Compute (squared) distance to the existing sample and then check if the existing sample is
+       * closer than radius to the provided sample. */
+      cell_sample = &samples_vec[cell * ndims];
+      di = sample[0] - cell_sample[0];
+      d_sqr = di * di;
+      for (i = 1; i < ndims; ++i) {
+        di = sample[i] - cell_sample[i];
+        d_sqr += di * di;
+      }
       if (d_sqr < r_sqr) { return 1; }
     }
 
@@ -496,15 +577,22 @@ int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
   FTPHFreeFn free_fn,
   tph_poisson_sampling *s)
 {
+  if (!args) { return TPH_POISSON_INVALID_ARGS; }
+  int valid_args = 1;
+  valid_args &= (args->radius > 0.F);
+  valid_args &= (args->max_sample_attempts > 0);
+  valid_args &= (args->ndims > 0);
+  for (int32_t i = 0; i < args->ndims; ++i) {
+    valid_args &= (args->bounds_max[i] > args->bounds_min[i]);
+  }
+  if (!valid_args) { return TPH_POISSON_INVALID_ARGS; }
+
+
   assert(s != NULL);
   if (s->internal != NULL) { tph_poisson_free(s); }
   s->internal = NULL;
-  s->dims = 0;
-  s->numpoints = 0;
-
-  if (!tph_valid_args(args) || alloc_fn == NULL || free_fn == NULL) {
-    return TPH_POISSON_INVALID_ARGS;
-  }
+  s->ndims = 0;
+  s->nsamples = 0;
 
   tph_poisson_context_internal *internal =
     (tph_poisson_context_internal *)alloc_fn(user_alloc_ctx, sizeof(tph_poisson_context_internal));
@@ -592,7 +680,7 @@ int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
     }
   }
 
-#if 1// TMP TEST!!
+#if 0// TMP TEST!!
   internal->pos =
     (tph_real *)internal->alloc(internal->mem_ctx, 5 * args->ndims * sizeof(tph_real));
   if (internal->pos == NULL) { return TPH_POISSON_BAD_ALLOC; }
@@ -615,8 +703,8 @@ int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
   // cvector_free(active_indices);
 
   s->internal = internal;
-  s->dims = args->ndims;
-  s->numpoints = 5;
+  s->ndims = args->ndims;
+  s->nsamples = 5;
 
   return TPH_POISSON_SUCCESS;
 
