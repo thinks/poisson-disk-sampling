@@ -13,38 +13,32 @@ int main(int argc, char *argv[])
   constexpr std::array<tph_real, 2> bounds_min{ -100.F, -100.F };
   constexpr std::array<tph_real, 2> bounds_max{ 100.F, 100.F };
 
-  // clang-format off
-  const tph_poisson_args args{ 
-    /*.radius=*/10.F,
-    /*.dims=*/2,
-    /*.bounds_min=*/bounds_min.data(),
-    /*.bounds_max=*/bounds_max.data(),
-    /*.max_sample_attempts=*/30,
-    /*.seed=*/0 };
-  auto sampling = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_free)>{
-    new tph_poisson_sampling{ 
-      /*.internal=*/nullptr,
-      /*.dims=*/0,
-      /*.num_points=*/0 },
-    tph_poisson_free
+  tph_poisson_args args = {};
+  args.radius = 10.F;
+  args.ndims = 2;
+  args.bounds_min = bounds_min.data();
+  args.bounds_max = bounds_max.data();
+  args.max_sample_attempts = 30;
+  args.seed = 0;
+  auto sampling = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_destroy)>{
+    new tph_poisson_sampling{ /*.ndims=*/0,
+      /*.nsamples=*/0,
+      /*.samples=*/nullptr,
+      /*.alloc=*/nullptr },
+    tph_poisson_destroy
   };
-  // clang-format on
 
-  if (const int32_t ret = tph_poisson_generate(&args, sampling.get()); ret != TPH_POISSON_SUCCESS) {
-    std::printf("Generate error...");
+  if (const int ret = tph_poisson_create(sampling.get(), &args, nullptr);
+      ret != TPH_POISSON_SUCCESS) {
+    std::printf("Error...");
     return 1;
   };
-  const tph_poisson_points points = tph_poisson_get_points(sampling.get());
-  if (points.pos == nullptr) {
-    std::printf("NULL");
-    return 1;
-  }
 
-  for (uint32_t i = 0; i < sampling->numpoints; ++i) {
-    std::printf("pos[%" PRIu32 "] = ( %.3f, %.3f )\n",
+  for (ptrdiff_t i = 0; i < sampling->nsamples; ++i) {
+    std::printf("p[%td] = ( %.3f, %.3f )\n",
       i,
-      points.pos[i * sampling->dims],
-      points.pos[i * sampling->dims + 1]);
+      sampling->samples[i * sampling->ndims],
+      sampling->samples[i * sampling->ndims + 1]);
   }
 
   return 0;

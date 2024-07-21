@@ -36,20 +36,13 @@ extern "C" {
 
 typedef TPH_REAL_TYPE tph_real;
 
-// clang-format off
-typedef struct tph_poisson_points_           tph_poisson_points;
-typedef struct tph_poisson_args_             tph_poisson_args;
-typedef struct tph_poisson_allocator_        tph_poisson_allocator;
-typedef struct tph_poisson_sampling_         tph_poisson_sampling;
-typedef struct tph_poisson_context_internal_ tph_poisson_context_internal;
-// clang-format on
+/* clang-format off */
+typedef struct tph_poisson_args_      tph_poisson_args;
+typedef struct tph_poisson_allocator_ tph_poisson_allocator;
+typedef struct tph_poisson_sampling_  tph_poisson_sampling;
+/* clang-format on */
 
 #pragma pack(push, 1)
-
-struct tph_poisson_points_
-{
-  const tph_real *pos;
-};
 
 struct tph_poisson_allocator_
 {
@@ -71,10 +64,10 @@ struct tph_poisson_args_
 
 struct tph_poisson_sampling_
 {
-  tph_poisson_context_internal *internal;
   int32_t ndims;
   ptrdiff_t nsamples;
   tph_real *samples;
+  tph_poisson_allocator *alloc;
 };
 
 #pragma pack(pop)
@@ -92,23 +85,10 @@ extern int32_t tph_poisson_create(tph_poisson_sampling *sampling,
   const tph_poisson_args *args,
   tph_poisson_allocator *alloc);
 
-#if 0
-typedef void *(*FTPHAllocFn)(void *user_ctx, size_t size);
-typedef void (*FTPHFreeFn)(void *user_ctx, void *p);
-
-extern int32_t tph_poisson_generate_useralloc(const tph_poisson_args *args,
-  void *userallocctx,
-  FTPHAllocFn alloc_fn,
-  FTPHFreeFn free_fn,
-  tph_poisson_sampling *sampling);
-#endif
-
 /**
- *
+ * @brief ...
  */
-extern void tph_poisson_destroy(tph_poisson_sampling *sampling, tph_poisson_allocator *alloc);
-
-extern tph_poisson_points tph_poisson_get_points(const tph_poisson_sampling *sampling);
+extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
 
 #ifdef __cplusplus
 }// extern "C"
@@ -122,7 +102,6 @@ extern tph_poisson_points tph_poisson_get_points(const tph_poisson_sampling *sam
 #include <stdlib.h>// malloc, realloc, free
 
 /* Memory. */
-/* TODO - protext libc malloc, realloc, free? Or should just use custom allocator in that case? */
 
 static void *tph_poisson_malloc(ptrdiff_t size, void *ctx)
 {
@@ -216,6 +195,8 @@ static uint64_t tph_poisson_xoshiro256p_next(tph_poisson_xoshiro256p_state *stat
   return result;
 }
 
+/* Misc. */
+
 /**
  * @brief Returns a floating point number in [0..1).
  * @param x Bit representation.
@@ -228,7 +209,22 @@ static inline double tph_poisson_to_double(const uint64_t x)
   return (x >> 11) * 0x1.0p-53;
 }
 
-// Vector.
+/**
+ * @brief Returns the provided value clamped to the range [min_value, max_value].
+ * Assumes min_value <= max_value.
+ * @param min_value Lower bound.
+ * @param max_value Upper bound.
+ * @param value     Value.
+ * @return Value clamped to the range [min_value, max_value].
+ */
+static inline tph_real
+  tph_poisson_clamped(const tph_real min_value, const tph_real max_value, const tph_real value)
+{
+  tph_poisson_assert(min_value <= max_value);
+  return value < min_value ? min_value : (value > max_value ? max_value : value);
+}
+
+/* Vector. */
 
 typedef struct tph_poisson_vec_header_
 {
@@ -277,6 +273,18 @@ static void tph_poisson_vec_free(void *vec, tph_poisson_allocator *alloc)
     tph_poisson_vec_header *hdr = tph_poisson_vec_to_hdr(vec);
     alloc->free((void *)hdr, sizeof(tph_poisson_vec_header) + hdr->capacity, alloc->ctx);
   }
+}
+
+/**
+ * @brief Checks if the vector has no elements.
+ * @param vec - Vector.
+ * @return Non-zero if empty, zero otherwise.
+ */
+#define tph_poisson_vec_empty(vec) (_tph_poisson_vec_empty((vec)))
+static inline int _tph_poisson_vec_empty(const void *vec)
+{
+  /* Could be strict here and check if size in bytes is < sizeof(type)... */
+  return vec ? tph_poisson_vec_to_hdr(vec)->size == 0 : (int)1;
 }
 
 /**
@@ -352,8 +360,9 @@ static int _tph_poisson_vec_append(void **vec_ptr,
  */
 #define tph_poisson_vec_erase_unordered(vec, i, count) \
   (_tph_poisson_vec_erase_unordered((vec), (i), (count)))
-static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t i, ptrdiff_t count);
-
+static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t i, ptrdiff_t count) {
+  asdsdf
+}
 
 // Structs.
 
@@ -372,19 +381,20 @@ typedef struct tph_poisson_grid_
 typedef struct tph_poisson_context_
 {
   tph_poisson_allocator *alloc;
+  char *mem;
+  ptrdiff_t mem_size;
 
   tph_real radius;
   int32_t ndims;
   uint32_t max_sample_attempts;
-  const tph_real *bounds_min;
-  const tph_real *bounds_max;
-
+  tph_real *bounds_min;
+  tph_real *bounds_max;
   tph_poisson_xoshiro256p_state prng_state;
 
   tph_real *sample;
 
   tph_poisson_vec(tph_real) samples_vec;
-  tph_poisson_vec(uint32_t) active_indices_vec; /* ptrdiff_t ?!?!? */
+  tph_poisson_vec(ptrdiff_t) active_indices_vec;
 
   tph_poisson_grid grid;
   ptrdiff_t *grid_index;
@@ -396,66 +406,8 @@ typedef struct tph_poisson_context_
 #pragma pack(pop)
 
 /**
- * @brief ...
+ * @brief
  */
-static int tph_poisson_grid_create(tph_poisson_grid *grid,
-  const tph_real radius,
-  const int32_t ndims,
-  const tph_real *bounds_min,
-  const tph_real *bounds_max,
-  const tph_poisson_context_internal *internal)
-{
-  tph_poisson_assert(ndims > 0);
-
-  /* Use a slightly smaller radius to avoid numerical issues. */
-  const tph_real dx = ((tph_real)0.999 * radius) / TPH_SQRT((tph_real)ndims);
-  const tph_real dx_rcp = (tph_real)1 / dx;
-
-  ptrdiff_t *size = (ptrdiff_t *)internal->alloc(internal->mem_ctx, ndims * sizeof(ptrdiff_t));
-  ptrdiff_t *stride = (ptrdiff_t *)internal->alloc(internal->mem_ctx, ndims * sizeof(ptrdiff_t));
-  if (!(size && stride)) { return TPH_POISSON_BAD_ALLOC; }
-
-  size[0] = (ptrdiff_t)TPH_CEIL((bounds_max[0] - bounds_min[0]) * dx_rcp);
-  stride[0] = 1;
-  ptrdiff_t linear_size = 1;
-  for (int32_t i = 1; i < ndims; ++i) {
-    /* Not checking for overflow! */
-    tph_poisson_assert(bounds_max[i] > bounds_min[i]);
-    size[i] = (ptrdiff_t)TPH_CEIL((bounds_max[i] - bounds_min[i]) * dx_rcp);
-    tph_poisson_assert(size[i] > 0);
-    stride[i] = stride[i - 1] * size[i - 1];
-    linear_size *= size[i];
-  }
-
-  uint32_t *cells = (uint32_t *)internal->alloc(internal->mem_ctx, linear_size * sizeof(uint32_t));
-  if (!cells) {
-    internal->free(internal->mem_ctx, size);
-    internal->free(internal->mem_ctx, stride);
-    return TPH_POISSON_BAD_ALLOC;
-  }
-  /* Initialize cells with sentinel value 0xFFFFFFFF, indicating no sample there.
-   * Cell values are later set to indices of samples. */
-  memset(cells, 0xFF, linear_size * sizeof(uint32_t));
-
-  grid->dx = dx;
-  grid->dx_rcp = dx_rcp;
-  /*grid->linear_size = linear_size;*/
-  grid->size = size;
-  grid->stride = stride;
-  grid->cells = cells;
-
-  return TPH_POISSON_SUCCESS;
-}
-
-static void tph_poisson_grid_destroy(tph_poisson_grid *grid, tph_poisson_allocator *alloc)
-{
-  internal->free(internal->mem_ctx, grid->size);
-  internal->free(internal->mem_ctx, grid->stride);
-  internal->free(internal->mem_ctx, grid->cells);
-}
-
-static void tph_poisson_context_destroy(tph_poisson_context *ctx) {}
-
 static int tph_poisson_context_init(tph_poisson_context *ctx,
   const tph_real radius,
   const int32_t ndims,
@@ -469,40 +421,96 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
   if (!ctx->alloc) { ctx->alloc = &tph_poisson_default_alloc; };
 
   if (!((radius > 0) & (ndims > 0) & (max_sample_attempts > 0))) {
-    tph_poisson_context_destroy(ctx);
     return TPH_POISSON_INVALID_ARGS;
   }
+  for (int32_t i = 0; i < ctx->ndims; ++i) {
+    if (!(bounds_max[i] > bounds_min[i])) { return TPH_POISSON_INVALID_ARGS; }
+  }
+
   ctx->radius = radius;
   ctx->ndims = ndims;
   ctx->max_sample_attempts = max_sample_attempts;
 
-  for (int32_t i = 0; i < ctx->ndims; ++i) {
-    if (!(bounds_max[i] > bounds_min[i])) {
-      tph_poisson_context_destroy(ctx);
-      return TPH_POISSON_INVALID_ARGS;
-    }
-  }
-  ctx->bounds_min = bounds_min;
-  ctx->bounds_max = bounds_max;
+  /* Use a slightly smaller radius to avoid numerical issues. */
+  ctx->grid.dx = ((tph_real)0.999 * ctx->radius) / TPH_SQRT((tph_real)ctx->ndims);
+  ctx->grid.dx_rcp = (tph_real)1 / ctx->grid.dx;
 
   /* Seed pseudo-random number generator. */
   tph_poisson_xoshiro256p_init(&ctx->prng_state, seed);
 
-  ctx->sample = (tph_real *)ctx->alloc->malloc(ctx->ndims * sizeof(tph_real), ctx->alloc->ctx);
-
-  /* NOTE - Could allocate a single buffer for these? */
-  ctx->grid_index =
-    (ptrdiff_t *)ctx->alloc->malloc(ctx->ndims * sizeof(ptrdiff_t), ctx->alloc->ctx);
-  ctx->min_grid_index =
-    (ptrdiff_t *)ctx->alloc->malloc(ctx->ndims * sizeof(ptrdiff_t), ctx->alloc->ctx);
-  ctx->max_grid_index =
-    (ptrdiff_t *)ctx->alloc->malloc(ctx->ndims * sizeof(ptrdiff_t), ctx->alloc->ctx);
-  if (!(ctx->grid_index && ctx->min_grid_index && ctx->max_grid_index)) {
-    tph_poisson_context_destroy(ctx);
-    return TPH_POISSON_BAD_ALLOC;
+  /* Compute grid linear size so that we know how much memory to allocate for cells. */
+  ptrdiff_t grid_linear_size = 1;
+  for (int32_t i = 0; i < ctx->ndims; ++i) {
+    /* Not checking for overflow! */
+    grid_linear_size *= (ptrdiff_t)TPH_CEIL((bounds_max[i] - bounds_min[i]) * ctx->grid.dx_rcp);
   }
 
+  /* clang-format off */
+  ctx->mem_size = ctx->ndims * (
+      sizeof(tph_real)  + /* ctx.bounds_min */ 
+      sizeof(tph_real)  + /* ctx.bounds_max */ 
+      sizeof(tph_real)  + /* ctx.sample */
+      sizeof(ptrdiff_t) + /* ctx.grid_index */
+      sizeof(ptrdiff_t) + /* ctx.min_grid_index */
+      sizeof(ptrdiff_t) + /* ctx.max_grid_index */
+      sizeof(ptrdiff_t) + /* ctx.grid.size */
+      sizeof(ptrdiff_t)   /* ctx.grid.stride */
+    ) + grid_linear_size * sizeof(uint32_t); /* ctx.grid.cells */
+  ctx->mem = (char*)ctx->alloc->malloc(ctx->mem_size, ctx->alloc->ctx);
+  /* clang-format on */
+  if (!ctx->mem) { return TPH_POISSON_BAD_ALLOC; }
+
+  /* Initialize context pointers. */
+  ptrdiff_t mem_offset = 0;
+  ctx->bounds_min = (tph_real *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(tph_real);
+  ctx->bounds_max = (tph_real *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(tph_real);
+  ctx->sample = (tph_real *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(tph_real);
+  ctx->grid_index = (ptrdiff_t *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(ptrdiff_t);
+  ctx->min_grid_index = (ptrdiff_t *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(ptrdiff_t);
+  ctx->max_grid_index = (ptrdiff_t *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(ptrdiff_t);
+  ctx->grid.size = (ptrdiff_t *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(ptrdiff_t);
+  ctx->grid.stride = (ptrdiff_t *)&ctx->mem[mem_offset];
+  mem_offset += ctx->ndims * sizeof(ptrdiff_t);
+  ctx->grid.cells = (uint32_t *)&ctx->mem[mem_offset];
+  tph_poisson_assert(ctx->mem_size = mem_offset + grid_linear_size * sizeof(uint32_t));
+
+  /* Copy bounds into context memory buffer to improve locality. */
+  memcpy(ctx->bounds_max, bounds_max, ctx->ndims * sizeof(tph_real));
+  memcpy(ctx->bounds_min, bounds_min, ctx->ndims * sizeof(tph_real));
+
+  /* Initialize grid size and stride. */
+  ctx->grid.size[0] =
+    (ptrdiff_t)TPH_CEIL((ctx->bounds_max[0] - ctx->bounds_min[0]) * ctx->grid.dx_rcp);
+  ctx->grid.stride[0] = 1;
+  for (int32_t i = 1; i < ctx->ndims; ++i) {
+    ctx->grid.size[i] =
+      (ptrdiff_t)TPH_CEIL((ctx->bounds_max[i] - ctx->bounds_min[i]) * ctx->grid.dx_rcp);
+    ctx->grid.stride[i] = ctx->grid.stride[i - 1] * ctx->grid.size[i - 1];
+  }
+
+  /* Initialize cells with sentinel value 0xFFFFFFFF, indicating no sample there.
+   * Cell values are later set to indices of samples. */
+  memset(ctx->grid.cells, 0xFF, grid_linear_size * sizeof(uint32_t));
+
   return TPH_POISSON_SUCCESS;
+}
+
+/**
+ * @brief ...
+ */
+static void tph_poisson_context_destroy(tph_poisson_context *ctx)
+{
+  if (!ctx) { return; }
+  ctx->alloc->free((void *)ctx->mem, ctx->mem_size, ctx->alloc->ctx);
+  tph_poisson_vec_free(ctx->samples_vec, ctx->alloc);
+  tph_poisson_vec_free(ctx->active_indices_vec, ctx->alloc);
 }
 
 /**
@@ -514,10 +522,8 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
  * @param ndims Number of values in p, b_min, and b_max.
  * @return Non-zero if p is element-wise inclusively inside the bounded region; otherwise zero.
  */
-static int tph_poisson_inside(const tph_real *p,
-  const tph_real *b_min,
-  const tph_real *b_max,
-  int32_t ndims)
+static int
+  tph_poisson_inside(const tph_real *p, const tph_real *b_min, const tph_real *b_max, int32_t ndims)
 {
   assert(ndims > 0);
   while (ndims--) {
@@ -528,22 +534,7 @@ static int tph_poisson_inside(const tph_real *p,
 }
 
 /**
- * @brief Returns the provided value clamped to the range [min_value, max_value].
- * Assumes min_value <= max_value.
- * @param min_value Lower bound.
- * @param max_value Upper bound.
- * @param value     Value.
- * @return Value clamped to the range [min_value, max_value].
- */
-static inline tph_real
-  tph_poisson_clamped(const tph_real min_value, const tph_real max_value, const tph_real value)
-{
-  tph_poisson_assert(min_value <= max_value);
-  return value < min_value ? min_value : (value > max_value ? max_value : value);
-}
-
-/**
- *
+ * @brief
  */
 static int tph_poisson_add_sample(const tph_real *sample, tph_poisson_context *ctx)
 {
@@ -576,8 +567,8 @@ static int tph_poisson_add_sample(const tph_real *sample, tph_poisson_context *c
 }
 
 /**
- * @brief Generate a pseudo-random sample position that is guaranteed be at a distance [radius, 2
- * * radius] from the provided center position.
+ * @brief Generate a pseudo-random sample position that is guaranteed be at a distance
+ * [radius, 2 * radius] from the provided center position.
  * @param center     Center position.
  * @param ndims      Number of values in center and sample.
  * @param radius     Radius bounding the annulus.
@@ -585,9 +576,7 @@ static int tph_poisson_add_sample(const tph_real *sample, tph_poisson_context *c
  * @param sample     Output sample position.
  */
 static void tph_poisson_rand_annulus_sample(const tph_real *center,
-  const int32_t ndims,
-  const tph_real radius,
-  tph_poisson_xoshiro256p_state *prng_state,
+  tph_poisson_context *ctx,
   tph_real *sample)
 {
   int32_t i = 0;
@@ -595,9 +584,9 @@ static void tph_poisson_rand_annulus_sample(const tph_real *center,
   while (1) {
     /* Generate a random component in the range [-2, 2] for each dimension. */
     sqr_mag = 0;
-    for (i = 0; i < ndims; ++i) {
+    for (i = 0; i < ctx->ndims; ++i) {
       sample[i] =
-        (tph_real)(-2 + 4 * tph_poisson_to_double(tph_poisson_xoshiro256p_next(prng_state)));
+        (tph_real)(-2 + 4 * tph_poisson_to_double(tph_poisson_xoshiro256p_next(&ctx->prng_state)));
       sqr_mag += sample[i] * sample[i];
     }
 
@@ -609,7 +598,7 @@ static void tph_poisson_rand_annulus_sample(const tph_real *center,
       /* Found a valid offset.
        * Add the offset scaled by radius to the center coordinate to
        * produce the final sample. */
-      for (i = 0; i < ndims; ++i) { sample[i] = center[i] + radius * sample[i]; }
+      for (i = 0; i < ctx->ndims; ++i) { sample[i] = center[i] + ctx->radius * sample[i]; }
       break;
     }
   }
@@ -619,66 +608,55 @@ static void tph_poisson_rand_annulus_sample(const tph_real *center,
  * @brief ...
  */
 static void tph_poisson_grid_index_bounds(const tph_real *sample,
-  const int32_t ndims,
-  const tph_real radius,
-  const tph_real *bounds_min,
-  const tph_poisson_grid *grid,
+  tph_poisson_context *ctx,
   ptrdiff_t *min_grid_index,
   ptrdiff_t *max_grid_index)
 {
-  const tph_real dx_rcp = grid->dx_rcp;
-  const ptrdiff_t *grid_size = grid->size;
-  for (int32_t i = 0; i < ndims; ++i) {
-    tph_poisson_assert(grid_size[i] > 0);
-    min_grid_index[i] = tph_poisson_clamped(
-      0, grid_size[i] - 1, (ptrdiff_t)TPH_FLOOR(((sample[i] - radius) - bounds_min[i]) * dx_rcp));
-    max_grid_index[i] = tph_poisson_clamped(
-      0, grid_size[i] - 1, (ptrdiff_t)TPH_FLOOR(((sample[i] + radius) - bounds_min[i]) * dx_rcp));
+  for (int32_t i = 0; i < ctx->ndims; ++i) {
+    tph_poisson_assert(ctx->grid.size[i] > 0);
+    min_grid_index[i] = tph_poisson_clamped(0,
+      ctx->grid.size[i] - 1,
+      (ptrdiff_t)TPH_FLOOR(((sample[i] - ctx->radius) - ctx->bounds_min[i]) * ctx->grid.dx_rcp));
+    max_grid_index[i] = tph_poisson_clamped(0,
+      ctx->grid.size[i] - 1,
+      (ptrdiff_t)TPH_FLOOR(((sample[i] + ctx->radius) - ctx->bounds_min[i]) * ctx->grid.dx_rcp));
   }
 }
 
 // Returns true if there exists another sample within the radius used to
 // construct the grid, otherwise false.
 static int tph_poisson_existing_sample_within_radius(const tph_real *sample,
-  const int32_t ndims,
-  const tph_real radius,
   const ptrdiff_t active_sample_index,
-  const tph_real *samples_vec,
-  const tph_poisson_grid *grid,
-  ptrdiff_t *grid_index,
+  tph_poisson_context *ctx,
   const ptrdiff_t *min_grid_index,
   const ptrdiff_t *max_grid_index)
 {
-  tph_poisson_assert(ndims > 0);
-  const ptrdiff_t *stride = grid->stride;
-  tph_poisson_assert(stride[0] == 1);
-  tph_poisson_assert(radius > 0);
-  const tph_real r_sqr = radius * radius;
+  const tph_real r_sqr = ctx->radius * ctx->radius;
   tph_real di = 0;
   tph_real d_sqr = -1;
   uint32_t cell = 0xFFFFFFFF;
   const tph_real *cell_sample = NULL;
   int32_t i = -1;
   ptrdiff_t k = -1;
-  memcpy(grid_index, min_grid_index, ndims * sizeof(ptrdiff_t));
+  memcpy(ctx->grid_index, min_grid_index, ctx->ndims * sizeof(ptrdiff_t));
   do {
     /* Compute linear grid index. */
-    tph_poisson_assert((0 <= grid_index[0]) & (grid_index[0] < grid->size[0]));
-    k = grid_index[0];
-    for (i = 1; i < ndims; ++i) {
+    tph_poisson_assert((0 <= ctx->grid_index[0]) & (ctx->grid_index[0] < ctx->grid.size[0]));
+    k = ctx->grid_index[0];
+    for (i = 1; i < ctx->ndims; ++i) {
       /* Not checking for overflow! */
-      tph_poisson_assert((0 <= grid_index[i]) & (grid_index[i] < grid->size[i]));
-      k += grid_index[i] * stride[i];
+      tph_poisson_assert((0 <= ctx->grid_index[i]) & (ctx->grid_index[i] < ctx->grid.size[i]));
+      k += ctx->grid_index[i] * ctx->grid.stride[i];
     }
 
-    cell = grid->cells[k];
+    cell = ctx->grid.cells[k];
     if ((cell != 0xFFFFFFFF) & (cell != (uint32_t)active_sample_index)) {
       /* Compute (squared) distance to the existing sample and then check if the existing sample is
        * closer than radius to the provided sample. */
-      cell_sample = &samples_vec[cell * ndims];
+      cell_sample = &ctx->samples_vec[cell * ctx->ndims];
       di = sample[0] - cell_sample[0];
       d_sqr = di * di;
-      for (i = 1; i < ndims; ++i) {
+      for (i = 1; i < ctx->ndims; ++i) {
         di = sample[i] - cell_sample[i];
         d_sqr += di * di;
       }
@@ -688,27 +666,20 @@ static int tph_poisson_existing_sample_within_radius(const tph_real *sample,
     /* Iterate over grid index range. Enumerate every grid index
      * between min_grid_index and max_grid_index (inclusive) exactly once.
      * Assumes that min_index is element-wise less than or equal to max_index. */
-    for (i = 0; i < ndims; ++i) {
+    for (i = 0; i < ctx->ndims; ++i) {
       assert(min_grid_index[i] <= max_grid_index[i]);
-      grid_index[i]++;
-      if (grid_index[i] <= max_grid_index[i]) { break; }
-      grid_index[i] = min_grid_index[i];
+      ctx->grid_index[i]++;
+      if (ctx->grid_index[i] <= max_grid_index[i]) { break; }
+      ctx->grid_index[i] = min_grid_index[i];
     }
     /* If the above loop ran to completion, without triggering the break, the
      * grid_index has been set to its original value (min_grid_index). Since this
      * was the starting value for grid_index we exit the outer loop when this happens. */
-  } while (i != ndims);
+  } while (i != ctx->ndims);
 
   /* No existing samples were found to be closer to the sample than the provided radius. */
   return 0;
 }
-
-
-/*int32_t tph_poisson_generate(const tph_poisson_args *args, tph_poisson_sampling *s)
-{
-  return tph_poisson_generate_useralloc(args, NULL, tph_alloc_fn, tph_free_fn, s);
-}*/
-
 
 int tph_poisson_create(tph_poisson_sampling *s,
   const tph_poisson_args *args,
@@ -726,57 +697,55 @@ int tph_poisson_create(tph_poisson_sampling *s,
     args->max_sample_attempts,
     args->seed,
     alloc);
-  if (ret != TPH_POISSON_SUCCESS) { return ret; }
-
-  /* Acceleration grid. */
-  tph_poisson_grid grid;
-  int ret = tph_poisson_grid_create(
-    &grid, args->radius, args->ndims, args->bounds_min, args->bounds_max, internal);
   if (ret != TPH_POISSON_SUCCESS) {
-    tph_poisson_free(s);
+    /* No need to destroy context here. */
     return ret;
   }
 
   /* Add first sample randomly within bounds. No need to check (non-existing) neighbors. */
-  for (int32_t i = 0; i < args->ndims; ++i) {
+  for (int32_t i = 0; i < ctx.ndims; ++i) {
     ctx.sample[i] = tph_poisson_clamped(ctx.bounds_min[i],
       ctx.bounds_max[i],
       ctx.bounds_min[i]
         + (tph_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&ctx.prng_state)))
             * (ctx.bounds_max[i] - ctx.bounds_min[i]));
   }
-  assert(tph_poisson_inside(pos, args->bounds_min, args->bounds_max, args->ndims));
 
-  ret = tph_poisson_add_sample(pos, samples_vec, active_indices_vec, grid, grid_index);
-  if (ret != TPH_POISSON_SUCCESS) { return ret; }
+  ret = tph_poisson_add_sample(ctx.sample, &ctx);
+  if (ret != TPH_POISSON_SUCCESS) {
+    tph_poisson_context_destroy(&ctx);
+    return ret;
+  }
 
-  while (!tph_poisson_vec_empty(active_indices_vec)) {
+  ptrdiff_t active_index = -1;
+  const tph_real *active_sample = NULL;
+  uint32_t attempt_count = 0;
+  while (!tph_poisson_vec_empty(ctx.active_indices_vec)) {
     /* Randomly choose an active sample. A sample is considered active
        until failed attempts have been made to generate a new sample within
        its annulus. */
-    const ptrdiff_t active_index =
-      (ptrdiff_t)(tph_poisson_xoshiro256p_next(&prng_state)
-                  % (uint64_t)tph_poisson_vec_size(active_indices_vec));
-    const ptrdiff_t sample_index = active_indices_vec[active_index];
-    const tph_real *sample_pos = &samples_vec[sample_index * args->ndims];
-    // const auto active_sample = pds::RandActiveSample(active_indices, samples, &local_seed);
-    uint32_t attempt_count = 0;
-    while (attempt_count < args->max_sample_attempts) {
+    active_index = (ptrdiff_t)(tph_poisson_xoshiro256p_next(&ctx.prng_state)
+                               % (uint64_t)tph_poisson_vec_size(ctx.active_indices_vec));
+    active_sample = &ctx.samples_vec[ctx.active_indices_vec[active_index] * ctx.ndims];
+    attempt_count = 0;
+    while (attempt_count < ctx.max_sample_attempts) {
       /* Randomly create a candidate sample inside the active sample's annulus. */
-      tph_poisson_rand_annulus_sample(sample_pos, args->ndims, args->radius, &prng_state, pos);
+      tph_poisson_rand_annulus_sample(active_sample, &ctx, ctx.sample);
       /* Check if candidate sample is within bounds. */
-      if (tph_poisson_inside(pos, args->bounds_min, args->bounds_max, args->ndims)) {
-        tph_poisson_grid_index_bounds(pos, &grid, min_grid_index, max_grid_index);
+      if (tph_poisson_inside(ctx.sample, ctx.bounds_min, ctx.bounds_max, ctx.ndims)) {
+        tph_poisson_grid_index_bounds(ctx.sample, &ctx, ctx.min_grid_index, ctx.max_grid_index);
         if (!tph_poisson_existing_sample_within_radius(
-              pos, active_index, samples_vec, &grid, grid_index, min_grid_index, max_grid_index)) {
+              ctx.sample, active_index, &ctx, ctx.min_grid_index, ctx.max_grid_index)) {
           /* No existing samples where found to be too close to the
            * candidate sample, no further attempts necessary. */
-          ret = tph_poisson_add_sample(pos, samples_vec, active_indices_vec, grid, grid_index);
-          if (ret != TPH_POISSON_SUCCESS) { return ret; }
+          ret = tph_poisson_add_sample(ctx.sample, &ctx);
+          if (ret != TPH_POISSON_SUCCESS) {
+            tph_poisson_context_destroy(&ctx);
+            return ret;
+          }
           break;
         }
-        /* else: The candidate sample is too close to an existing sample,
-         * move on to next attempt. */
+        /* else: The candidate sample is too close to an existing sample. */
       }
       /* else: The candidate sample is out-of-bounds. */
       ++attempt_count;
@@ -785,151 +754,34 @@ int tph_poisson_create(tph_poisson_sampling *s,
     if (attempt_count == args->max_sample_attempts) {
       /* No valid sample was found on the disk of the active sample after
        * maximum number of attempts, remove it from the active list. */
-      tph_poisson_vec_erase_unordered(active_indices_vec, active_index);
+      tph_poisson_vec_erase_unordered(ctx.active_indices_vec, active_index, /*count=*/1);
     }
   }
 
-#if 0// TMP TEST!!
-  internal->pos =
-    (tph_real *)internal->alloc(internal->mem_ctx, 5 * args->ndims * sizeof(tph_real));
-  if (internal->pos == NULL) { return TPH_POISSON_BAD_ALLOC; }
-  for (int32_t i = 0; i < 5; ++i) {
-    /* Generate random position within bounds. */
-    for (int32_t i = 0; i < args->ndims; ++i) {
-      pos[i] = tph_poisson_clamped(args->bounds_min[i],
-        args->bounds_max[i],
-        args->bounds_min[i]
-          + (tph_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&prng_state)))
-              * (args->bounds_max[i] - args->bounds_min[i]));
-    }
-    memcpy(&internal->pos[i * args->ndims], pos, args->ndims * sizeof(tph_real));
+  /* Transfer samples to output. */
+  const ptrdiff_t nsamples = tph_poisson_vec_size(ctx.samples_vec) / ctx.ndims;
+  tph_real* samples = (tph_real *)ctx.alloc->malloc(ctx.ndims * nsamples * sizeof(tph_real), ctx.alloc->ctx);
+  if (!samples) {
+    tph_poisson_context_destroy(&ctx);
+    return TPH_POISSON_BAD_ALLOC;
   }
-#endif
+  memcpy(samples, ctx.samples_vec, s->ndims * s->nsamples * sizeof(tph_real));
 
-  tph_poisson_grid_free(&grid, internal);
+  s->ndims = ctx.ndims;
+  s->nsamples = nsamples;
+  s->samples = samples;   
+  s->alloc = ctx.alloc;
 
-  // cvector_free(samples);
-  // cvector_free(active_indices);
-
-  s->internal = internal;
-  s->ndims = args->ndims;
-  s->nsamples = 5;
+  tph_poisson_context_destroy(&ctx);
 
   return TPH_POISSON_SUCCESS;
-
-#if 0
-  jcv_context_internal *internal = jcv_alloc_internal(num_points, userallocctx, allocfn, freefn);
-
-  internal->beachline_start = jcv_halfedge_new(internal, 0, 0);
-  internal->beachline_end = jcv_halfedge_new(internal, 0, 0);
-
-  internal->beachline_start->left = 0;
-  internal->beachline_start->right = internal->beachline_end;
-  internal->beachline_end->left = internal->beachline_start;
-  internal->beachline_end->right = 0;
-
-  internal->last_inserted = 0;
-
-  int max_num_events = num_points * 2;// beachline can have max 2*n-5 parabolas
-  jcv_pq_create(internal->eventqueue, max_num_events, (void **)internal->eventmem);
-
-  internal->numsites = num_points;
-  jcv_site *sites = internal->sites;
-
-  for (int i = 0; i < num_points; ++i) {
-    sites[i].p = points[i];
-    sites[i].edges = 0;
-    sites[i].index = i;
-  }
-
-  qsort(sites, (size_t)num_points, sizeof(jcv_site), jcv_point_cmp);
-
-  jcv_clipper box_clipper;
-  if (clipper == 0) {
-    box_clipper.test_fn = jcv_boxshape_test;
-    box_clipper.clip_fn = jcv_boxshape_clip;
-    box_clipper.fill_fn = jcv_boxshape_fillgaps;
-    clipper = &box_clipper;
-  }
-  internal->clipper = *clipper;
-
-  jcv_rect tmp_rect;
-  tmp_rect.min.x = tmp_rect.min.y = JCV_FLT_MAX;
-  tmp_rect.max.x = tmp_rect.max.y = -JCV_FLT_MAX;
-  jcv_prune_duplicates(internal, &tmp_rect);
-
-  // Prune using the test second
-  if (internal->clipper.test_fn) {
-    // e.g. used by the box clipper in the test_fn
-    internal->clipper.min = rect ? rect->min : tmp_rect.min;
-    internal->clipper.max = rect ? rect->max : tmp_rect.max;
-
-    jcv_prune_not_in_shape(internal, &tmp_rect);
-
-    // The pruning might have made the bounding box smaller
-    if (!rect) {
-      // In the case of all sites being all on a horizontal or vertical line, the
-      // rect area will be zero, and the diagram generation will most likely fail
-      jcv_rect_round(&tmp_rect);
-      jcv_rect_inflate(&tmp_rect, 10);
-
-      internal->clipper.min = tmp_rect.min;
-      internal->clipper.max = tmp_rect.max;
-    }
-  }
-
-  internal->rect = rect ? *rect : tmp_rect;
-
-  d->min = internal->rect.min;
-  d->max = internal->rect.max;
-  d->numsites = internal->numsites;
-  d->internal = internal;
-
-  internal->bottomsite = jcv_nextsite(internal);
-
-  jcv_priorityqueue *pq = internal->eventqueue;
-  jcv_site *site = jcv_nextsite(internal);
-
-  int finished = 0;
-  while (!finished) {
-    jcv_point lowest_pq_point;
-    if (!jcv_pq_empty(pq)) {
-      jcv_halfedge *he = (jcv_halfedge *)jcv_pq_top(pq);
-      lowest_pq_point.x = he->vertex.x;
-      lowest_pq_point.y = he->y;
-    }
-
-    if (site != 0 && (jcv_pq_empty(pq) || jcv_point_less(&site->p, &lowest_pq_point))) {
-      jcv_site_event(internal, site);
-      site = jcv_nextsite(internal);
-    } else if (!jcv_pq_empty(pq)) {
-      jcv_circle_event(internal);
-    } else {
-      finished = 1;
-    }
-  }
-
-  for (jcv_halfedge *he = internal->beachline_start->right; he != internal->beachline_end;
-       he = he->right) {
-    jcv_finishline(internal, he->edge);
-  }
-
-  jcv_fillgaps(d);
-#endif
 }
 
-void tph_poisson_destroy(tph_poisson_sampling *s, tph_poisson_allocator *alloc)
+void tph_poisson_destroy(tph_poisson_sampling *s)
 {
-  if (s && s->samples && s->nsamples > 0) {
-    void (*free_fn)(void *ptr, ptrdiff_t size, void *ctx) = alloc ? alloc->free : tph_poisson_free;
-    free_fn(s->samples, s->nsamples * sizeof(*s->samples), alloc ? alloc->ctx : (void *)NULL);
+  if (s && s->samples && s->ndims > 0 && s->nsamples > 0) {
+    s->alloc->free(s->samples, s->nsamples * s->ndims * sizeof(*s->samples), s->alloc->ctx);
   }
-}
-
-tph_poisson_points tph_poisson_get_points(const tph_poisson_sampling *s)
-{
-  tph_poisson_points p = { .pos = s != NULL && s->internal != NULL ? s->internal->pos : NULL };
-  return p;
 }
 
 #endif// TPH_POISSON_IMPLEMENTATION
