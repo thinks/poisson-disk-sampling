@@ -208,6 +208,9 @@ extern int _tphvec_append(void **vec_ptr, void *values, ptrdiff_t nbytes);
   (_tphvec_resize((void **)&(vec), (count) * sizeof(*(vec)), &(value), sizeof((value))))
 extern int _tphvec_resize(void **vec_ptr, ptrdiff_t count, void *value, ptrdiff_t sizeof_value);
 
+#define tphvec_erase_unordered(vec, pos, count) \
+  (_tphvec_erase_unordered((vec), (pos), (count), sizeof(*(vec))))
+extern void _tphvec_erase_unordered(void *vec, ptrdiff_t pos, ptrdiff_t count, size_t sizeof_elem);
 
 #if 0
 /**

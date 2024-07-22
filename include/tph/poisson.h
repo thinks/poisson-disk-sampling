@@ -210,19 +210,14 @@ static inline double tph_poisson_to_double(const uint64_t x)
 }
 
 /**
- * @brief Returns the provided value clamped to the range [min_value, max_value].
- * Assumes min_value <= max_value.
- * @param min_value Lower bound.
- * @param max_value Upper bound.
- * @param value     Value.
- * @return Value clamped to the range [min_value, max_value].
+ * @brief Returns the provided value clamped to the range [x0, x1].
+ * Assumes x0 <= x1.
+ * @param x0 Lower bound.
+ * @param x1 Upper bound.
+ * @param x  Value.
+ * @return Value clamped to the range [x0, x1].
  */
-static inline tph_real
-  tph_poisson_clamped(const tph_real min_value, const tph_real max_value, const tph_real value)
-{
-  tph_poisson_assert(min_value <= max_value);
-  return value < min_value ? min_value : (value > max_value ? max_value : value);
-}
+#define tph_poisson_clamped(x0, x1, x) ((x) < (x0) ? (x0) : ((x1) < (x) ? (x1) : (x)))
 
 /* Vector. */
 
@@ -346,22 +341,32 @@ static int _tph_poisson_vec_append(void **vec_ptr,
 }
 
 /**
- * @brief Add a single value to the end of the vector.
- * @param vec   Vector.
- * @param value Pointer to values to be added.
- * @param alloc Allocator.
- * @return TPH_POISSON_SUCCESS, or a non-zero error code.
- */
-#define tph_poisson_vec_push_back(vec, value, alloc) \
-  (_tph_poisson_vec_append((void **)&(vec), &(value), sizeof((value)), (alloc)))
-
-/**
  * @brief ...
+ * @param vec   Vector.
+ * @param pos   Starting index of elements to be erased; pos <= 0 is always a no-op.
+ * @param count Number of elements to erase; count <= 0 is always a no-op.
  */
-#define tph_poisson_vec_erase_unordered(vec, i, count) \
-  (_tph_poisson_vec_erase_unordered((vec), (i), (count)))
-static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t i, ptrdiff_t count) {
-  asdsdf
+#define tph_poisson_vec_erase_unordered(vec, pos, count) \
+  (_tph_poisson_vec_erase_unordered((vec), (pos), (count), sizeof(*(vec))))
+static void
+  _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t pos, ptrdiff_t count, size_t sizeof_elem)
+{
+  if (vec && ((pos >= 0) & (count > 0))) {
+    tph_poisson_vec_header *hdr = tph_poisson_vec_to_hdr(vec);
+    const ptrdiff_t pos_b = pos * sizeof_elem;
+    const ptrdiff_t count_b = count * sizeof_elem;
+    if (pos_b + count_b >= hdr->size) {
+      /* There are no elements behind the specified range.
+       * No re-ordering is necessary, simply decrease the size of the vector. */
+      hdr->size = pos_b;
+    } else {
+      ptrdiff_t n_src = count_b;
+      ptrdiff_t remain_b = hdr->size - pos_b - count_b;
+      if (remain_b < n_src) { n_src = remain_b; }
+      memcpy(&((char *)vec)[pos_b], &((char *)vec)[hdr->size - n_src], n_src);
+      hdr->size -= count_b;
+    }
+  }
 }
 
 // Structs.
@@ -543,7 +548,7 @@ static int tph_poisson_add_sample(const tph_real *sample, tph_poisson_context *c
   const ptrdiff_t sample_index = tph_poisson_vec_size(ctx->samples_vec);
   ret = tph_poisson_vec_append(ctx->samples_vec, sample, ctx->ndims, ctx->alloc);
   if (ret != TPH_POISSON_SUCCESS) { return ret; }
-  ret = tph_poisson_vec_push_back(ctx->active_indices_vec, sample_index, ctx->alloc);
+  ret = tph_poisson_vec_append(ctx->active_indices_vec, &sample_index, /*count=*/1, ctx->alloc);
   if (ret != TPH_POISSON_SUCCESS) { return ret; }
 
   /* Compute linear grid index. */
@@ -559,7 +564,6 @@ static int tph_poisson_add_sample(const tph_real *sample, tph_poisson_context *c
   }
 
   /* Record sample index in grid. */
-  /*tph_poisson_assert((0 <= k) & (k < grid->linear_size));*/
   tph_poisson_assert(ctx->grid.cells[k] == 0xFFFFFFFF);
   ctx->grid.cells[k] = (uint32_t)sample_index;
   tph_poisson_assert(ctx->grid.cells[k] != 0xFFFFFFFF);
@@ -612,14 +616,15 @@ static void tph_poisson_grid_index_bounds(const tph_real *sample,
   ptrdiff_t *min_grid_index,
   ptrdiff_t *max_grid_index)
 {
+  ptrdiff_t xi = 0;
+  ptrdiff_t xi_max = 0;
   for (int32_t i = 0; i < ctx->ndims; ++i) {
     tph_poisson_assert(ctx->grid.size[i] > 0);
-    min_grid_index[i] = tph_poisson_clamped(0,
-      ctx->grid.size[i] - 1,
-      (ptrdiff_t)TPH_FLOOR(((sample[i] - ctx->radius) - ctx->bounds_min[i]) * ctx->grid.dx_rcp));
-    max_grid_index[i] = tph_poisson_clamped(0,
-      ctx->grid.size[i] - 1,
-      (ptrdiff_t)TPH_FLOOR(((sample[i] + ctx->radius) - ctx->bounds_min[i]) * ctx->grid.dx_rcp));
+    xi_max = ctx->grid.size[i] - 1;
+    xi = (ptrdiff_t)TPH_FLOOR(((sample[i] - ctx->radius) - ctx->bounds_min[i]) * ctx->grid.dx_rcp);
+    min_grid_index[i] = tph_poisson_clamped(0, xi_max, xi);
+    xi = (ptrdiff_t)TPH_FLOOR(((sample[i] + ctx->radius) - ctx->bounds_min[i]) * ctx->grid.dx_rcp);
+    max_grid_index[i] = tph_poisson_clamped(0, xi_max, xi);
   }
 }
 
@@ -704,13 +709,12 @@ int tph_poisson_create(tph_poisson_sampling *s,
 
   /* Add first sample randomly within bounds. No need to check (non-existing) neighbors. */
   for (int32_t i = 0; i < ctx.ndims; ++i) {
-    ctx.sample[i] = tph_poisson_clamped(ctx.bounds_min[i],
-      ctx.bounds_max[i],
+    ctx.sample[i] =
       ctx.bounds_min[i]
-        + (tph_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&ctx.prng_state)))
-            * (ctx.bounds_max[i] - ctx.bounds_min[i]));
+      + (tph_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&ctx.prng_state)))
+          * (ctx.bounds_max[i] - ctx.bounds_min[i]);
+    ctx.sample[i] = tph_poisson_clamped(ctx.bounds_min[i], ctx.bounds_max[i], ctx.sample[i]);
   }
-
   ret = tph_poisson_add_sample(ctx.sample, &ctx);
   if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_context_destroy(&ctx);
@@ -734,8 +738,11 @@ int tph_poisson_create(tph_poisson_sampling *s,
       /* Check if candidate sample is within bounds. */
       if (tph_poisson_inside(ctx.sample, ctx.bounds_min, ctx.bounds_max, ctx.ndims)) {
         tph_poisson_grid_index_bounds(ctx.sample, &ctx, ctx.min_grid_index, ctx.max_grid_index);
-        if (!tph_poisson_existing_sample_within_radius(
-              ctx.sample, active_index, &ctx, ctx.min_grid_index, ctx.max_grid_index)) {
+        if (!tph_poisson_existing_sample_within_radius(ctx.sample,
+              ctx.active_indices_vec[active_index],
+              &ctx,
+              ctx.min_grid_index,
+              ctx.max_grid_index)) {
           /* No existing samples where found to be too close to the
            * candidate sample, no further attempts necessary. */
           ret = tph_poisson_add_sample(ctx.sample, &ctx);
@@ -760,7 +767,8 @@ int tph_poisson_create(tph_poisson_sampling *s,
 
   /* Transfer samples to output. */
   const ptrdiff_t nsamples = tph_poisson_vec_size(ctx.samples_vec) / ctx.ndims;
-  tph_real* samples = (tph_real *)ctx.alloc->malloc(ctx.ndims * nsamples * sizeof(tph_real), ctx.alloc->ctx);
+  tph_real *samples =
+    (tph_real *)ctx.alloc->malloc(ctx.ndims * nsamples * sizeof(tph_real), ctx.alloc->ctx);
   if (!samples) {
     tph_poisson_context_destroy(&ctx);
     return TPH_POISSON_BAD_ALLOC;
@@ -769,7 +777,7 @@ int tph_poisson_create(tph_poisson_sampling *s,
 
   s->ndims = ctx.ndims;
   s->nsamples = nsamples;
-  s->samples = samples;   
+  s->samples = samples;
   s->alloc = ctx.alloc;
 
   tph_poisson_context_destroy(&ctx);
@@ -779,9 +787,12 @@ int tph_poisson_create(tph_poisson_sampling *s,
 
 void tph_poisson_destroy(tph_poisson_sampling *s)
 {
-  if (s && s->samples && s->ndims > 0 && s->nsamples > 0) {
+  if ((s != NULL) & (s->samples != NULL) & (s->ndims > 0) & (s->nsamples > 0)) {
     s->alloc->free(s->samples, s->nsamples * s->ndims * sizeof(*s->samples), s->alloc->ctx);
   }
 }
+
+#undef tph_poisson_clamped
+/* TODO undef all macros!! */
 
 #endif// TPH_POISSON_IMPLEMENTATION

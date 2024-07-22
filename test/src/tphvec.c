@@ -269,3 +269,23 @@ int _tphvec_resize(void **vec_ptr, ptrdiff_t count, void *value, ptrdiff_t sizeo
   }
   return TPHVEC_SUCCESS;
 }
+
+void _tphvec_erase_unordered(void *vec, ptrdiff_t pos, ptrdiff_t count, size_t sizeof_elem)
+{
+  if (vec && ((pos >= 0) & (count > 0))) {
+    tphvec_header_t *hdr = _tphvec_vec_to_hdr(vec);
+    const ptrdiff_t pos_b = pos * sizeof_elem;
+    const ptrdiff_t count_b = count * sizeof_elem;
+    if (pos_b + count_b >= hdr->size) {
+      /* There are no elements behind the specified range.
+       * No re-ordering is necessary, simply decrease the size of the vector. */
+      hdr->size = pos_b;
+    } else {
+      ptrdiff_t n_src = count_b;
+      ptrdiff_t remain_b = hdr->size - pos_b - count_b;
+      if (remain_b < n_src) { n_src = remain_b; }
+      memcpy(&((char *)vec)[pos_b], &((char *)vec)[hdr->size - n_src], n_src);
+      hdr->size -= count_b;
+    }
+  }
+}

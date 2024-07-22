@@ -85,6 +85,18 @@ int main(int argc, char *argv[])
     printf("\n");
   }
 
+  {
+    tphvec(float) v2 = NULL;
+    float vals[] = { 0.F, 1.F, 2.F, 3.F, 4.F, 5.F };
+    tphvec_append(v2, vals, 6);
+    printf("Erase\n");
+    print_vecf(v2);
+    printf("\n");
+    tphvec_erase_unordered(v2, 1, 2);
+    //tphvec_erase_unordered(v2, 4, 3);
+    print_vecf(v2);
+    printf("\n");
+  }
 
 #if 0
   float *v2 = NULL;
