@@ -5,7 +5,7 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 ##
 ## Project
 ##
-set(_tph_poisson_hdr "include/tph/poisson.h")
+set(_tph_poisson_hdr "include/thinks/tph_poisson.h")
 file(STRINGS
      ${_tph_poisson_hdr}
      _ver_tmp

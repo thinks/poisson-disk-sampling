@@ -4,7 +4,7 @@
 
 #define TPH_POISSON_IMPLEMENTATION
 #define TPH_POISSON_REAL_TYPE float /*double*/
-#include <tph/poisson.h>
+#include <thinks/tph_poisson.h>
 
 int main(int argc, char *argv[])
 {

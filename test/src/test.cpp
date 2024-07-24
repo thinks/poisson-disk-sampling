@@ -1,6 +1,6 @@
 #define TPH_POISSON_IMPLEMENTATION
 // #define TPH_POISSON_REAL_TYPE float
-#include <tph/poisson.h>
+#include <thinks/tph_poisson.h>
 using Real = TPH_POISSON_REAL_TYPE;
 
 #include <array>
