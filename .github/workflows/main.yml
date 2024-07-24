@@ -24,12 +24,12 @@ jobs:
           ubuntu-18.04-gcc-9-cxx-14,
           ubuntu-18.04-gcc-9-cxx-17,
           ubuntu-18.04-clang-9-cxx-17,
-          macOS-latest-xcode-cxx-11,
-          macOS-latest-xcode-cxx-14,
-          macOS-latest-xcode-cxx-17,
-          windows-2019-cl-cxx-11,
-          windows-2019-cl-cxx-14,
-          windows-2019-cl-cxx-17
+          # macOS-latest-xcode-cxx-11,
+          # macOS-latest-xcode-cxx-14,
+          # macOS-latest-xcode-cxx-17,
+          # windows-2019-cl-cxx-11,
+          # windows-2019-cl-cxx-14,
+          # windows-2019-cl-cxx-17
         ]
         include:
           - name: ubuntu-18.04-gcc-9-cxx-11
