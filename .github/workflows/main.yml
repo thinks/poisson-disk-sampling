@@ -33,22 +33,22 @@ jobs:
         ]
         include:
           - name: ubuntu-18.04-gcc-9-cxx-11
-            os: ubuntu-18.04
+            os: ubuntu-latest
             compiler: gcc
             version: "9"
             cxx_std: 11        
           - name: ubuntu-18.04-gcc-9-cxx-14
-            os: ubuntu-18.04
+            os: ubuntu-latest
             compiler: gcc
             version: "9"
             cxx_std: 14
           - name: ubuntu-18.04-gcc-9-cxx-17
-            os: ubuntu-18.04
+            os: ubuntu-latest
             compiler: gcc
             version: "9"
             cxx_std: 17
           - name: ubuntu-18.04-clang-9-cxx-17
-            os: ubuntu-18.04
+            os: ubuntu-latest
             compiler: clang
             version: "9"
             cxx_std: 17
