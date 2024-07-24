@@ -3,13 +3,13 @@
 #include <string.h>// memset
 
 #define TPH_POISSON_IMPLEMENTATION
-#define TPH_REAL_TYPE float /*double*/
+#define TPH_POISSON_REAL_TYPE float /*double*/
 #include <tph/poisson.h>
 
 int main(int argc, char *argv[])
 {
-  const tph_real bounds_min[] = { -100.F, -100.F };
-  const tph_real bounds_max[] = { 100.F, 100.F };
+  const tph_poisson_real bounds_min[] = { -100.F, -100.F };
+  const tph_poisson_real bounds_max[] = { 100.F, 100.F };
   tph_poisson_args args = {};
   args.radius = 10.F;
   args.ndims = 2;

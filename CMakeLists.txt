@@ -9,27 +9,26 @@ set(_tph_poisson_hdr "include/tph/poisson.h")
 file(STRINGS
      ${_tph_poisson_hdr}
      _ver_tmp
-     REGEX "#define TPH_MAJOR_VERSION .*$")
-string(REGEX MATCHALL "[0-9]+" TPH_MAJOR_VERSION ${_ver_tmp})
+     REGEX "#define TPH_POISSON_MAJOR_VERSION .*$")
+string(REGEX MATCHALL "[0-9]+" TPH_POISSON_MAJOR_VERSION ${_ver_tmp})
 file(STRINGS
      ${_tph_poisson_hdr}
      _ver_tmp
-     REGEX "#define TPH_MINOR_VERSION .*$")
-string(REGEX MATCHALL "[0-9]+" TPH_MINOR_VERSION ${_ver_tmp})
+     REGEX "#define TPH_POISSON_MINOR_VERSION .*$")
+string(REGEX MATCHALL "[0-9]+" TPH_POISSON_MINOR_VERSION ${_ver_tmp})
 file(STRINGS
      ${_tph_poisson_hdr}
      _ver_tmp
-     REGEX "#define TPH_PATCH_VERSION .*$")
-string(REGEX MATCHALL "[0-9]+" TPH_PATCH_VERSION ${_ver_tmp})
+     REGEX "#define TPH_POISSON_PATCH_VERSION .*$")
+string(REGEX MATCHALL "[0-9]+" TPH_POISSON_PATCH_VERSION ${_ver_tmp})
 unset(_ver_tmp)
 unset(_tph_poisson_hdr)
 
 # Set the project name, version, language, etc.
-project(
-  tph_poisson
-  VERSION "${TPH_MAJOR_VERSION}.${TPH_MINOR_VERSION}.${TPH_PATCH_VERSION}"
+project(tph_poisson
+  VERSION "${TPH_POISSON_MAJOR_VERSION}.${TPH_POISSON_MINOR_VERSION}.${TPH_POISSON_PATCH_VERSION}"
   DESCRIPTION ""
-  # HOMEPAGE_URL "%%myurl%%"
+  HOMEPAGE_URL "https://github.com/thinks/poisson-disk-sampling"
   LANGUAGES CXX C)
 message(STATUS "${PROJECT_NAME}-${PROJECT_VERSION}")
 

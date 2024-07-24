@@ -18,7 +18,7 @@ else()
   set(_c_standard 11)
 endif()
 
-add_executable(tph_poisson_test main.cpp)
+add_executable(tph_poisson_test test.cpp)
 target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson)
 set_target_properties(tph_poisson_test PROPERTIES
   CXX_STANDARD ${_cxx_standard}
@@ -41,4 +41,3 @@ add_test(NAME tphvec_test COMMAND tphvec_test)
 
 unset(_cxx_standard)
 unset(_c_standard)
-

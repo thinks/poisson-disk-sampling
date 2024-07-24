@@ -5,13 +5,13 @@
 #include <memory>// std::unique_ptr
 
 #define TPH_POISSON_IMPLEMENTATION
-#define TPH_REAL_TYPE float /*double*/
+#define TPH_POISSON_REAL_TYPE float /*double*/
 #include <tph/poisson.h>
 
 int main(int argc, char *argv[])
 {
-  constexpr std::array<tph_real, 2> bounds_min{ -100.F, -100.F };
-  constexpr std::array<tph_real, 2> bounds_max{ 100.F, 100.F };
+  constexpr std::array<tph_poisson_real, 2> bounds_min{ -100.F, -100.F };
+  constexpr std::array<tph_poisson_real, 2> bounds_max{ 100.F, 100.F };
 
   tph_poisson_args args = {};
   args.radius = 10.F;
