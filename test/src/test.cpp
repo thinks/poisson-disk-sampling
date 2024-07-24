@@ -3,6 +3,7 @@
 #include <thinks/tph_poisson.h>
 using Real = TPH_POISSON_REAL_TYPE;
 
+#include <algorithm>// std::all_of
 #include <array>
 #include <cmath>
 #include <cstdint>
