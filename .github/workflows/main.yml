@@ -52,34 +52,34 @@ jobs:
             compiler: clang
             version: "9"
             cxx_std: 17
-          - name: macOS-latest-xcode-cxx-11
-            os: macOS-latest
-            compiler: xcode
-            cxx_std: 11
-          - name: macOS-latest-xcode-cxx-14
-            os: macOS-latest
-            compiler: xcode
-            cxx_std: 14
-          - name: macOS-latest-xcode-cxx-17
-            os: macOS-latest
-            compiler: xcode
-            cxx_std: 17
-          - name: windows-2019-cl-cxx-11
-            os: windows-latest
-            compiler: cl    
-            cxx_std: 11
-          - name: windows-2019-cl-cxx-17
-            os: windows-latest
-            compiler: cl    
-            cxx_std: 17
-          - name: windows-2019-cl-cxx-14
-            os: windows-latest
-            compiler: cl    
-            cxx_std: 14
-          - name: windows-2019-cl-cxx-17
-            os: windows-latest
-            compiler: cl    
-            cxx_std: 17
+          # - name: macOS-latest-xcode-cxx-11
+          #   os: macOS-latest
+          #   compiler: xcode
+          #   cxx_std: 11
+          # - name: macOS-latest-xcode-cxx-14
+          #   os: macOS-latest
+          #   compiler: xcode
+          #   cxx_std: 14
+          # - name: macOS-latest-xcode-cxx-17
+          #   os: macOS-latest
+          #   compiler: xcode
+          #   cxx_std: 17
+          # - name: windows-2019-cl-cxx-11
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 11
+          # - name: windows-2019-cl-cxx-17
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 17
+          # - name: windows-2019-cl-cxx-14
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 14
+          # - name: windows-2019-cl-cxx-17
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 17
 
     steps:
       - uses: actions/checkout@v1

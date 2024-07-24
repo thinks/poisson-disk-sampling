@@ -11,30 +11,6 @@ using Real = TPH_POISSON_REAL_TYPE;
 #include <thread>
 #include <vector>
 
-static void
-  require_fail(const char *expr, const char *file, unsigned int line, const char *function)
-{
-  std::printf(
-    "Requirement failed: '%s' on line %u in file %s in function %s\n", expr, line, file, function);
-  std::abort();
-}
-
-#define REQUIRE(expr) \
-  (static_cast<bool>(expr) ? void(0) : require_fail(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-
-using unique_poisson_ptr = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_destroy)>;
-static auto make_unique_poisson() -> unique_poisson_ptr
-{
-  return unique_poisson_ptr(new tph_poisson_sampling{}, tph_poisson_destroy);
-}
-
-static auto ThreadCount(const unsigned int max_thread_count) noexcept -> unsigned int
-{
-  return std::thread::hardware_concurrency() > 0
-           ? std::min(std::thread::hardware_concurrency(), max_thread_count)
-           : 1;
-}
-
 #if 0
 template<int32_t NDIMS> class PoissonSampling
 {
@@ -75,6 +51,23 @@ private:
 };
 #endif
 
+static void
+  require_fail(const char *expr, const char *file, unsigned int line, const char *function)
+{
+  std::printf(
+    "Requirement failed: '%s' on line %u in file %s in function %s\n", expr, line, file, function);
+  std::abort();
+}
+
+#define REQUIRE(expr) \
+  (static_cast<bool>(expr) ? void(0) : require_fail(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+
+using unique_poisson_ptr = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_destroy)>;
+static auto make_unique_poisson() -> unique_poisson_ptr
+{
+  return unique_poisson_ptr(new tph_poisson_sampling{}, tph_poisson_destroy);
+}
+
 // Brute-force (with some tricks) verification that the distance between each
 // possible sample pair meets the Poisson requirement, i.e. is greater than some
 // radius.
@@ -97,7 +90,9 @@ static void TestRadius()
     // Avoid spawning more threads than there are samples (although very
     // unlikely).
     const ptrdiff_t thread_count =
-      static_cast<ptrdiff_t>(ThreadCount(static_cast<unsigned int>(sampling->nsamples)));
+      std::thread::hardware_concurrency() > 0
+        ? std::min(static_cast<ptrdiff_t>(std::thread::hardware_concurrency()), sampling->nsamples)
+        : static_cast<ptrdiff_t>(1);
 
     // Launch threads.
     std::vector<std::future<bool>> futures;
