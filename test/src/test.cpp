@@ -60,8 +60,15 @@ static void
   std::abort();
 }
 
+// clang-format off
+#ifdef _MSC_VER
+  #define TPH_PRETTY_FUNCTION __FUNCSIG__
+#else 
+  #define TPH_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#endif
 #define REQUIRE(expr) \
-  (static_cast<bool>(expr) ? void(0) : require_fail(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+  (static_cast<bool>(expr) ? void(0) : require_fail(#expr, __FILE__, __LINE__, TPH_PRETTY_FUNCTION))
+// clang-format on
 
 using unique_poisson_ptr = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_destroy)>;
 static auto make_unique_poisson() -> unique_poisson_ptr
