@@ -38,7 +38,12 @@ extern "C" {
 
 #ifndef TPH_POISSON_MEMCPY
 #include <string.h>
-#define TPH_POISSON_MEMCPY(dst, src, n) memcpy((dst), (src), (n))
+#define TPH_POISSON_MEMCPY(dst, src, n) memcpy((dst), (src), (size_t)(n))
+#endif
+
+#ifndef TPH_POISSON_MEMSET
+#include <string.h>
+#define TPH_POISSON_MEMSET(s, c, n) memset((s), (c), (size_t)(n))
 #endif
 
 typedef TPH_POISSON_REAL_TYPE tph_poisson_real;
@@ -109,6 +114,8 @@ extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
 #undef TPH_POISSON_IMPLEMENTATION
 
 #include <stdlib.h>// malloc, realloc, free
+
+#define TPH_POISSON_SIZEOF(type) ((ptrdiff_t)sizeof(type))
 
 /* Memory. */
 
@@ -215,7 +222,7 @@ static inline double tph_poisson_to_double(const uint64_t x)
 {
   /* Convert to double, as suggested at https://prng.di.unimi.it.
      This conversion prefers the high bits of x (usually, a good idea). */
-  return (x >> 11) * 0x1.0p-53;
+  return (double)(x >> 11) * 0x1.0p-53;
 }
 
 /**
@@ -275,7 +282,8 @@ static void tph_poisson_vec_free(void *vec, tph_poisson_allocator *alloc)
 {
   if (vec) {
     tph_poisson_vec_header *hdr = tph_poisson_vec_to_hdr(vec);
-    alloc->free((void *)hdr, sizeof(tph_poisson_vec_header) + hdr->capacity, alloc->ctx);
+    alloc->free(
+      (void *)hdr, TPH_POISSON_SIZEOF(tph_poisson_vec_header) + hdr->capacity, alloc->ctx);
   }
 }
 
@@ -284,8 +292,8 @@ static void tph_poisson_vec_free(void *vec, tph_poisson_allocator *alloc)
  * @param vec Vector.
  * @return The number of elements in the vector.
  */
-#define tph_poisson_vec_size(vec) (_tph_poisson_vec_size((vec), sizeof(*(vec))))
-static inline ptrdiff_t _tph_poisson_vec_size(const void *vec, const size_t sizeof_elem)
+#define tph_poisson_vec_size(vec) (_tph_poisson_vec_size((vec), TPH_POISSON_SIZEOF(*(vec))))
+static inline ptrdiff_t _tph_poisson_vec_size(const void *vec, const ptrdiff_t sizeof_elem)
 {
   return vec ? tph_poisson_vec_to_hdr(vec)->size / sizeof_elem : (ptrdiff_t)0;
 }
@@ -299,7 +307,8 @@ static inline ptrdiff_t _tph_poisson_vec_size(const void *vec, const size_t size
  * @return TPH_POISSON_SUCCESS, or a non-zero error code.
  */
 #define tph_poisson_vec_append(vec, values, count, alloc) \
-  (_tph_poisson_vec_append((void **)&(vec), (values), (count) * sizeof(*(values)), (alloc)))
+  (_tph_poisson_vec_append(                               \
+    (void **)&(vec), (values), (count) * TPH_POISSON_SIZEOF(*(values)), (alloc)))
 static int _tph_poisson_vec_append(void **vec_ptr,
   const void *values,
   const ptrdiff_t nbytes,
@@ -316,8 +325,8 @@ static int _tph_poisson_vec_append(void **vec_ptr,
       if (new_cap <= (PTRDIFF_MAX >> 1)) { new_cap <<= 1; }
       if (new_cap < req_cap) { new_cap = req_cap; }
       tph_poisson_vec_header *new_hdr = (tph_poisson_vec_header *)alloc->realloc((void *)hdr,
-        /*old_size=*/sizeof(tph_poisson_vec_header) + hdr->capacity,
-        /*new_size=*/sizeof(tph_poisson_vec_header) + new_cap,
+        /*old_size=*/TPH_POISSON_SIZEOF(tph_poisson_vec_header) + hdr->capacity,
+        /*new_size=*/TPH_POISSON_SIZEOF(tph_poisson_vec_header) + new_cap,
         alloc->ctx);
       if (!new_hdr) { return TPH_POISSON_BAD_ALLOC; }
       hdr = new_hdr;
@@ -329,7 +338,7 @@ static int _tph_poisson_vec_append(void **vec_ptr,
   } else {
     /* Initialize a new vector. */
     tph_poisson_vec_header *hdr = (tph_poisson_vec_header *)(alloc->malloc(
-      sizeof(tph_poisson_vec_header) + nbytes, alloc->ctx));
+      TPH_POISSON_SIZEOF(tph_poisson_vec_header) + nbytes, alloc->ctx));
     if (!hdr) { return TPH_POISSON_BAD_ALLOC; }
     hdr->capacity = nbytes;
     hdr->size = nbytes;
@@ -346,7 +355,8 @@ static int _tph_poisson_vec_append(void **vec_ptr,
  * @param count Number of elements to erase; count <= 0 is always a no-op.
  */
 #define tph_poisson_vec_erase_unordered(vec, pos, count) \
-  (_tph_poisson_vec_erase_unordered((vec), (pos) * sizeof(*(vec)), (count) * sizeof(*(vec))))
+  (_tph_poisson_vec_erase_unordered(                     \
+    (vec), (pos) * TPH_POISSON_SIZEOF(*(vec)), (count) * TPH_POISSON_SIZEOF(*(vec))))
 static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t pos, ptrdiff_t count)
 {
   if ((vec != NULL) & ((pos >= 0) & (count > 0))) {
@@ -454,15 +464,15 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
 
   /* clang-format off */
   ctx->mem_size = ctx->ndims * (
-      sizeof(tph_poisson_real)  + /* ctx.bounds_min */ 
-      sizeof(tph_poisson_real)  + /* ctx.bounds_max */ 
-      sizeof(tph_poisson_real)  + /* ctx.sample */
-      sizeof(ptrdiff_t)         + /* ctx.grid_index */
-      sizeof(ptrdiff_t)         + /* ctx.min_grid_index */
-      sizeof(ptrdiff_t)         + /* ctx.max_grid_index */
-      sizeof(ptrdiff_t)         + /* ctx.grid.size */
-      sizeof(ptrdiff_t)           /* ctx.grid.stride */
-    ) + grid_linear_size * sizeof(uint32_t); /* ctx.grid.cells */
+      TPH_POISSON_SIZEOF(tph_poisson_real) + /* ctx.bounds_min */ 
+      TPH_POISSON_SIZEOF(tph_poisson_real) + /* ctx.bounds_max */ 
+      TPH_POISSON_SIZEOF(tph_poisson_real) + /* ctx.sample */
+      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.grid_index */
+      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.min_grid_index */
+      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.max_grid_index */
+      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.grid.size */
+      TPH_POISSON_SIZEOF(ptrdiff_t)          /* ctx.grid.stride */
+    ) + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t); /* ctx.grid.cells */
   ctx->mem = (char*)ctx->alloc->malloc(ctx->mem_size, ctx->alloc->ctx);
   /* clang-format on */
   if (!ctx->mem) { return TPH_POISSON_BAD_ALLOC; }
@@ -474,28 +484,30 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
   /* clang-format off */
   ptrdiff_t mem_offset = 0;
   ctx->bounds_min      = (tph_poisson_real *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(tph_poisson_real);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
   ctx->bounds_max      = (tph_poisson_real *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(tph_poisson_real);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
   ctx->sample          = (tph_poisson_real *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(tph_poisson_real);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
   ctx->grid_index      = (ptrdiff_t *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(ptrdiff_t);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
   ctx->min_grid_index  = (ptrdiff_t *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(ptrdiff_t);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
   ctx->max_grid_index  = (ptrdiff_t *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(ptrdiff_t);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
   ctx->grid_size       = (ptrdiff_t *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(ptrdiff_t);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
   ctx->grid_stride     = (ptrdiff_t *)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * sizeof(ptrdiff_t);
+  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
   ctx->grid_cells      = (uint32_t *)&ctx->mem[mem_offset];
   /* clang-format on */
-  tph_poisson_assert(ctx->mem_size == mem_offset + grid_linear_size * sizeof(uint32_t));
+  tph_poisson_assert(ctx->mem_size == mem_offset + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t));
 
   /* Copy bounds into context memory buffer to improve locality. */
-  TPH_POISSON_MEMCPY(ctx->bounds_min, bounds_min, ctx->ndims * sizeof(tph_poisson_real));
-  TPH_POISSON_MEMCPY(ctx->bounds_max, bounds_max, ctx->ndims * sizeof(tph_poisson_real));
+  TPH_POISSON_MEMCPY(
+    ctx->bounds_min, bounds_min, ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real));
+  TPH_POISSON_MEMCPY(
+    ctx->bounds_max, bounds_max, ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real));
 
   /* Initialize grid size and stride. */
   ctx->grid_size[0] =
@@ -509,7 +521,7 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
 
   /* Initialize cells with sentinel value 0xFFFFFFFF, indicating no sample there.
    * Cell values are later set to sample indices. */
-  memset(ctx->grid_cells, 0xFF, grid_linear_size * sizeof(uint32_t));
+  TPH_POISSON_MEMSET(ctx->grid_cells, 0xFF, grid_linear_size * TPH_POISSON_SIZEOF(uint32_t));
 
   return TPH_POISSON_SUCCESS;
 }
@@ -703,7 +715,7 @@ static int tph_poisson_existing_sample_within_radius(const tph_poisson_real *sam
   const tph_poisson_real *cell_sample = NULL;
   int32_t i = -1;
   ptrdiff_t k = -1;
-  TPH_POISSON_MEMCPY(ctx->grid_index, min_grid_index, ctx->ndims * sizeof(ptrdiff_t));
+  TPH_POISSON_MEMCPY(ctx->grid_index, min_grid_index, ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t));
   do {
     /* Compute linear grid index. */
     tph_poisson_assert((0 <= ctx->grid_index[0]) & (ctx->grid_index[0] < ctx->grid_size[0]));
@@ -718,7 +730,7 @@ static int tph_poisson_existing_sample_within_radius(const tph_poisson_real *sam
     if ((cell != 0xFFFFFFFF) & (cell != (uint32_t)active_sample_index)) {
       /* Compute (squared) distance to the existing sample and then check if the existing sample is
        * closer than radius to the provided sample. */
-      cell_sample = &ctx->samples_vec[cell * ctx->ndims];
+      cell_sample = &ctx->samples_vec[(ptrdiff_t)cell * ctx->ndims];
       di = sample[0] - cell_sample[0];
       d_sqr = di * di;
       for (i = 1; i < ctx->ndims; ++i) {
@@ -756,7 +768,7 @@ int tph_poisson_create(tph_poisson_sampling *s,
   tph_poisson_destroy(s);
 
   /* Initialize context. Validates arguments and allocates buffers. */
-  tph_poisson_context ctx = {};
+  tph_poisson_context ctx = { 0 };
   int ret = tph_poisson_context_init(&ctx,
     args->radius,
     args->ndims,
@@ -835,12 +847,13 @@ int tph_poisson_create(tph_poisson_sampling *s,
   const ptrdiff_t nsamples = tph_poisson_vec_size(ctx.samples_vec) / ctx.ndims;
   tph_poisson_assert(nsamples >= 1);
   tph_poisson_real *samples = (tph_poisson_real *)ctx.alloc->malloc(
-    ctx.ndims * nsamples * sizeof(tph_poisson_real), ctx.alloc->ctx);
+    ctx.ndims * nsamples * TPH_POISSON_SIZEOF(tph_poisson_real), ctx.alloc->ctx);
   if (!samples) {
     tph_poisson_context_destroy(&ctx);
     return TPH_POISSON_BAD_ALLOC;
   }
-  TPH_POISSON_MEMCPY(samples, ctx.samples_vec, ctx.ndims * nsamples * sizeof(tph_poisson_real));
+  TPH_POISSON_MEMCPY(
+    samples, ctx.samples_vec, ctx.ndims * nsamples * TPH_POISSON_SIZEOF(tph_poisson_real));
   s->ndims = ctx.ndims;
   s->nsamples = nsamples;
   s->samples = samples;
@@ -857,10 +870,12 @@ void tph_poisson_destroy(tph_poisson_sampling *s)
    * was default-initialized do nothing. */
   if (s && ((s->alloc != NULL) & (s->samples != NULL) & (s->ndims > 0) & (s->nsamples > 0))) {
     tph_poisson_assert(s->alloc->free);
-    s->alloc->free(s->samples, s->nsamples * s->ndims * sizeof(*s->samples), s->alloc->ctx);
+    s->alloc->free(
+      s->samples, s->nsamples * s->ndims * TPH_POISSON_SIZEOF(*s->samples), s->alloc->ctx);
   }
 }
 
+#undef TPH_POISSON_SIZEOF
 #undef TPH_POISSON_CLAMP
 #undef tph_poisson_vec
 #undef tph_poisson_vec_empty

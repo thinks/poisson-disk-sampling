@@ -1,8 +1,3 @@
-#define TPH_POISSON_IMPLEMENTATION
-// #define TPH_POISSON_REAL_TYPE float
-#include <thinks/tph_poisson.h>
-using Real = TPH_POISSON_REAL_TYPE;
-
 #include <algorithm>// std::all_of
 #include <array>
 #include <cmath>
@@ -11,6 +6,9 @@ using Real = TPH_POISSON_REAL_TYPE;
 #include <limits>
 #include <thread>
 #include <vector>
+
+#include "tph_poisson_f.h"
+using Real = TPH_POISSON_REAL_TYPE;
 
 #if 0
 template<int32_t NDIMS> class PoissonSampling

@@ -57,8 +57,9 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(_sub_project OFF)
 endif()
 
-option(TPH_POISSON_BUILD_TESTS    "Enable test build targets when BUILD_TESTING is enabled." ${_main_project})
-option(TPH_POISSON_BUILD_EXAMPLES "Enable example build targets." ${_main_project})
+option(TPH_POISSON_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+option(TPH_POISSON_BUILD_TESTS        "Enable test build targets when BUILD_TESTING is enabled." ${_main_project})
+option(TPH_POISSON_BUILD_EXAMPLES     "Enable example build targets." ${_main_project})
 
 unset(_main_project)
 unset(_sub_project)
