@@ -480,26 +480,27 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
   /* Could zero-initialize and align (perhaps to sizeof(void*)?) memory here,
    * but it doesn't seem necessary? */
 
-  /* Initialize context pointers. */
+  /* Initialize context pointers. 
+   * Requires intermediate casts to void* to suppress alignment warnings. */
   /* clang-format off */
   ptrdiff_t mem_offset = 0;
   ctx->bounds_min      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
-  ctx->bounds_max      = (tph_poisson_real *)&ctx->mem[mem_offset];
+  ctx->bounds_max      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
-  ctx->sample          = (tph_poisson_real *)&ctx->mem[mem_offset];
+  ctx->sample          = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
-  ctx->grid_index      = (ptrdiff_t *)&ctx->mem[mem_offset];
+  ctx->grid_index      = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->min_grid_index  = (ptrdiff_t *)&ctx->mem[mem_offset];
+  ctx->min_grid_index  = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->max_grid_index  = (ptrdiff_t *)&ctx->mem[mem_offset];
+  ctx->max_grid_index  = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->grid_size       = (ptrdiff_t *)&ctx->mem[mem_offset];
+  ctx->grid_size       = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->grid_stride     = (ptrdiff_t *)&ctx->mem[mem_offset];
+  ctx->grid_stride     = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->grid_cells      = (uint32_t *)&ctx->mem[mem_offset];
+  ctx->grid_cells      = (uint32_t *)(void*)&ctx->mem[mem_offset];
   /* clang-format on */
   tph_poisson_assert(ctx->mem_size == mem_offset + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t));
 
