@@ -486,11 +486,11 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
   /* Could zero-initialize and align (perhaps to sizeof(void*)?) memory here,
    * but it doesn't seem necessary? */
 
-asdasd
+  /*asdasd*/
 
-  /* Initialize context pointers.
-   * Requires intermediate casts to void* to suppress alignment warnings (-Wcast-align). */
-  /* clang-format off */
+    /* Initialize context pointers.
+     * Requires intermediate casts to void* to suppress alignment warnings (-Wcast-align). */
+    /* clang-format off */
   ptrdiff_t mem_offset = 0;
   ctx->bounds_min      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
