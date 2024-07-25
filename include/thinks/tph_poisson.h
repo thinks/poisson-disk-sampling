@@ -510,7 +510,7 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
   ctx->grid_cells      = (uint32_t *)(void*)&ctx->mem[mem_offset];
   /* clang-format on */
-  tph_poisson_assert(ctx->mem_size == mem_offset + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t));
+  tph_poisson_assert(ctx->mem_size >= mem_offset + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t));
 
   /* Copy bounds into context memory buffer to improve locality. */
   TPH_POISSON_MEMCPY(
