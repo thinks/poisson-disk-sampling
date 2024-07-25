@@ -117,6 +117,10 @@ extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
 
 #define TPH_POISSON_SIZEOF(type) ((ptrdiff_t)sizeof(type))
 
+#if defined(_MSC_VER) && !defined(__cplusplus)
+#define inline __inline
+#endif
+
 /* Memory. */
 
 static void *tph_poisson_malloc(ptrdiff_t size, void *ctx)
@@ -472,16 +476,20 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
       TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.max_grid_index */
       TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.grid.size */
       TPH_POISSON_SIZEOF(ptrdiff_t)          /* ctx.grid.stride */
-    ) + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t); /* ctx.grid.cells */
+    ) + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t) /* ctx.grid.cells */
+    + 16; /* 16 bytes padding for alignment; */
   ctx->mem = (char*)ctx->alloc->malloc(ctx->mem_size, ctx->alloc->ctx);
   /* clang-format on */
   if (!ctx->mem) { return TPH_POISSON_BAD_ALLOC; }
+  TPH_POISSON_MEMSET(ctx->mem, 0, ctx->mem_size);
 
   /* Could zero-initialize and align (perhaps to sizeof(void*)?) memory here,
    * but it doesn't seem necessary? */
 
-  /* Initialize context pointers. 
-   * Requires intermediate casts to void* to suppress alignment warnings. */
+asdasd
+
+  /* Initialize context pointers.
+   * Requires intermediate casts to void* to suppress alignment warnings (-Wcast-align). */
   /* clang-format off */
   ptrdiff_t mem_offset = 0;
   ctx->bounds_min      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
