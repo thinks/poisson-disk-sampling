@@ -483,7 +483,7 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
   /* Initialize context pointers. */
   /* clang-format off */
   ptrdiff_t mem_offset = 0;
-  ctx->bounds_min      = (tph_poisson_real *)&ctx->mem[mem_offset];
+  ctx->bounds_min      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
   ctx->bounds_max      = (tph_poisson_real *)&ctx->mem[mem_offset];
   mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
