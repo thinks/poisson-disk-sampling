@@ -381,8 +381,6 @@ static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t pos, ptrdiff_t
 
 // Structs.
 
-#pragma pack(push, 1)
-
 typedef struct tph_poisson_context_
 {
   tph_poisson_allocator *alloc;
@@ -412,8 +410,6 @@ typedef struct tph_poisson_context_
   ptrdiff_t *min_grid_index;
   ptrdiff_t *max_grid_index;
 } tph_poisson_context;
-
-#pragma pack(pop)
 
 /**
  * @brief
