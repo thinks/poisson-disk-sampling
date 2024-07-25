@@ -123,7 +123,10 @@ set_target_properties(tph_poisson_simple_cpp PROPERTIES
 )
 
 add_executable(tph_poisson_simple_c "simple.c")
-target_link_libraries(tph_poisson_simple_c PRIVATE thinks::tph_poisson m)
+target_link_libraries(tph_poisson_simple_c PRIVATE thinks::tph_poisson)
+if(NOT MSVC)
+  target_link_libraries(tph_poisson_simple_c PRIVATE m)
+endif()
 set_target_properties(tph_poisson_simple_c PROPERTIES
   C_STANDARD ${_c_standard}
   C_STANDARD_REQUIRED ON

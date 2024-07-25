@@ -44,8 +44,6 @@ jobs:
 #        packaging_maintainer_mode:
 #          - ON
 #          - OFF
-#        build_shared:
-#          - OFF
 
         exclude:
           # mingw is determined by this author to be too buggy to support
@@ -57,14 +55,11 @@ jobs:
           # if you try to use a compiler that does not have gcov set
           - compiler: gcc-11
             gcov_executable: gcov
-            enable_ipo: On
 
           - compiler: llvm-15.0.2
-            enable_ipo: Off
             gcov_executable: "llvm-cov gcov"
 
           - os: macos-10.15
-            enable_ipo: Off
 
           # Set up preferred package generators, for given build configurations
           - build_type: Release
@@ -78,7 +73,6 @@ jobs:
             build_type: Debug
             gcov_executable: gcov
             packaging_maintainer_mode: On
-            enable_ipo: Off
 
           # Windows msvc builds
           - os: windows-2022
@@ -86,14 +80,12 @@ jobs:
             generator: "Visual Studio 17 2022"
             build_type: Debug
             packaging_maintainer_mode: On
-            enable_ipo: On
 
           - os: windows-2022
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
             packaging_maintainer_mode: On
-            enable_ipo: On
 
           - os: windows-2022
             compiler: msvc
@@ -113,8 +105,6 @@ jobs:
             generator: "Visual Studio 17 2022"
             build_type: Release
             packaging_maintainer_mode: On
-            enable_ipo: On
-            build_shared: On
 
 
     steps:
