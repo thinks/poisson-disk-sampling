@@ -116,6 +116,7 @@ extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
 #include <stdlib.h>// malloc, realloc, free
 
 #define TPH_POISSON_SIZEOF(type) ((ptrdiff_t)sizeof(type))
+#define TPH_POISSON_ALIGNOF(type) ((ptrdiff_t)alignof(type))
 
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #define inline __inline
@@ -384,7 +385,7 @@ static void _tph_poisson_vec_erase_unordered(void *vec, ptrdiff_t pos, ptrdiff_t
 typedef struct tph_poisson_context_
 {
   tph_poisson_allocator *alloc;
-  char *mem;
+  void *mem;
   ptrdiff_t mem_size;
 
   tph_poisson_real radius;
@@ -410,6 +411,16 @@ typedef struct tph_poisson_context_
   ptrdiff_t *min_grid_index;
   ptrdiff_t *max_grid_index;
 } tph_poisson_context;
+
+#include <inttypes.h>
+#include <stdalign.h>
+#include <stdio.h>
+
+static inline void *tph_poisson_align(void *ptr, size_t alignment)
+{
+  return (void *)(((uintptr_t)ptr + (alignment - 1)) & ~(alignment - 1));
+}
+
 
 /**
  * @brief
@@ -462,51 +473,63 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
       (ptrdiff_t)TPH_POISSON_CEIL((bounds_max[i] - bounds_min[i]) * ctx->grid_dx_rcp);
   }
 
+  static_assert((alignof(tph_poisson_real) > 0)
+                  & ((alignof(tph_poisson_real) & (alignof(tph_poisson_real) - 1)) == 0),
+    "msg");
+  static_assert((alignof(ptrdiff_t) > 0)
+                  & ((alignof(ptrdiff_t) & (alignof(ptrdiff_t) - 1)) == 0),
+    "msg");
+  static_assert((alignof(uint32_t) > 0)
+                  & ((alignof(uint32_t) & (alignof(uint32_t) - 1)) == 0),
+    "msg");
+
   /* clang-format off */
-  ctx->mem_size = ctx->ndims * (
-      TPH_POISSON_SIZEOF(tph_poisson_real) + /* ctx.bounds_min */ 
-      TPH_POISSON_SIZEOF(tph_poisson_real) + /* ctx.bounds_max */ 
-      TPH_POISSON_SIZEOF(tph_poisson_real) + /* ctx.sample */
-      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.grid_index */
-      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.min_grid_index */
-      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.max_grid_index */
-      TPH_POISSON_SIZEOF(ptrdiff_t)        + /* ctx.grid.size */
-      TPH_POISSON_SIZEOF(ptrdiff_t)          /* ctx.grid.stride */
-    ) + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t) /* ctx.grid.cells */
-    + 16; /* 16 bytes padding for alignment; */
+  ctx->mem_size = 
+    /* bounds_min, bounds_max, sample */ 
+    ctx->ndims * 3 * TPH_POISSON_SIZEOF(tph_poisson_real) + TPH_POISSON_ALIGNOF(tph_poisson_real) +
+    /* grid_index + min_grid_index + max_grid_index + grid.size + grid.stride*/
+    ctx->ndims * 5 * TPH_POISSON_SIZEOF(ptrdiff_t) + TPH_POISSON_ALIGNOF(ptrdiff_t) +  
+    /* grid.cells */         
+    grid_linear_size * TPH_POISSON_SIZEOF(uint32_t) + TPH_POISSON_ALIGNOF(uint32_t); 
   ctx->mem = (char*)ctx->alloc->malloc(ctx->mem_size, ctx->alloc->ctx);
   /* clang-format on */
   if (!ctx->mem) { return TPH_POISSON_BAD_ALLOC; }
   TPH_POISSON_MEMSET(ctx->mem, 0, ctx->mem_size);
 
-  /* Could zero-initialize and align (perhaps to sizeof(void*)?) memory here,
-   * but it doesn't seem necessary? */
+  /* Initialize context pointers. Make sure alignment is correct. */
+  /* clang-format off */
+  void* ptr = tph_poisson_align(ctx->mem, alignof(ptrdiff_t));
+  ptr = (ctx->grid_index     = (ptrdiff_t *)ptr) + ctx->ndims;
+  ptr = (ctx->min_grid_index = (ptrdiff_t *)ptr) + ctx->ndims;
+  ptr = (ctx->max_grid_index = (ptrdiff_t *)ptr) + ctx->ndims;
+  ptr = (ctx->grid_size      = (ptrdiff_t *)ptr) + ctx->ndims;
+  ptr = (ctx->grid_stride    = (ptrdiff_t *)ptr) + ctx->ndims;
+  ptr = tph_poisson_align(ptr, alignof(tph_poisson_real));
+  ptr = (ctx->bounds_min = (tph_poisson_real *)ptr) + ctx->ndims;
+  ptr = (ctx->bounds_max = (tph_poisson_real *)ptr) + ctx->ndims;
+  ptr = (ctx->sample     = (tph_poisson_real *)ptr) + ctx->ndims;
+  ptr = tph_poisson_align(ptr, alignof(uint32_t));
+  ptr = (ctx->grid_cells = (uint32_t *)ptr) + grid_linear_size;
+  tph_poisson_assert((intptr_t)ptr < (intptr_t)ctx->mem + ctx->mem_size);
 
-  /*asdasd*/
+  /* x modulo y = (x & (y − 1)), when y is a power of 2. */
+#define ALIGNED(ptr, alignment) \
+  (((uintptr_t)(ptr) & (alignment - 1)) == 0)
 
-    /* Initialize context pointers.
-     * Requires intermediate casts to void* to suppress alignment warnings (-Wcast-align). */
-    /* clang-format off */
-  ptrdiff_t mem_offset = 0;
-  ctx->bounds_min      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
-  ctx->bounds_max      = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
-  ctx->sample          = (tph_poisson_real *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(tph_poisson_real);
-  ctx->grid_index      = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->min_grid_index  = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->max_grid_index  = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->grid_size       = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->grid_stride     = (ptrdiff_t *)(void*)&ctx->mem[mem_offset];
-  mem_offset          += ctx->ndims * TPH_POISSON_SIZEOF(ptrdiff_t);
-  ctx->grid_cells      = (uint32_t *)(void*)&ctx->mem[mem_offset];
+  printf("ndims = %d\n", ctx->ndims);
+  printf("mem = %#" PRIxPTR"\n", (uintptr_t)ctx->mem);
+
+  printf("grid_index = %#" PRIxPTR " (%d)\n", ctx->grid_index, ALIGNED(ctx->grid_index, alignof(ptrdiff_t)));
+  printf("min_grid_index = %#" PRIxPTR" (%d)\n", ctx->min_grid_index, ALIGNED(ctx->min_grid_index, alignof(ptrdiff_t)));
+  printf("max_grid_index = %#" PRIxPTR" (%d)\n", ctx->max_grid_index, ALIGNED(ctx->max_grid_index, alignof(ptrdiff_t)));
+  printf("grid_size = %#" PRIxPTR" (%d)\n", ctx->grid_size, ALIGNED(ctx->grid_size, alignof(ptrdiff_t)));
+  printf("grid_stride = %#" PRIxPTR" (%d)\n", ctx->grid_stride, ALIGNED(ctx->grid_stride, alignof(ptrdiff_t)));
+  printf("bounds_min = %#" PRIxPTR" (%d)\n", (uintptr_t)ctx->bounds_min, ALIGNED(ctx->bounds_min, alignof(tph_poisson_real)));
+  printf("bounds_max = %#" PRIxPTR" (%d)\n", (uintptr_t)ctx->bounds_max, ALIGNED(ctx->bounds_max, alignof(tph_poisson_real)));
+  printf("sample = %#" PRIxPTR" (%d)\n", (uintptr_t)ctx->sample, ALIGNED(ctx->sample, alignof(tph_poisson_real)));
+  printf("cells = %#" PRIxPTR" (%d)\n", (uintptr_t)ctx->grid_cells, ALIGNED(ctx->sample, alignof(uint32_t)));
+  printf("mem = %#" PRIxPTR ", ptr = %#" PRIxPTR "\n", (uintptr_t)ctx->mem + ctx->mem_size, ptr);
   /* clang-format on */
-  tph_poisson_assert(ctx->mem_size >= mem_offset + grid_linear_size * TPH_POISSON_SIZEOF(uint32_t));
 
   /* Copy bounds into context memory buffer to improve locality. */
   TPH_POISSON_MEMCPY(
