@@ -3,7 +3,7 @@
 #include <string.h>// memset
 
 #define TPH_POISSON_IMPLEMENTATION
-#define TPH_POISSON_REAL_TYPE float /*double*/
+/* #define TPH_POISSON_REAL_TYPE float */ /*double*/
 #include <thinks/tph_poisson.h>
 
 int main(int argc, char *argv[])

@@ -380,10 +380,20 @@ static void TestInvalidArgs()
 
 int main(int argc, char *argv[])
 {
+  std::printf("TestRadius...\n");
   TestRadius();
+
+  std::printf("TestBounds...\n");
   TestBounds();
+
+  std::printf("TestVaryingMaxSampleAttempts...\n");
   TestVaryingMaxSampleAttempts();
+
+  std::printf("TestVaryingSeed...\n");
   TestVaryingSeed();
+
+  std::printf("TestInvalidArgs...\n");
   TestInvalidArgs();
+  
   return EXIT_SUCCESS;
 }
