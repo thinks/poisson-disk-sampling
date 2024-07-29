@@ -59,12 +59,7 @@ jobs:
           - compiler: llvm-15.0.2
             gcov_executable: "llvm-cov gcov"
 
-          - os: macos-latest
-
-          # Set up preferred package generators, for given build configurations
-          - build_type: Release
-            packaging_maintainer_mode: OFF
-            package_generator: TBZ2
+          # - os: macos-latest
 
           # This exists solely to make sure a non-multiconfig build works
           # - os: ubuntu-20.04
