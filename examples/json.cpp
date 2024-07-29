@@ -32,14 +32,17 @@ int main(int /*argc*/, char * /*argv*/[])
     std::abort();
   }
 
+  const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
+  if (samples == nullptr) { std::abort(); }
+
   using json = nlohmann::json;
   json j;
   j["bounds_min"] = bounds_min;
   j["bounds_max"] = bounds_max;
   j["radius"] = args.radius;
   j["ndims"] = args.ndims;
-  j["samples"] = std::vector<tph_poisson_real>{ sampling->samples,
-    sampling->samples + sampling->ndims * sampling->nsamples };
+  j["samples"] =
+    std::vector<tph_poisson_real>{ samples, samples + sampling->ndims * sampling->nsamples };
 
   std::ofstream ofs{ "./tph_poisson.json" };
   if (!ofs) { return EXIT_FAILURE; }

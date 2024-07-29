@@ -91,6 +91,8 @@ static void TestRadius()
     if (tph_poisson_create(sampling.get(), &args, /*alloc=*/nullptr) != TPH_POISSON_SUCCESS) {
       return false;
     }
+    const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
+    if (samples == nullptr) { return false; }
 
     // Setup threading.
     // Avoid spawning more threads than there are samples (although very
@@ -113,10 +115,10 @@ static void TestRadius()
         const int32_t ndims = sampling->ndims;
         const Real r_sqr = args.radius * args.radius;
         for (ptrdiff_t j = i; j < sampling->nsamples; j += thread_count) {
-          const Real *sj = &sampling->samples[j * ndims];
+          const Real *sj = &samples[j * ndims];
           const ptrdiff_t k_max = j;
           for (ptrdiff_t k = 0; k < k_max; ++k) {
-            const Real *sk = &sampling->samples[k * ndims];
+            const Real *sk = &samples[k * ndims];
             Real dist_sqr = 0;
             for (int32_t m = 0; m < ndims; ++m) { dist_sqr += (sj[m] - sk[m]) * (sj[m] - sk[m]); }
             if (!(dist_sqr > r_sqr)) { return false; }
@@ -162,8 +164,10 @@ static void TestBounds()
     if (tph_poisson_create(sampling.get(), &args, /*alloc=*/nullptr) != TPH_POISSON_SUCCESS) {
       return false;
     }
+    const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
+    if (samples == nullptr) { return false; }
     for (ptrdiff_t i = 0; i < sampling->nsamples; ++i) {
-      const Real *p = &sampling->samples[i * sampling->ndims];
+      const Real *p = &samples[i * sampling->ndims];
       for (int32_t j = 0; j < sampling->ndims; ++j) {
         if (!((bounds_min[j] <= p[j]) & (p[j] <= bounds_max[j]))) { return false; }
       }
@@ -238,6 +242,11 @@ static void TestVaryingSeed()
   REQUIRE(
     TPH_POISSON_SUCCESS == tph_poisson_create(sampling_1337.get(), &args_1337, /*alloc=*/nullptr));
 
+  const tph_poisson_real *samples_1981 = tph_poisson_get_samples(sampling_1981.get());
+  const tph_poisson_real *samples_1337 = tph_poisson_get_samples(sampling_1337.get());
+  REQUIRE(samples_1981 != nullptr);
+  REQUIRE(samples_1337 != nullptr);
+
   // For each sample in the first point set compute the smallest
   // distance checking every sample in the second point set.
   // Then, if the smallest distance is larger than some threshold
@@ -246,10 +255,10 @@ static void TestVaryingSeed()
   // distributions must be different.
   auto distinct_sample_found = false;
   for (ptrdiff_t i = 0; i < sampling_1981->nsamples; ++i) {
-    const Real *p = &sampling_1981->samples[i * ndims];
+    const Real *p = &samples_1981[i * sampling_1981->ndims];
     Real min_sqr_dist = std::numeric_limits<Real>::max();
     for (ptrdiff_t j = 0; j < sampling_1337->nsamples; ++j) {
-      const Real *q = &sampling_1337->samples[j * ndims];
+      const Real *q = &samples_1337[j * sampling_1337->ndims];
       Real sqr_dist = 0;
       for (int32_t k = 0; k < ndims; ++k) { sqr_dist += (p[k] - q[k]) * (p[k] - q[k]); }
       min_sqr_dist = std::min(min_sqr_dist, sqr_dist);
@@ -280,13 +289,10 @@ static void TestInvalidArgs()
     TPH_POISSON_SUCCESS == tph_poisson_create(sampling.get(), &valid_args, /*alloc=*/nullptr));
   REQUIRE(sampling->ndims == ndims);
   REQUIRE(sampling->nsamples > 0);
-  REQUIRE(sampling->samples != nullptr);
-  REQUIRE(sampling->alloc != nullptr);
+  REQUIRE(tph_poisson_get_samples(sampling.get()) != nullptr);
   sampling = make_unique_poisson();
   REQUIRE(sampling->ndims == 0);
   REQUIRE(sampling->nsamples == 0);
-  REQUIRE(sampling->samples == nullptr);
-  REQUIRE(sampling->alloc == nullptr);
 
   // radius <= 0
   [&]() {
@@ -374,8 +380,7 @@ static void TestInvalidArgs()
   // Verify that no output was written by failed attempts.
   REQUIRE(sampling->ndims == 0);
   REQUIRE(sampling->nsamples == 0);
-  REQUIRE(sampling->samples == nullptr);
-  REQUIRE(sampling->alloc == nullptr);
+  REQUIRE(tph_poisson_get_samples(sampling.get()) == nullptr);
 }
 
 int main(int argc, char *argv[])
@@ -394,6 +399,6 @@ int main(int argc, char *argv[])
 
   std::printf("TestInvalidArgs...\n");
   TestInvalidArgs();
-  
+
   return EXIT_SUCCESS;
 }
