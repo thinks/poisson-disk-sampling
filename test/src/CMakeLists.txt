@@ -95,16 +95,24 @@ set_target_properties(tph_poisson_test PROPERTIES
   CXX_EXTENSIONS OFF
 )
 add_test(NAME tph_poisson_test COMMAND tph_poisson_test)
+
+add_executable(tph_poisson_vec_test 
+  "tph_poisson_vec_test.c")
+target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
+if(NOT MSVC)
+  target_link_libraries(tph_poisson_vec_test PRIVATE m)
+endif()
+set_target_properties(tph_poisson_vec_test PROPERTIES
+  C_STANDARD ${_c_standard}
+  C_STANDARD_REQUIRED ON
+  C_EXTENSIONS OFF
+)
+add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
+
 unset(_cxx_standard)
 unset(_c_standard)
 unset(_c_warnings)
 
-# # Default to c11.
-# if (DEFINED CMAKE_C_STANDARD)
-#   set(_c_standard ${CMAKE_C_STANDARD})
-# else()
-#   set(_c_standard 11)
-# endif()
 #
 # add_executable(tphvec_test 
 #   "tphvec.h" 
@@ -117,5 +125,3 @@ unset(_c_warnings)
 #   C_EXTENSIONS OFF
 # )
 # add_test(NAME tphvec_test COMMAND tphvec_test)
-#
-# unset(_c_standard)

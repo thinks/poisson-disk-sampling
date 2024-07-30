@@ -287,6 +287,11 @@ static TPH_POISSON_INLINE double tph_poisson_to_double(const uint64_t x)
   return (double)(x >> 11) * 0x1.0p-53;
 }
 
+static TPH_POISSON_INLINE int tph_poisson_ispowtwo(const size_t x)
+{
+  return (x > 0) & ((x & (x - 1)) == 0);
+}
+
 /**
  * @brief Returns the provided value clamped to the range [x0, x1].
  * Assumes x0 <= x1.
@@ -303,49 +308,68 @@ static TPH_POISSON_INLINE double tph_poisson_to_double(const uint64_t x)
 
 typedef struct tph_poisson_vec_header_
 {
+  void *mem;
   ptrdiff_t capacity;
   ptrdiff_t size;
 } tph_poisson_vec_header;
 
+/* clang-format off */
 /**
  * @brief Declares a vector.
  * @param type The type of elements in the vector, e.g. int, float, etc.
  */
-#define tph_poisson_vec(type) type *
+#define tph_poisson_vec(type)   \
+  static_assert((alignof(type) > 0) & ((alignof(type) & (alignof(type) - 1)) == 0), ""); \
+  static_assert(alignof(type) <= alignof(tph_poisson_vec_header), ""); \
+  static_assert(alignof(tph_poisson_vec_header) % alignof(type) == 0, ""); \
+  type *
+/* clang-format on */
 
 /**
  * @brief Converts a header to a vector. Assumes that the header is not NULL.
- * @param hdr - Header.
+ * @param hdr Header.
  * @return The vector as a <void*>.
  */
 static TPH_POISSON_INLINE void *tph_poisson_hdr_to_vec(const tph_poisson_vec_header *hdr)
 {
   tph_poisson_assert(hdr);
-  return (void *)&(hdr[1]);
+  return (void *)((uintptr_t)hdr + sizeof(tph_poisson_vec_header));
 }
 
 /**
  * @brief Converts a vector to a header. Assumes that the vector is not NULL.
- * @param vec - Vector.
+ * @param vec Vector.
  * @return A header pointer.
  */
 static TPH_POISSON_INLINE tph_poisson_vec_header *tph_poisson_vec_to_hdr(const void *vec)
 {
   tph_poisson_assert(vec);
-  return &((tph_poisson_vec_header *)vec)[-1];
+  return (tph_poisson_vec_header *)tph_poisson_align(
+    (void *)((uintptr_t)vec - ((alignof(max_align_t) - 1) + sizeof(tph_poisson_vec_header))),
+    alignof(tph_poisson_vec_header));
+}
+
+static TPH_POISSON_INLINE ptrdiff_t tph_poisson_vec_mem_size(const ptrdiff_t cap)
+{
+  /* clang-format off */
+  return (ptrdiff_t)(
+    sizeof(tph_poisson_vec_header) + 
+    (alignof(tph_poisson_vec_header) - 1) +
+    (alignof(max_align_t) - 1)) + 
+    cap;
+  /* clang-format on */
 }
 
 /**
  * @brief Frees all memory associated with the vector.
- * @param vec - Vector.
+ * @param vec Vector.
  * @return void
  */
 static void tph_poisson_vec_free(void *vec, tph_poisson_allocator *alloc)
 {
   if (vec) {
     tph_poisson_vec_header *hdr = tph_poisson_vec_to_hdr(vec);
-    alloc->free(
-      (void *)hdr, TPH_POISSON_SIZEOF(tph_poisson_vec_header) + hdr->capacity, alloc->ctx);
+    alloc->free(hdr->mem, tph_poisson_vec_mem_size(hdr->capacity), alloc->ctx);
   }
 }
 
@@ -355,10 +379,9 @@ static void tph_poisson_vec_free(void *vec, tph_poisson_allocator *alloc)
  * @return The number of elements in the vector.
  */
 #define tph_poisson_vec_size(vec) (_tph_poisson_vec_size((vec), TPH_POISSON_SIZEOF(*(vec))))
-static TPH_POISSON_INLINE ptrdiff_t _tph_poisson_vec_size(const void *vec,
-  const ptrdiff_t sizeof_elem)
+static TPH_POISSON_INLINE ptrdiff_t _tph_poisson_vec_size(const void *vec, const ptrdiff_t elemsize)
 {
-  return vec ? tph_poisson_vec_to_hdr(vec)->size / sizeof_elem : (ptrdiff_t)0;
+  return vec ? tph_poisson_vec_to_hdr(vec)->size / elemsize : (ptrdiff_t)0;
 }
 
 /**
@@ -377,6 +400,7 @@ static int _tph_poisson_vec_append(void **vec_ptr,
   const ptrdiff_t nbytes,
   tph_poisson_allocator *alloc)
 {
+  if (!((values != NULL) & (nbytes > 0))) { return TPH_POISSON_INVALID_ARGS; }
   if (*vec_ptr) {
     /* Existing vector. */
     tph_poisson_vec_header *hdr = tph_poisson_vec_to_hdr(*vec_ptr);
@@ -396,17 +420,30 @@ static int _tph_poisson_vec_append(void **vec_ptr,
       hdr->capacity = new_cap;
       *vec_ptr = tph_poisson_hdr_to_vec(hdr);
     }
-    TPH_POISSON_MEMCPY((char *)*vec_ptr + hdr->size, values, nbytes);
+    TPH_POISSON_MEMCPY((void *)((intptr_t)*vec_ptr + hdr->size), values, nbytes);
     hdr->size += nbytes;
   } else {
     /* Initialize a new vector. */
-    tph_poisson_vec_header *hdr = (tph_poisson_vec_header *)(alloc->malloc(
-      TPH_POISSON_SIZEOF(tph_poisson_vec_header) + nbytes, alloc->ctx));
-    if (!hdr) { return TPH_POISSON_BAD_ALLOC; }
+
+    void *mem = alloc->malloc(tph_poisson_vec_mem_size(nbytes), alloc->ctx);
+    if (!mem) { return TPH_POISSON_BAD_ALLOC; }
+    tph_poisson_vec_header *hdr =
+      (tph_poisson_vec_header *)tph_poisson_align(mem, alignof(tph_poisson_vec_header));
+    hdr->mem = mem;
     hdr->capacity = nbytes;
     hdr->size = nbytes;
-    *vec_ptr = tph_poisson_hdr_to_vec(hdr);
+    *vec_ptr = tph_poisson_align(
+      (void *)((uintptr_t)hdr + sizeof(tph_poisson_vec_header)), alignof(max_align_t));
     TPH_POISSON_MEMCPY(*vec_ptr, values, nbytes);
+
+
+    // tph_poisson_vec_header *hdr = (tph_poisson_vec_header *)(alloc->malloc(
+    //   TPH_POISSON_SIZEOF(tph_poisson_vec_header) + nbytes, alloc->ctx));
+    // if (!hdr) { return TPH_POISSON_BAD_ALLOC; }
+    // hdr->capacity = nbytes;
+    // hdr->size = nbytes;
+    // *vec_ptr = tph_poisson_hdr_to_vec(hdr);
+    // TPH_POISSON_MEMCPY(*vec_ptr, values, nbytes);
   }
   return TPH_POISSON_SUCCESS;
 }
@@ -451,12 +488,21 @@ static int _tph_poisson_vec_shrink_to_fit(void **vec_ptr, tph_poisson_allocator 
     tph_poisson_assert(hdr->size <= hdr->capacity);
     if (hdr->size == hdr->capacity) { return TPH_POISSON_SUCCESS; }
     tph_poisson_vec_header *new_hdr = (tph_poisson_vec_header *)alloc->realloc(hdr,
-      /*old_size=*/(ptrdiff_t)sizeof(tph_poisson_vec_header) + hdr->capacity,
-      /*new_size=*/(ptrdiff_t)sizeof(tph_poisson_vec_header) + hdr->size,
+      /*old_size=*/TPH_POISSON_SIZEOF(tph_poisson_vec_header) + hdr->capacity,
+      /*new_size=*/TPH_POISSON_SIZEOF(tph_poisson_vec_header) + hdr->size,
       alloc->ctx);
     if (!new_hdr) { return TPH_POISSON_BAD_ALLOC; }
+
+    /* TODO align new_hdr!! */
+
+    tph_poisson_assert(tph_poisson_ispowtwo(alignof(tph_poisson_vec_header))
+                       && ((uintptr_t)new_hdr & (alignof(tph_poisson_vec_header) - 1)) == 0);
+
+
     new_hdr->capacity = new_hdr->size;
     *vec_ptr = tph_poisson_hdr_to_vec(new_hdr);
+    tph_poisson_assert(tph_poisson_ispowtwo(alignof(tph_poisson_vec_header))
+                       && ((uintptr_t)new_hdr & (alignof(tph_poisson_vec_header) - 1)) == 0);
   }
   return TPH_POISSON_SUCCESS;
 }
@@ -1019,17 +1065,17 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *s)
 /* Clean up internal macros. */
 #undef TPH_POISSON_INLINE
 
-#undef TPH_POISSON_SIZEOF
-#undef TPH_POISSON_ALIGNOF
-#undef TPH_POISSON_MALLOC
-#undef TPH_POISSON_REALLOC
-#undef TPH_POISSON_FREE
-#undef TPH_POISSON_CLAMP
+// #undef TPH_POISSON_SIZEOF
+// #undef TPH_POISSON_ALIGNOF
+// #undef TPH_POISSON_MALLOC
+// #undef TPH_POISSON_REALLOC
+// #undef TPH_POISSON_FREE
+// #undef TPH_POISSON_CLAMP
 
-#undef tph_poisson_vec
-#undef tph_poisson_vec_empty
-#undef tph_poisson_vec_size
-#undef tph_poisson_vec_append
-#undef tph_poisson_vec_erase_unordered
+// #undef tph_poisson_vec
+// #undef tph_poisson_vec_empty
+// #undef tph_poisson_vec_size
+// #undef tph_poisson_vec_append
+// #undef tph_poisson_vec_erase_unordered
 
 #endif// TPH_POISSON_IMPLEMENTATION
