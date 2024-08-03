@@ -294,6 +294,19 @@ static void TestInvalidArgs()
   REQUIRE(sampling->ndims == 0);
   REQUIRE(sampling->nsamples == 0);
 
+  // sampling == NULL
+  [&]() {
+    tph_poisson_args args = valid_args;
+    REQUIRE(TPH_POISSON_INVALID_ARGS
+            == tph_poisson_create(/*sampling=*/nullptr, &args, /*alloc=*/nullptr));
+  }();
+
+  // args == NULL
+  [&]() {
+    REQUIRE(TPH_POISSON_INVALID_ARGS
+            == tph_poisson_create(sampling.get(), /*args=*/nullptr, /*alloc=*/nullptr));
+  }();
+
   // radius <= 0
   [&]() {
     tph_poisson_args args = valid_args;
@@ -383,6 +396,35 @@ static void TestInvalidArgs()
   REQUIRE(tph_poisson_get_samples(sampling.get()) == nullptr);
 }
 
+static void TestDestroy()
+{
+  constexpr int32_t ndims = 2;
+  constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
+  constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
+  tph_poisson_args valid_args = {};
+  valid_args.radius = 1;
+  valid_args.ndims = ndims;
+  valid_args.bounds_min = bounds_min.data();
+  valid_args.bounds_max = bounds_max.data();
+  valid_args.max_sample_attempts = UINT32_C(30);
+  valid_args.seed = UINT64_C(333);
+  tph_poisson_sampling sampling = {};
+  REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&sampling, &valid_args, /*alloc=*/nullptr));
+  REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
+  tph_poisson_destroy(&sampling);
+
+  // No samples after destroy.
+  REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
+
+  // Double create without intermediate destroy.
+  REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&sampling, &valid_args, /*alloc=*/nullptr));
+  REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&sampling, &valid_args, /*alloc=*/nullptr));
+  
+  // Double destroy (no crash).
+  tph_poisson_destroy(&sampling);
+  tph_poisson_destroy(&sampling);
+}
+
 int main(int argc, char *argv[])
 {
   std::printf("TestRadius...\n");
@@ -399,6 +441,9 @@ int main(int argc, char *argv[])
 
   std::printf("TestInvalidArgs...\n");
   TestInvalidArgs();
+
+  std::printf("TestDestroy...\n");
+  TestDestroy();
 
   return EXIT_SUCCESS;
 }

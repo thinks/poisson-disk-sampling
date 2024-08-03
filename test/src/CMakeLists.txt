@@ -87,7 +87,8 @@ set_target_properties(tph_poisson_f PROPERTIES
 add_library(thinks::tph_poisson_f ALIAS tph_poisson_f)
 
 add_executable(tph_poisson_test 
-  "test.cpp")
+  "test.cpp"
+  "test_alloc.c")
 target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson_f)
 set_target_properties(tph_poisson_test PROPERTIES
   CXX_STANDARD ${_cxx_standard}
