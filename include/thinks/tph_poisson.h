@@ -526,7 +526,7 @@ static tph_poisson_sampling_internal *tph_poisson_alloc_internal(tph_poisson_all
   void *alloc_ctx = alloc ? alloc->ctx : tph_poisson_default_alloc.ctx;
   void *mem = malloc_fn(mem_size, alloc_ctx);
   if (!mem) { return NULL; }
-  TPH_POISSON_MEMSET(mem, 0, mem_size);
+  TPH_POISSON_MEMSET(mem, 0, (size_t)mem_size);
   void *aligned_mem = tph_poisson_align(mem, alignof(tph_poisson_sampling_internal));
   tph_poisson_sampling_internal *internal = (tph_poisson_sampling_internal *)aligned_mem;
   internal->alloc.malloc = malloc_fn;
