@@ -38,7 +38,7 @@ function(FetchNlohmannJson)
     execute_process(
       COMMAND ${CMAKE_CTEST_COMMAND}
               --build-and-test  ${nlohmann_json_SOURCE_DIR} ${nlohmann_json_BINARY_DIR}
-              --build-generator "Unix Makefiles" ${nlohmann_json_GENERATOR_ARGS}
+              --build-generator ${CMAKE_GENERATOR} ${nlohmann_json_GENERATOR_ARGS}
               --build-target    install
               --build-noclean
               --build-options   ${nlohmann_json_CACHE_ARGS}
@@ -51,7 +51,9 @@ function(FetchNlohmannJson)
       file(READ ${nlohmann_json_BINARY_DIR}/build_output.log build_log)
       message(FATAL_ERROR "Result = ${result}\nFailed nlohmann::json-${args_VERSION} build, see build log:\n"
         "${build_log}")
+      unset(build_log)
     endif()
+    unset(result)
     message(STATUS "nlohmann::json-${args_VERSION} build complete")
   endif()
   
