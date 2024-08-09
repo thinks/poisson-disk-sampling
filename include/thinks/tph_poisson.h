@@ -1,3 +1,8 @@
+/*
+ * Copyright(c) 2024 Tommy Hinks
+ * For LICENSE (MIT), USAGE or HISTORY, see bottom of file.
+ */
+
 #ifndef TPH_POISSON_H
 #define TPH_POISSON_H
 
@@ -32,15 +37,15 @@ extern "C" {
 #error \
   "TPH_POISSON_REAL_TYPE, TPH_POISSON_SQRT, TPH_POISSON_CEIL and TPH_POISSON_FLOOR must all be defined; or none of them."
 #endif
-/* clang-format on */
 #if !defined(TPH_POISSON_REAL_TYPE) && !defined(TPH_POISSON_SQRT) && !defined(TPH_POISSON_CEIL) \
   && !defined(TPH_POISSON_FLOOR)
 #define TPH_POISSON_REAL_TYPE float
 #include <math.h>
-#define TPH_POISSON_SQRT(_X_) sqrtf((_X_))
-#define TPH_POISSON_CEIL(_X_) ceilf((_X_))
-#define TPH_POISSON_FLOOR(_X_) floorf((_X_))
+#define TPH_POISSON_SQRT  sqrtf
+#define TPH_POISSON_CEIL  ceilf
+#define TPH_POISSON_FLOOR floorf
 #endif
+/* clang-format on */
 
 typedef TPH_POISSON_REAL_TYPE tph_poisson_real;
 
@@ -149,8 +154,8 @@ extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sam
  */
 
 /* clang-format off */
-#if (defined(TPH_POISSON_MALLOC) && (!defined(TPH_POISSON_FREE))) || \
-    (defined(TPH_POISSON_FREE) && (!defined(TPH_POISSON_MALLOC)))
+#if ( defined(TPH_POISSON_MALLOC) && !defined(TPH_POISSON_FREE)) || \
+    (!defined(TPH_POISSON_MALLOC) &&  defined(TPH_POISSON_FREE))
 #error \
   "TPH_POISSON_MALLOC and TPH_POISSON_FREE must both be defined; or none of them."
 #endif
@@ -161,7 +166,8 @@ extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sam
 #define TPH_POISSON_FREE free
 #endif
 
-/* Adapt libc memory functions to our allocator interface. */
+/* Adapt libc memory functions to our allocator interface. These functions will be called if no
+ * custom allocator is provided at run-time. */
 
 static TPH_POISSON_INLINE void *tph_poisson_malloc(ptrdiff_t size, void *ctx)
 {
@@ -294,7 +300,7 @@ typedef struct tph_poisson_vec_
 } tph_poisson_vec;
 
 /**
- * @brief Returns non-zero if the vector is in a valid state; otherwise zero. User for debugging.
+ * @brief Returns non-zero if the vector is in a valid state; otherwise zero. Used for debugging.
  * @param ElemT Vector element type.
  * @param vec   Vector.
  * @return Non-zero if the vector is in a valid state; otherwise zero.
@@ -511,7 +517,8 @@ typedef struct tph_poisson_context_
   ptrdiff_t *grid_stride; /** Strides in each dimension, used to compute linear index. */
   uint32_t *grid_cells; /** Grid cells storing indices to points inside them. */
 
-  /* Arrays of size ndims. Pre-allocated in the context to provide 'scratch' variables. */
+  /* Arrays of size ndims. Pre-allocated in the context to provide 'scratch' variables that are used
+   * during the creation of a sampling, but don't need to be stored afterwards. */
   tph_poisson_real *sample;
   ptrdiff_t *grid_index;
   ptrdiff_t *min_grid_index;
@@ -608,7 +615,7 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
 
   /* Initialize context pointers. Make sure alignment is correct. */
   void *ptr = ctx->mem;
-  
+
 #ifdef TPH_POISSON_CTX_ALLOC
 #error "TPH_POISSON_CTX_ALLOC already defined!"
 #endif
@@ -1055,3 +1062,120 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *s)
 */
 
 #endif// TPH_POISSON_IMPLEMENTATION
+
+/*
+
+ABOUT:
+
+    A single file implementation of Poisson disk sampling in arbitrary dimensions.
+
+HISTORY:
+    0.4     2024-08-XYZ  - ...
+
+LICENSE:
+
+    The MIT License (MIT)
+
+    Copyright (c) 2024 Tommy Hinks
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+DISCLAIMER:
+
+    This software is supplied "AS IS" without any warranties and support
+
+USAGE:
+
+    The input points are pruned if
+
+        * There are duplicates points
+        * The input points are outside of the bounding box (i.e. fail the clipping test function)
+        * The input points are rejected by the clipper's test function
+
+    The input bounding box is optional (calculated automatically)
+
+    The input domain is (-FLT_MAX, FLT_MAX] (for floats)
+
+    The api consists of these functions:
+
+    int tph_poisson_create(tph_poisson_sampling *sampling,
+                           const tph_poisson_args *args,
+                           tph_poisson_allocator *alloc);
+
+    void tph_poisson_destroy(tph_poisson_sampling *sampling);
+
+    const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling);
+
+    Example usage:
+
+    #include <assert.h>
+    #include <stddef.h>// ptrdiff_t
+    #include <stdio.h>// printf
+    #include <stdlib.h>// EXIT_FAILURE, etc
+
+    #define TPH_POISSON_IMPLEMENTATION
+    // To use double:
+    // #define TPH_POISSON_REAL_TYPE double
+    // #define TPH_POISSON_SQRT  sqrt
+    // #define TPH_POISSON_CEIL  ceil
+    // #define TPH_POISSON_FLOOR floor
+    #include "thinks/tph_poisson.h"
+
+    int main(int argc, char *argv[])
+    {
+      (void)argc;
+      (void)argv;
+
+      const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-100, (tph_poisson_real)-100 };
+      const tph_poisson_real bounds_max[2] = { (tph_poisson_real)100, (tph_poisson_real)100 };
+      tph_poisson_args args = { NULL };
+      args.radius = (tph_poisson_real)10;
+      args.ndims = 2;
+      args.bounds_min = bounds_min;
+      args.bounds_max = bounds_max;
+      args.max_sample_attempts = 30;
+      args.seed = 1981;
+
+      tph_poisson_sampling sampling = { NULL };
+      tph_poisson_allocator *alloc = NULL;
+      int ret = tph_poisson_create(&sampling, &args, alloc);
+      if (ret != TPH_POISSON_SUCCESS) {
+        // No need to destroy sampling here!
+        printf("Failed creating Poisson sampling! Error code: %d", ret);
+        return EXIT_FAILURE;
+      }
+
+      const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
+      assert(samples);
+
+      // Print sample positions.
+      for (ptrdiff_t i = 0; i < sampling.nsamples; ++i) {
+        printf("sample[%td] = ( %.3f, %.3f )\n",
+          i,
+          samples[i * sampling.ndims],
+          samples[i * sampling.ndims + 1]);
+      }
+
+      // Free memory.
+      tph_poisson_destroy(&sampling);
+
+      return EXIT_SUCCESS;
+    }
+
+ */
