@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stddef.h>/* ptrdiff_t */
+#include <stdint.h>/* UINT64_C, etc */
 #include <stdio.h>/* printf */
 #include <stdlib.h>/* EXIT_FAILURE, etc */
 
@@ -21,12 +22,12 @@ int main(int argc, char *argv[])
   const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-100, (tph_poisson_real)-100 };
   const tph_poisson_real bounds_max[2] = { (tph_poisson_real)100, (tph_poisson_real)100 };
   tph_poisson_args args = { NULL };
-  args.radius = (tph_poisson_real)10;
-  args.ndims = 2;
   args.bounds_min = bounds_min;
   args.bounds_max = bounds_max;
-  args.max_sample_attempts = 30;
-  args.seed = 1981;
+  args.radius = (tph_poisson_real)10;
+  args.ndims = INT32_C(2);
+  args.max_sample_attempts = UINT32_C(30);
+  args.seed = UINT64_C(1981);
 
   tph_poisson_sampling sampling = { NULL };
   tph_poisson_allocator *alloc = NULL;

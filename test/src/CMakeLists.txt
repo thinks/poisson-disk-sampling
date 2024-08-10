@@ -86,10 +86,33 @@ set_target_properties(tph_poisson_f PROPERTIES
 )
 add_library(thinks::tph_poisson_f ALIAS tph_poisson_f)
 
+add_library(tph_poisson_d STATIC
+  "tph_poisson_d.c")
+target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson)
+target_compile_options(tph_poisson_d PRIVATE ${_c_warnings})
+set_target_properties(tph_poisson_d PROPERTIES
+  C_STANDARD ${_c_standard}
+  C_STANDARD_REQUIRED ON
+  C_EXTENSIONS OFF
+)
+add_library(thinks::tph_poisson_d ALIAS tph_poisson_d)
+
+FetchContent_Declare(rpmalloc
+  GIT_REPOSITORY https://github.com/mjansson/rpmalloc.git
+  GIT_TAG        1.4.5
+  GIT_SHALLOW    TRUE
+  GIT_PROGRESS   TRUE
+)
+FetchContent_GetProperties(rpmalloc)
+if(NOT rpmalloc_POPULATED)
+  FetchContent_Populate(rpmalloc)
+endif()
+
 add_executable(tph_poisson_test 
   "test.cpp"
-  "test_alloc.c")
-target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson_f)
+  ${rpmalloc_SOURCE_DIR}/rpmalloc/rpmalloc.c)
+target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson_f thinks::tph_poisson_d)
+target_include_directories(tph_poisson_test PRIVATE ${rpmalloc_SOURCE_DIR})
 set_target_properties(tph_poisson_test PROPERTIES
   CXX_STANDARD ${_cxx_standard}
   CXX_STANDARD_REQUIRED ON

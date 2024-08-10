@@ -1,6 +1,6 @@
 /*
  * Copyright(c) 2024 Tommy Hinks
- * For LICENSE (MIT), USAGE or HISTORY, see bottom of file.
+ * For LICENSE (MIT), USAGE, and HISTORY see the end of this file.
  */
 
 #ifndef TPH_POISSON_H
@@ -14,7 +14,6 @@
  * TODOS:
  * - Move implementation macros to implementation section??
  * - Build and run tests with sanitizers!!
- * - Tests with user alloc (should in some cases provide poorly aligned allocs!)  !!
  * - Tests with TPH_POISSON_REAL_TYPE == double!!
  */
 
@@ -89,6 +88,7 @@ struct tph_poisson_sampling_
 
 /* clang-format off */
 
+/* Possible return values from tph_poisson_create. */
 #define TPH_POISSON_SUCCESS       0
 #define TPH_POISSON_BAD_ALLOC     1
 #define TPH_POISSON_INVALID_ARGS  2
@@ -159,12 +159,12 @@ extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sam
 #error \
   "TPH_POISSON_MALLOC and TPH_POISSON_FREE must both be defined; or none of them."
 #endif
-/* clang-format on */
 #if !defined(TPH_POISSON_MALLOC) && !defined(TPH_POISSON_FREE)
 #include <stdlib.h>
 #define TPH_POISSON_MALLOC malloc
 #define TPH_POISSON_FREE free
 #endif
+/* clang-format on */
 
 /* Adapt libc memory functions to our allocator interface. These functions will be called if no
  * custom allocator is provided at run-time. */
@@ -1124,15 +1124,16 @@ USAGE:
 
     #include <assert.h>
     #include <stddef.h>// ptrdiff_t
+    #include <stdint.h>// UINT64_C, etc
     #include <stdio.h>// printf
     #include <stdlib.h>// EXIT_FAILURE, etc
 
-    #define TPH_POISSON_IMPLEMENTATION
     // To use double:
     // #define TPH_POISSON_REAL_TYPE double
     // #define TPH_POISSON_SQRT  sqrt
     // #define TPH_POISSON_CEIL  ceil
     // #define TPH_POISSON_FLOOR floor
+    #define TPH_POISSON_IMPLEMENTATION
     #include "thinks/tph_poisson.h"
 
     int main(int argc, char *argv[])
@@ -1143,12 +1144,12 @@ USAGE:
       const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-100, (tph_poisson_real)-100 };
       const tph_poisson_real bounds_max[2] = { (tph_poisson_real)100, (tph_poisson_real)100 };
       tph_poisson_args args = { NULL };
-      args.radius = (tph_poisson_real)10;
-      args.ndims = 2;
       args.bounds_min = bounds_min;
       args.bounds_max = bounds_max;
-      args.max_sample_attempts = 30;
-      args.seed = 1981;
+      args.radius = (tph_poisson_real)10;
+      args.ndims = INT32_C(2);
+      args.max_sample_attempts = UINT32_C(30);
+      args.seed = UINT64_C(1981);
 
       tph_poisson_sampling sampling = { NULL };
       tph_poisson_allocator *alloc = NULL;
