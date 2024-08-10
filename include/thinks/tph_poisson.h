@@ -838,8 +838,6 @@ static void tph_poisson_grid_index_bounds(tph_poisson_context *ctx,
  * @param min_grid_index      Minimum grid index.
  * @param max_grid_index      Maximum grid index.
  */
-// Returns true if there exists another sample within the radius used to
-// construct the grid, otherwise false.
 static int tph_poisson_existing_sample_within_radius(tph_poisson_context *ctx,
   const tph_poisson_vec *samples,
   const tph_poisson_real *sample,
