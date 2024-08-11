@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstring>// std::memcmp
 #include <future>
 #include <limits>
 #include <thread>
