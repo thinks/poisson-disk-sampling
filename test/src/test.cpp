@@ -300,12 +300,14 @@ static void TestInvalidArgs(tph_poisson_allocator *alloc)
       {
         tph_poisson_allocator incomplete_alloc = *alloc;
         incomplete_alloc.malloc = nullptr;
-        REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, &incomplete_alloc));
+        REQUIRE(
+          TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, &incomplete_alloc));
       }
       {
         tph_poisson_allocator incomplete_alloc = *alloc;
         incomplete_alloc.free = nullptr;
-        REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, &incomplete_alloc));
+        REQUIRE(
+          TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, &incomplete_alloc));
       }
     }();
   }
@@ -422,9 +424,54 @@ static void TestDestroy(tph_poisson_allocator *alloc)
   tph_poisson_destroy(&sampling);
 }
 
+static void TestUserAlloc()
+{
+  const auto create_sampling = [](tph_poisson_allocator *alloc) {
+    constexpr int32_t ndims = 2;
+    constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
+    constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
+    tph_poisson_args valid_args = {};
+    valid_args.radius = 1;
+    valid_args.ndims = ndims;
+    valid_args.bounds_min = bounds_min.data();
+    valid_args.bounds_max = bounds_max.data();
+    valid_args.max_sample_attempts = UINT32_C(30);
+    valid_args.seed = UINT64_C(333);
+    unique_poisson_ptr sampling = make_unique_poisson();
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling.get(), &valid_args, alloc));
+    return sampling;
+  };
+
+  tph_poisson_allocator rpalloc = {};
+  rpalloc.malloc = [](ptrdiff_t size, void *ctx) {
+    static_cast<void>(ctx);
+    return rpmalloc(static_cast<size_t>(size));
+  };
+  rpalloc.free = [](void *ptr, ptrdiff_t size, void *ctx) {
+    static_cast<void>(size);
+    static_cast<void>(ctx);
+    return rpfree(ptr);
+  };
+  rpalloc.ctx = nullptr;
+
+  unique_poisson_ptr sampling = create_sampling(/*alloc=*/nullptr);
+  unique_poisson_ptr sampling_alloc = create_sampling(&rpalloc);
+  REQUIRE(sampling->ndims == sampling_alloc->ndims);
+  REQUIRE(sampling->nsamples == sampling_alloc->nsamples);
+
+  const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
+  const tph_poisson_real *samples_alloc = tph_poisson_get_samples(sampling_alloc.get());
+  REQUIRE(samples != nullptr);
+  REQUIRE(samples_alloc != nullptr);
+  REQUIRE(std::memcmp(
+            samples, samples_alloc, sampling->ndims * sampling->nsamples * sizeof(tph_poisson_real))
+          == 0);
+}
+
 int main(int argc, char *argv[])
 {
   rpmalloc_initialize();
+
   tph_poisson_allocator rpalloc = {};
   rpalloc.malloc = [](ptrdiff_t size, void *ctx) {
     static_cast<void>(ctx);
@@ -466,6 +513,9 @@ int main(int argc, char *argv[])
   TestDestroy(/*alloc=*/nullptr);
   std::printf("TestDestroy... (rpmalloc)\n");
   TestDestroy(&rpalloc);
+
+  std::printf("TestUserAlloc...\n");
+  TestUserAlloc();
 
   rpmalloc_finalize();
 
