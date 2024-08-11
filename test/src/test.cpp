@@ -438,11 +438,10 @@ static void TestDestroy()
 
 static void TestUserAlloc()
 {
-  constexpr int32_t ndims = 2;
-  constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
-  constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
-
   const auto create_sampling = [](tph_poisson_allocator *alloc) {
+    constexpr int32_t ndims = 2;
+    constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
+    constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
     tph_poisson_args valid_args = {};
     valid_args.radius = 1;
     valid_args.ndims = ndims;
