@@ -1,7 +1,6 @@
 #include <array>//std::array
 #include <cassert>
 #include <cstdio>// std::printf
-#include <cstring>// std::memset
 #include <memory>// std::unique_ptr
 
 #define TPH_POISSON_IMPLEMENTATION

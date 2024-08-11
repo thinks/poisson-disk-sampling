@@ -12,7 +12,6 @@
 
 /*
  * TODOS:
- * - Move implementation macros to implementation section??
  * - Build and run tests with sanitizers!!
  */
 
@@ -96,19 +95,44 @@ struct tph_poisson_sampling_
 /* clang-format on */
 
 /**
- * @brief ...
+ * Generates a list of samples with the guarantees: (1) No two samples are closer to each other than
+ * args.radius; (2) No sample is outside the region [args.bounds_min, args.bounds_max].
+ *
+ * The algorithm tries to fit as many samples as possible into the region without violating the
+ * above requirements. The samples are accessed using the tph_poisson_get_samples function.
+
+ * If the arguments are invalid TPH_POISSON_INVALID_ARGS is returned.
+ * The arguments are invalid if:
+ * - args.radius is <= 0, or
+ * - args.ndims is < 1, or
+ * - args.bounds_min[i] >= args.bounds_max[i], or
+ * - args.max_sample_attempts == 0, or
+ * - an invalid allocator is provided.
+ *
+ * If a memory allocation fails TPH_POISSON_BAD_ALLOC is returned.
+ * If the number of samples exceeds the maximum number TPH_POISSON_OVERFLOW is returned.
+ *
+ * @param sampling Sampling to store samples.
+ * @param args     Arguments.
+ * @param alloc    Optional custom allocator (may be null).
+ * @return TPH_POISSON_SUCCESS if no errors; otherwise a non-zero error code.
  */
 extern int tph_poisson_create(tph_poisson_sampling *sampling,
   const tph_poisson_args *args,
   tph_poisson_allocator *alloc);
 
 /**
- * @brief ...
+ * @brief Frees all memory used by the sampling.
+ * @param sampling Sampling to store samples.
  */
 extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
 
 /**
- * @brief ...
+ * Returns a pointer to the samples in the provided sampling. Samples are stored as N-dimensional
+ * points, i.e. the first N values are the coordinates of the first point, etc. Note that
+ * sampling.ndims and sampling.nsamples can be used to unpack the raw samples into points.
+ * @param sampling Sampling to store samples.
+ * @return Pointer to samples.
  */
 extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling);
 
@@ -127,6 +151,12 @@ extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sam
 
 #include <stdalign.h>// alignof
 
+#if defined(_MSC_VER) && !defined(__cplusplus)
+#define TPH_POISSON_INLINE __inline
+#else
+#define TPH_POISSON_INLINE inline
+#endif
+
 #ifndef tph_poisson_assert
 #include <assert.h>
 #define tph_poisson_assert(_X_) assert((_X_))
@@ -140,12 +170,6 @@ extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sam
 #ifndef TPH_POISSON_MEMSET
 #include <string.h>
 #define TPH_POISSON_MEMSET(s, c, n) memset((s), (c), (n))
-#endif
-
-#if defined(_MSC_VER) && !defined(__cplusplus)
-#define TPH_POISSON_INLINE __inline
-#else
-#define TPH_POISSON_INLINE inline
 #endif
 
 /*
@@ -299,7 +323,8 @@ typedef struct tph_poisson_vec_
 } tph_poisson_vec;
 
 /**
- * @brief Returns non-zero if the vector is in a valid state; otherwise zero. Used for debugging.
+ * @brief Returns non-zero if the vector is in a valid state; otherwise zero. Only used for
+ * debugging.
  * @param ElemT Vector element type.
  * @param vec   Vector.
  * @return Non-zero if the vector is in a valid state; otherwise zero.
@@ -850,13 +875,14 @@ static int tph_poisson_existing_sample_within_radius(tph_poisson_context *ctx,
   const tph_poisson_real *cell_sample = NULL;
   int32_t i = -1;
   ptrdiff_t k = -1;
+  const int32_t ndims = ctx->ndims;
   TPH_POISSON_MEMCPY(
-    ctx->grid_index, min_grid_index, (size_t)(ctx->ndims * (ptrdiff_t)sizeof(ptrdiff_t)));
+    ctx->grid_index, min_grid_index, (size_t)(ndims * (ptrdiff_t)sizeof(ptrdiff_t)));
   do {
     /* Compute linear grid index. */
     tph_poisson_assert((0 <= ctx->grid_index[0]) & (ctx->grid_index[0] < ctx->grid_size[0]));
     k = ctx->grid_index[0];
-    for (i = 1; i < ctx->ndims; ++i) {
+    for (i = 1; i < ndims; ++i) {
       /* Not checking for overflow! */
       tph_poisson_assert((0 <= ctx->grid_index[i]) & (ctx->grid_index[i] < ctx->grid_size[i]));
       k += ctx->grid_index[i] * ctx->grid_stride[i];
@@ -867,10 +893,10 @@ static int tph_poisson_existing_sample_within_radius(tph_poisson_context *ctx,
       /* Compute (squared) distance to the existing sample and then check if the existing sample is
        * closer than (squared) radius to the provided sample. */
       cell_sample =
-        (const tph_poisson_real *)samples->begin + (ptrdiff_t)ctx->grid_cells[k] * ctx->ndims;
+        (const tph_poisson_real *)samples->begin + (ptrdiff_t)ctx->grid_cells[k] * ndims;
       di = sample[0] - cell_sample[0];
       d_sqr = di * di;
-      for (i = 1; i < ctx->ndims; ++i) {
+      for (i = 1; i < ndims; ++i) {
         di = sample[i] - cell_sample[i];
         d_sqr += di * di;
       }
@@ -880,7 +906,7 @@ static int tph_poisson_existing_sample_within_radius(tph_poisson_context *ctx,
     /* Iterate over grid index range. Enumerate every grid index between min_grid_index and
      * max_grid_index (inclusive) exactly once. Assumes that min_index is element-wise less than or
      * equal to max_index. */
-    for (i = 0; i < ctx->ndims; ++i) {
+    for (i = 0; i < ndims; ++i) {
       tph_poisson_assert(min_grid_index[i] <= max_grid_index[i]);
       ctx->grid_index[i]++;
       if (ctx->grid_index[i] <= max_grid_index[i]) { break; }
@@ -889,7 +915,7 @@ static int tph_poisson_existing_sample_within_radius(tph_poisson_context *ctx,
     /* If the above loop ran to completion, without triggering the break, the grid_index has been
      * set to its original value (min_grid_index). Since this was the starting value for grid_index
      * we exit the outer loop when this happens. */
-  } while (i != ctx->ndims);
+  } while (i != ndims);
 
   /* No existing sample was found to be closer to the provided sample than the radius. */
   return 0;
@@ -1022,17 +1048,19 @@ int tph_poisson_create(tph_poisson_sampling *s,
 
 void tph_poisson_destroy(tph_poisson_sampling *s)
 {
-  /* Sanity-check that the sampling was initialized by a call to tph_poisson_create. If the sampling
-   * was default-initialized do nothing. */
-  if (s && s->internal) {
-    tph_poisson_sampling_internal *internal = s->internal;
-    tph_poisson_vec_free(&internal->samples, &internal->alloc);
-    tph_poisson_free_fn free_fn = internal->alloc.free;
-    void *alloc_ctx = internal->alloc.ctx;
-    free_fn(internal->mem, internal->mem_size, alloc_ctx);
+  if (s) {
+    s->ndims = 0;
+    s->nsamples = 0;
+    if (s->internal) {
+      tph_poisson_sampling_internal *internal = s->internal;
+      tph_poisson_vec_free(&internal->samples, &internal->alloc);
+      tph_poisson_free_fn free_fn = internal->alloc.free;
+      void *alloc_ctx = internal->alloc.ctx;
+      free_fn(internal->mem, internal->mem_size, alloc_ctx);
 
-    /* Protects from destroy being called more than once causing a double-free error. */
-    s->internal = NULL;
+      /* Protects from destroy being called more than once causing a double-free error. */
+      s->internal = NULL;
+    }
   }
 }
 
@@ -1043,20 +1071,18 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *s)
 }
 
 /* Clean up internal macros. */
+#undef TPH_POISSON_INLINE
 #undef tph_poisson_assert
 #undef TPH_POISSON_MEMCPY
 #undef TPH_POISSON_MEMSET
-#undef TPH_POISSON_INLINE
 #undef TPH_POISSON_MALLOC
 #undef TPH_POISSON_FREE
 
-/*
 #undef tph_poisson_vec_invariants
 #undef tph_poisson_vec_size
 #undef tph_poisson_vec_append
 #undef tph_poisson_vec_erase_unordered
 #undef tph_poisson_vec_shrink_to_fit
-*/
 
 #endif// TPH_POISSON_IMPLEMENTATION
 
@@ -1099,15 +1125,11 @@ DISCLAIMER:
 
 USAGE:
 
-    The input points are pruned if
+    Generates a list of samples with the guarantees: (1) No two samples are closer to each other
+    than some radius; (2) No sample is outside the region bounds.
 
-        * There are duplicates points
-        * The input points are outside of the bounding box (i.e. fail the clipping test function)
-        * The input points are rejected by the clipper's test function
-
-    The input bounding box is optional (calculated automatically)
-
-    The input domain is (-FLT_MAX, FLT_MAX] (for floats)
+    The algorithm tries to fit as many samples as possible into the region without violating the
+    above requirements.
 
     The API consists of these functions:
 
