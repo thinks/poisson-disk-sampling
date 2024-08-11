@@ -14,7 +14,6 @@
  * TODOS:
  * - Move implementation macros to implementation section??
  * - Build and run tests with sanitizers!!
- * - Tests with TPH_POISSON_REAL_TYPE == double!!
  */
 
 #include <stddef.h>// size_t, ptrdiff_t, NULL
@@ -1110,7 +1109,7 @@ USAGE:
 
     The input domain is (-FLT_MAX, FLT_MAX] (for floats)
 
-    The api consists of these functions:
+    The API consists of these functions:
 
     int tph_poisson_create(tph_poisson_sampling *sampling,
                            const tph_poisson_args *args,

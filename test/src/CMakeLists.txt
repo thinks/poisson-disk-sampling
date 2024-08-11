@@ -97,6 +97,8 @@ set_target_properties(tph_poisson_d PROPERTIES
 )
 add_library(thinks::tph_poisson_d ALIAS tph_poisson_d)
 
+# Fetch rpmalloc repo, source files are included directly in our test build, since the 
+# project does not have a CMake build system.
 FetchContent_Declare(rpmalloc
   GIT_REPOSITORY https://github.com/mjansson/rpmalloc.git
   GIT_TAG        1.4.5
@@ -108,10 +110,11 @@ if(NOT rpmalloc_POPULATED)
   FetchContent_Populate(rpmalloc)
 endif()
 
+# float
 add_executable(tph_poisson_test 
   "test.cpp"
-  ${rpmalloc_SOURCE_DIR}/rpmalloc/rpmalloc.c)
-target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson_f thinks::tph_poisson_d)
+  "${rpmalloc_SOURCE_DIR}/rpmalloc/rpmalloc.c")
+target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson_f)
 target_include_directories(tph_poisson_test PRIVATE ${rpmalloc_SOURCE_DIR})
 set_target_properties(tph_poisson_test PROPERTIES
   CXX_STANDARD ${_cxx_standard}
@@ -120,18 +123,32 @@ set_target_properties(tph_poisson_test PROPERTIES
 )
 add_test(NAME tph_poisson_test COMMAND tph_poisson_test)
 
-add_executable(tph_poisson_vec_test 
-  "tph_poisson_vec_test.c")
-target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
-if(NOT MSVC)
-  target_link_libraries(tph_poisson_vec_test PRIVATE m)
-endif()
-set_target_properties(tph_poisson_vec_test PROPERTIES
-  C_STANDARD ${_c_standard}
-  C_STANDARD_REQUIRED ON
-  C_EXTENSIONS OFF
+# double
+add_executable(tph_poisson_test_d
+  "test.cpp"
+  "${rpmalloc_SOURCE_DIR}/rpmalloc/rpmalloc.c")
+target_link_libraries(tph_poisson_test_d PRIVATE thinks::tph_poisson_d)
+target_include_directories(tph_poisson_test_d PRIVATE ${rpmalloc_SOURCE_DIR})
+target_compile_definitions(tph_poisson_test_d PRIVATE TPH_POISSON_TEST_USE_DOUBLE)
+set_target_properties(tph_poisson_test_d PROPERTIES
+  CXX_STANDARD ${_cxx_standard}
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
 )
-add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
+add_test(NAME tph_poisson_test_d COMMAND tph_poisson_test_d)
+
+# add_executable(tph_poisson_vec_test 
+#   "tph_poisson_vec_test.c")
+# target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
+# if(NOT MSVC)
+#   target_link_libraries(tph_poisson_vec_test PRIVATE m)
+# endif()
+# set_target_properties(tph_poisson_vec_test PROPERTIES
+#   C_STANDARD ${_c_standard}
+#   C_STANDARD_REQUIRED ON
+#   C_EXTENSIONS OFF
+# )
+# add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
 
 unset(_cxx_standard)
 unset(_c_standard)

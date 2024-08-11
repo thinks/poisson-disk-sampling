@@ -1,6 +1,6 @@
 #ifndef TPH_POISSON_D_H
 #define TPH_POISSON_D_H
-
+ 
 #include <math.h>
 #define TPH_POISSON_REAL_TYPE double
 #define TPH_POISSON_SQRT sqrt
