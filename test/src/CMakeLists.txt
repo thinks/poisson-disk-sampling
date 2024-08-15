@@ -75,9 +75,46 @@ else()
   message(AUTHOR_WARNING "No compiler warnings set for C compiler: '${CMAKE_C_COMPILER_ID}'")
 endif()
 
+# ASAN="-fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope -fsanitize=undefined"
+
+add_library(tph_poisson_asan INTERFACE)
+add_library(thinks::tph_poisson_asan ALIAS tph_poisson_asan)
+if(TPH_POISSON_USE_ASAN)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+    target_compile_options(tph_poisson_asan INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-address-use-after-scope)
+    target_link_options(tph_poisson_asan INTERFACE -fsanitize=address,undefined)
+  elseif(MSVC) 
+    target_compile_options(tph_poisson_asan INTERFACE "-fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope")
+    target_link_options(tph_poisson_asan INTERFACE "-fsanitize=address")
+  endif()
+endif()
+
+# add_library(tph_poisson_san)
+# alias?
+# list(JOIN SANITIZERS "," LIST_OF_SANITIZERS)
+# if(LIST_OF_SANITIZERS)
+#   if(NOT "${LIST_OF_SANITIZERS}" STREQUAL "")
+#     if(NOT MSVC)
+#       target_compile_options(${project_name} INTERFACE -fsanitize=${LIST_OF_SANITIZERS})
+#       target_link_options(${project_name} INTERFACE -fsanitize=${LIST_OF_SANITIZERS})
+#     else()
+#       string(FIND "$ENV{PATH}" "$ENV{VSINSTALLDIR}" index_of_vs_install_dir)
+#       if("${index_of_vs_install_dir}" STREQUAL "-1")
+#         message(
+#           SEND_ERROR
+#             "Using MSVC sanitizers requires setting the MSVC environment before building the project. Please manually open the MSVC command prompt and rebuild the project."
+#         )
+#       endif()
+#       target_compile_options(${project_name} INTERFACE /fsanitize=${LIST_OF_SANITIZERS} /Zi /INCREMENTAL:NO)
+#       target_compile_definitions(${project_name} INTERFACE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
+#       target_link_options(${project_name} INTERFACE /INCREMENTAL:NO)
+#     endif()
+#   endif()
+# endif()
+
 add_library(tph_poisson_f STATIC
   "tph_poisson_f.c")
-target_link_libraries(tph_poisson_f PUBLIC thinks::tph_poisson)
+target_link_libraries(tph_poisson_f PUBLIC thinks::tph_poisson thinks::tph_poisson_asan)
 target_compile_options(tph_poisson_f PRIVATE ${_c_warnings})
 set_target_properties(tph_poisson_f PROPERTIES
   C_STANDARD ${_c_standard}
@@ -88,7 +125,7 @@ add_library(thinks::tph_poisson_f ALIAS tph_poisson_f)
 
 add_library(tph_poisson_d STATIC
   "tph_poisson_d.c")
-target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson)
+target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson thinks::tph_poisson_asan)
 target_compile_options(tph_poisson_d PRIVATE ${_c_warnings})
 set_target_properties(tph_poisson_d PROPERTIES
   C_STANDARD ${_c_standard}
@@ -116,6 +153,7 @@ add_executable(tph_poisson_test
   "${rpmalloc_SOURCE_DIR}/rpmalloc/rpmalloc.c")
 target_link_libraries(tph_poisson_test PRIVATE thinks::tph_poisson_f)
 target_include_directories(tph_poisson_test PRIVATE ${rpmalloc_SOURCE_DIR})
+target_compile_definitions(tph_poisson_test PRIVATE ENABLE_STATISTICS=1 ENABLE_ASSERTS=1)
 set_target_properties(tph_poisson_test PROPERTIES
   CXX_STANDARD ${_cxx_standard}
   CXX_STANDARD_REQUIRED ON
@@ -129,7 +167,7 @@ add_executable(tph_poisson_test_d
   "${rpmalloc_SOURCE_DIR}/rpmalloc/rpmalloc.c")
 target_link_libraries(tph_poisson_test_d PRIVATE thinks::tph_poisson_d)
 target_include_directories(tph_poisson_test_d PRIVATE ${rpmalloc_SOURCE_DIR})
-target_compile_definitions(tph_poisson_test_d PRIVATE TPH_POISSON_TEST_USE_DOUBLE)
+target_compile_definitions(tph_poisson_test_d PRIVATE TPH_POISSON_TEST_USE_DOUBLE ENABLE_STATISTICS=1 ENABLE_ASSERTS=1)
 set_target_properties(tph_poisson_test_d PROPERTIES
   CXX_STANDARD ${_cxx_standard}
   CXX_STANDARD_REQUIRED ON
@@ -137,18 +175,18 @@ set_target_properties(tph_poisson_test_d PROPERTIES
 )
 add_test(NAME tph_poisson_test_d COMMAND tph_poisson_test_d)
 
-# add_executable(tph_poisson_vec_test 
-#   "tph_poisson_vec_test.c")
-# target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
-# if(NOT MSVC)
-#   target_link_libraries(tph_poisson_vec_test PRIVATE m)
-# endif()
-# set_target_properties(tph_poisson_vec_test PROPERTIES
-#   C_STANDARD ${_c_standard}
-#   C_STANDARD_REQUIRED ON
-#   C_EXTENSIONS OFF
-# )
-# add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
+add_executable(tph_poisson_vec_test 
+  "tph_poisson_vec_test.c")
+target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
+if(NOT MSVC)
+  target_link_libraries(tph_poisson_vec_test PRIVATE m)
+endif()
+set_target_properties(tph_poisson_vec_test PROPERTIES
+  C_STANDARD ${_c_standard}
+  C_STANDARD_REQUIRED ON
+  C_EXTENSIONS OFF
+)
+add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
 
 unset(_cxx_standard)
 unset(_c_standard)

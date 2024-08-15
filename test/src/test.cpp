@@ -35,10 +35,14 @@ static void
   (static_cast<bool>(expr) ? void(0) : require_fail(#expr, __FILE__, __LINE__, TPH_PRETTY_FUNCTION))
 // clang-format on
 
-using unique_poisson_ptr = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_destroy)>;
+using unique_poisson_ptr =
+  std::unique_ptr<tph_poisson_sampling, std::function<void(tph_poisson_sampling *)>>;
 static auto make_unique_poisson() -> unique_poisson_ptr
 {
-  return unique_poisson_ptr(new tph_poisson_sampling{}, tph_poisson_destroy);
+  return unique_poisson_ptr(new tph_poisson_sampling{}, [](tph_poisson_sampling *s) {
+    tph_poisson_destroy(s);
+    delete s;
+  });
 }
 
 static auto make_rpalloc() -> tph_poisson_allocator
@@ -89,27 +93,32 @@ static void TestRadius()
     // Launch threads.
     std::vector<std::future<bool>> futures;
     for (ptrdiff_t i = 0; i < thread_count; ++i) {
-      futures.emplace_back(std::async(std::launch::async, [&]() {
-        // We know that distance is symmetrical, such that
-        // dist(s[j], s[k]) == dist(s[k], s[j]). Therefore
-        // we need only compute the upper half of the matrix (excluding the diagonal).
-        //
-        // Load balance threads such that "short" (small j) and "long" (large j)
-        // columns are divided evenly among threads.
-        const int32_t ndims = sampling->ndims;
-        const Real r_sqr = args.radius * args.radius;
-        for (ptrdiff_t j = i; j < sampling->nsamples; j += thread_count) {
-          const Real *sj = &samples[j * ndims];
-          const ptrdiff_t k_max = j;
-          for (ptrdiff_t k = 0; k < k_max; ++k) {
-            const Real *sk = &samples[k * ndims];
-            Real dist_sqr = 0;
-            for (int32_t m = 0; m < ndims; ++m) { dist_sqr += (sj[m] - sk[m]) * (sj[m] - sk[m]); }
-            if (!(dist_sqr > r_sqr)) { return false; }
+      futures.emplace_back(std::async(std::launch::async,
+        [i,
+          samples,
+          thread_count,
+          ndims = sampling->ndims,
+          nsamples = sampling->nsamples,
+          r = args.radius]() {
+          // We know that distance is symmetrical, such that
+          // dist(s[j], s[k]) == dist(s[k], s[j]). Therefore
+          // we need only compute the upper half of the matrix (excluding the diagonal).
+          //
+          // Load balance threads such that "short" (small j) and "long" (large j)
+          // columns are divided evenly among threads.
+          const Real r_sqr = r * r;
+          for (ptrdiff_t j = i; j < nsamples; j += thread_count) {
+            const Real *sj = &samples[j * ndims];
+            const ptrdiff_t k_max = j;
+            for (ptrdiff_t k = 0; k < k_max; ++k) {
+              const Real *sk = &samples[k * ndims];
+              Real dist_sqr = 0;
+              for (int32_t m = 0; m < ndims; ++m) { dist_sqr += (sj[m] - sk[m]) * (sj[m] - sk[m]); }
+              if (!(dist_sqr > r_sqr)) { return false; }
+            }
           }
-        }
-        return true;
-      }));
+          return true;
+        }));
     }
 
     // Check results.
@@ -119,8 +128,7 @@ static void TestRadius()
   };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  const std::array<tph_poisson_allocator *, 2> allocs = { nullptr, &rpalloc };
-  for (auto alloc : allocs) {
+  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     REQUIRE(valid_radius(/*bounds_min=*/{ -100, -100 }, /*bounds_max=*/{ 100, 100 }, alloc));
     REQUIRE(valid_radius({ -20, -20, -20 }, { 20, 20, 20 }, alloc));
     REQUIRE(valid_radius({ -10, -10, -10, -10 }, { 10, 10, 10, 10 }, alloc));
@@ -156,20 +164,9 @@ static void TestBounds()
 
   tph_poisson_allocator rpalloc = make_rpalloc();
   for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
-    REQUIRE(valid_bounds(
-      /*bounds_min=*/{ -100, -100 },
-      /*bounds_max=*/{ 100, 100 },
-      alloc));
-
-    REQUIRE(valid_bounds(
-      /*bounds_min=*/{ -20, -20, -20 },
-      /*bounds_max=*/{ 20, 20, 20 },
-      alloc));
-
-    REQUIRE(valid_bounds(
-      /*bounds_min=*/{ -10, -10, -10, -10 },
-      /*bounds_max=*/{ 10, 10, 10, 10 },
-      alloc));
+    REQUIRE(valid_bounds(/*bounds_min=*/{ -100, -100 }, /*bounds_max=*/{ 100, 100 }, alloc));
+    REQUIRE(valid_bounds({ -20, -20, -20 }, { 20, 20, 20 }, alloc));
+    REQUIRE(valid_bounds({ -10, -10, -10, -10 }, { 10, 10, 10, 10 }, alloc));
   }
 }
 
@@ -178,13 +175,12 @@ static void TestBounds()
 // all other parameters constant).
 static void TestVaryingMaxSampleAttempts()
 {
-  constexpr int32_t ndims = 2;
+  constexpr int32_t ndims = INT32_C(2);
   constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  const std::array<tph_poisson_allocator *, 2> allocs = { nullptr, &rpalloc };
-  for (auto alloc : allocs) {
+  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args args_10 = {};
     args_10.ndims = ndims;
     args_10.radius = static_cast<Real>(0.5);
@@ -208,13 +204,12 @@ static void TestVaryingMaxSampleAttempts()
 // all other parameters constant).
 static void TestVaryingSeed()
 {
-  constexpr int32_t ndims = 2;
+  constexpr int32_t ndims = INT32_C(2);
   constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  const std::array<tph_poisson_allocator *, 2> allocs = { nullptr, &rpalloc };
-  for (auto alloc : allocs) {
+  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args args_1981 = {};
     args_1981.ndims = ndims;
     args_1981.radius = static_cast<Real>(0.5);
@@ -268,8 +263,7 @@ static void TestInvalidArgs()
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  const std::array<tph_poisson_allocator *, 2> allocs = { nullptr, &rpalloc };
-  for (auto alloc : allocs) {
+  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args valid_args = {};
     valid_args.radius = 1;
     valid_args.ndims = ndims;
@@ -456,8 +450,8 @@ static void TestUserAlloc()
 
   // Verify that we get exactly (bit-wise) the same results with default (libc malloc) and user
   // allocator (rpmalloc).
-  unique_poisson_ptr sampling = create_sampling(/*alloc=*/nullptr);
   tph_poisson_allocator rpalloc = make_rpalloc();
+  unique_poisson_ptr sampling = create_sampling(/*alloc=*/nullptr);
   unique_poisson_ptr sampling_alloc = create_sampling(&rpalloc);
   REQUIRE(sampling->ndims == sampling_alloc->ndims);
   REQUIRE(sampling->nsamples == sampling_alloc->nsamples);
@@ -471,14 +465,14 @@ static void TestUserAlloc()
           == 0);
 }
 
+extern "C" const char *__ubsan_default_options() { return "print_stacktrace=1"; }
+
 int main(int argc, char *argv[])
 {
   static_cast<void>(argc);
   static_cast<void>(argv);
 
   rpmalloc_initialize();
-
-  tph_poisson_allocator rpalloc = make_rpalloc();
 
   std::printf("TestRadius...\n");
   TestRadius();

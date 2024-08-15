@@ -448,8 +448,10 @@ static int _tph_poisson_vec_erase_unordered(tph_poisson_vec *vec,
   const ptrdiff_t count,
   const size_t elem_size)
 {
+  ptrdiff_t n = count * (ptrdiff_t)elem_size;
   const intptr_t er_begin = (intptr_t)vec->begin + pos * (ptrdiff_t)elem_size;
-  const intptr_t er_end = (intptr_t)er_begin + count * (ptrdiff_t)elem_size;
+  const intptr_t er_end = (intptr_t)er_begin + n;
+
   /* clang-format off */
   if ((er_begin == er_end) |              /* count == 0 */
       (er_begin < (intptr_t)vec->begin) | /* pos < 0 */
@@ -465,8 +467,13 @@ static int _tph_poisson_vec_erase_unordered(tph_poisson_vec *vec,
   } else {
     /* Copy elements from the end of the vector into the positions to be erased and then decrease
      * the size of the vector. */
-    TPH_POISSON_MEMCPY(
-      (void *)er_begin, (const void *)er_end, (size_t)((intptr_t)vec->end - er_end));
+    intptr_t src = (intptr_t)vec->end - n;
+    if (src < er_end) {
+      src = er_end;
+      n = (intptr_t)vec->end - src;
+    }
+
+    TPH_POISSON_MEMCPY((void *)er_begin, (const void *)src, (size_t)n);
     vec->end = (void *)((intptr_t)vec->end - (er_end - er_begin));
   }
   return TPH_POISSON_SUCCESS;
@@ -1078,11 +1085,11 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *s)
 #undef TPH_POISSON_MALLOC
 #undef TPH_POISSON_FREE
 
-#undef tph_poisson_vec_invariants
-#undef tph_poisson_vec_size
-#undef tph_poisson_vec_append
-#undef tph_poisson_vec_erase_unordered
-#undef tph_poisson_vec_shrink_to_fit
+// #undef tph_poisson_vec_invariants
+// #undef tph_poisson_vec_size
+// #undef tph_poisson_vec_append
+// #undef tph_poisson_vec_erase_unordered
+// #undef tph_poisson_vec_shrink_to_fit
 
 #endif// TPH_POISSON_IMPLEMENTATION
 

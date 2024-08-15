@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
   assert(tph_poisson_vec_invariants(float, &v));
   print_vecf(&v);
 
+  tph_poisson_vec_erase_unordered(float, &v, 2, 1);
+  assert(tph_poisson_vec_invariants(float, &v));
+  print_vecf(&v);
+
   tph_poisson_vec_shrink_to_fit(float, &v, &tph_poisson_default_alloc);
   assert(tph_poisson_vec_invariants(float, &v));
   print_vecf(&v);
