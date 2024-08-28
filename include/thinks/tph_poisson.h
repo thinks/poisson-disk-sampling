@@ -1088,11 +1088,11 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
 #undef TPH_POISSON_MALLOC
 #undef TPH_POISSON_FREE
 
-// #undef tph_poisson_vec_invariants
-// #undef tph_poisson_vec_size
-// #undef tph_poisson_vec_append
-// #undef tph_poisson_vec_erase_unordered
-// #undef tph_poisson_vec_shrink_to_fit
+#undef tph_poisson_vec_invariants
+#undef tph_poisson_vec_size
+#undef tph_poisson_vec_append
+#undef tph_poisson_vec_erase_unordered
+#undef tph_poisson_vec_shrink_to_fit
 
 #endif// TPH_POISSON_IMPLEMENTATION
 
