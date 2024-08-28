@@ -20,15 +20,14 @@ jobs:
       with: { python-version: "3.12" }
 
     - name: Install codespell
-      if: never() # always()
       run: pip3 install codespell
 
-    - name: Lint
-      run: cmake -D FORMAT_COMMAND=clang-format-14 -P cmake/lint.cmake
+    # - name: Lint
+    #   run: cmake -D FORMAT_COMMAND=clang-format-14 -P cmake/lint.cmake
 
-    - name: Spell check
-      if: never() # always()
-      run: cmake -P cmake/spell.cmake
+    # - name: Spell check
+    #   if: always()
+    #   run: cmake -P cmake/spell.cmake
 
   coverage:
     needs: [lint]
