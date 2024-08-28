@@ -1,15 +1,20 @@
 ---
-# Enable ALL the things! Except not really...
+# Enable ALL the things! Except not really
 Checks: "-*,\
   -google-readability-todo,\
   clang-analyzer-*,\
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,\
   cert-*,\
   bugprone-*,\
+  -bugprone-easily-swappable-parameters,\
   concurrency-*,\
   misc-*,\
   portability-*,\
   openmp-*,\
-  readability-*"
+  readability-*,\
+  -readability-magic-numbers,\
+  -readability-identifier-length,\
+  -readability-function-cognitive-complexity"
 WarningsAsErrors: ''
 CheckOptions:
   - key: 'bugprone-argument-comment.StrictMode'
