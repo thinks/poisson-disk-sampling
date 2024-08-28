@@ -2,7 +2,7 @@
 #include <tph/poisson.h>
 
 #include <inttypes.h>
-#include <stdio.h> // printf
+#include <stdio.h>// printf
 
 int main(int argc, char *argv[])
 {
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     tph_real pos[2];
     pos[0] = points->pos[i * sampling.dims];
     pos[1] = points->pos[i * sampling.dims + 1];
-    printf("p[%"PRIu32"] = ( %.3f, %.3f )", i, pos[0], pos[1]);
+    printf("p[%" PRIu32 "] = ( %.3f, %.3f )", i, pos[0], pos[1]);
   }
 
   tph_poisson_free(&sampling);

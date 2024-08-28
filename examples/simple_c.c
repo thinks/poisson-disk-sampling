@@ -5,13 +5,13 @@
 #include <stdlib.h>/* EXIT_FAILURE, etc */
 
 #define TPH_POISSON_IMPLEMENTATION
-#if 0
+/*
 #define TPH_POISSON_REAL_TYPE double
 #include <math.h>
 #define TPH_POISSON_SQRT sqrt
 #define TPH_POISSON_CEIL ceil
 #define TPH_POISSON_FLOOR floor
-#endif
+*/
 #include <thinks/tph_poisson.h>
 
 int main(int argc, char *argv[])
@@ -21,10 +21,11 @@ int main(int argc, char *argv[])
 
   const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-100, (tph_poisson_real)-100 };
   const tph_poisson_real bounds_max[2] = { (tph_poisson_real)100, (tph_poisson_real)100 };
+  const tph_poisson_real radius = 10;
   tph_poisson_args args = { NULL };
   args.bounds_min = bounds_min;
   args.bounds_max = bounds_max;
-  args.radius = (tph_poisson_real)10;
+  args.radius = radius;
   args.ndims = INT32_C(2);
   args.max_sample_attempts = UINT32_C(30);
   args.seed = UINT64_C(1981);
@@ -45,8 +46,8 @@ int main(int argc, char *argv[])
   for (ptrdiff_t i = 0; i < sampling.nsamples; ++i) {
     printf("sample[%td] = ( %.3f, %.3f )\n",
       i,
-      samples[i * sampling.ndims],
-      samples[i * sampling.ndims + 1]);
+      (double)samples[i * sampling.ndims],
+      (double)samples[i * sampling.ndims + 1]);
   }
 
   /* Free memory. */

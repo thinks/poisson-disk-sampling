@@ -38,58 +38,55 @@ _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 #endif
 #include "simple_fft/fft.h"
 HEDLEY_DIAGNOSTIC_POP
-// clang-format on
+  // clang-format on
 
-HEDLEY_WARN_UNUSED_RESULT
-static HEDLEY_CONSTEXPR auto Reinterval(
-    const double in_val, const double old_min, const double old_max,
-    const double new_min, const double new_max) noexcept -> double {
+  HEDLEY_WARN_UNUSED_RESULT static HEDLEY_CONSTEXPR auto Reinterval(const double in_val,
+    const double old_min,
+    const double old_max,
+    const double new_min,
+    const double new_max) noexcept -> double
+{
   return (old_max - old_min) == 0.0
-             ? new_max
-             : (((in_val - old_min) * (new_max - new_min)) /
-                (old_max - old_min)) +
-                   new_min;
+           ? new_max
+           : (((in_val - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
 }
 
-template <typename PixelT>
-class Image {
- public:
+template<typename PixelT> class Image
+{
+public:
   Image(const std::size_t width, const std::size_t height)
-      : _width(width), _height(height), _pixels(_width * _height, PixelT{0}) {}
+    : _width(width), _height(height), _pixels(_width * _height, PixelT{ 0 })
+  {}
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT constexpr auto width() const -> std::size_t {
-    return _width;
-  }
+  HEDLEY_WARN_UNUSED_RESULT constexpr auto width() const -> std::size_t { return _width; }
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT constexpr auto height() const -> std::size_t {
-    return _height;
-  }
+  HEDLEY_WARN_UNUSED_RESULT constexpr auto height() const -> std::size_t { return _height; }
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT auto data() const -> const PixelT* {
-    return _pixels.data();
-  }
+  HEDLEY_WARN_UNUSED_RESULT auto data() const -> const PixelT * { return _pixels.data(); }
 
   // NOLINTNEXTLINE
-  HEDLEY_WARN_UNUSED_RESULT auto data() -> PixelT* { return _pixels.data(); }
+  HEDLEY_WARN_UNUSED_RESULT auto data() -> PixelT * { return _pixels.data(); }
 
   HEDLEY_WARN_UNUSED_RESULT
-  auto operator()(const std::size_t i, const std::size_t j) -> PixelT& {
+  auto operator()(const std::size_t i, const std::size_t j) -> PixelT &
+  {
     return _pixels[_linearIndex(i, j)];
   }
 
   HEDLEY_WARN_UNUSED_RESULT
-  auto operator()(const std::size_t i, const std::size_t j) const -> const PixelT& {
+  auto operator()(const std::size_t i, const std::size_t j) const -> const PixelT &
+  {
     return _pixels[_linearIndex(i, j)];
   }
 
- private:
+private:
   HEDLEY_WARN_UNUSED_RESULT
   // NOLINTNEXTLINE
-  constexpr std::size_t _linearIndex(const std::size_t i,
-                                     const std::size_t j) const {
+  constexpr std::size_t _linearIndex(const std::size_t i, const std::size_t j) const
+  {
     return i + _width * j;
   }
 
@@ -98,8 +95,8 @@ class Image {
   std::vector<PixelT> _pixels;
 };
 
-static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
-    -> Image<double>& {
+static auto AddEq(const Image<double> &rhs, Image<double> *lhs) noexcept -> Image<double> &
+{
   if (!(rhs.width() == lhs->width() && rhs.height() == lhs->height())) {
     std::cerr << "AddEq width/height mismatch";
     std::abort();
@@ -108,64 +105,55 @@ static auto AddEq(const Image<double>& rhs, Image<double>* lhs) noexcept
   const auto w = rhs.width();
   const auto h = rhs.height();
   for (auto i = 0U; i < w; ++i) {
-    for (auto j = 0U; j < h; ++j) {
-      (*lhs)(i, j) += rhs(i, j);
-    }
+    for (auto j = 0U; j < h; ++j) { (*lhs)(i, j) += rhs(i, j); }
   }
   return *lhs;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto Scaled(const Image<double>& img,
-                                             const double scalar) noexcept
-    -> Image<double> {
+HEDLEY_WARN_UNUSED_RESULT static auto Scaled(const Image<double> &img,
+  const double scalar) noexcept -> Image<double>
+{
   Image<double> out = img;
   const auto w = out.width();
   const auto h = out.height();
   for (auto i = 0U; i < w; ++i) {
-    for (auto j = 0U; j < h; ++j) {
-      out(i, j) *= scalar;
-    }
+    for (auto j = 0U; j < h; ++j) { out(i, j) *= scalar; }
   }
   return out;
 }
 
 HEDLEY_WARN_UNUSED_RESULT static auto SubtractAverage(
-    const Image<double>& img) noexcept -> Image<double> {
+  const Image<double> &img) noexcept -> Image<double>
+{
   auto out = img;
   const auto w = out.width();
   const auto h = out.height();
   double avg = 0.0;
   for (auto i = 0U; i < w; ++i) {
-    for (auto j = 0U; j < h; ++j) {
-      avg += out(i, j);
-    }
+    for (auto j = 0U; j < h; ++j) { avg += out(i, j); }
   }
   avg /= static_cast<double>(w * h);
 
   for (auto i = 0U; i < w; ++i) {
-    for (auto j = 0U; j < h; ++j) {
-      out(i, j) -= avg;
-    }
+    for (auto j = 0U; j < h; ++j) { out(i, j) -= avg; }
   }
 
   return out;
 }
 
 HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
-    const Image<double>& img_in) noexcept -> Image<std::complex<double>> {
+  const Image<double> &img_in) noexcept -> Image<std::complex<double>>
+{
   // Create a complex image with imaginary components set to zero.
   auto c_img = Image<std::complex<double>>(img_in.width(), img_in.height());
   const auto w = c_img.width();
   const auto h = c_img.height();
   for (auto i = 0U; i < w; ++i) {
-    for (auto j = 0U; j < h; ++j) {
-      c_img(i, j) = {img_in(i, j), 0.0};
-    }
+    for (auto j = 0U; j < h; ++j) { c_img(i, j) = { img_in(i, j), 0.0 }; }
   }
 
-  const char* error_description = nullptr;
-  if (!simple_fft::FFT(c_img, c_img.width(), c_img.height(),
-                       error_description)) {
+  const char *error_description = nullptr;
+  if (!simple_fft::FFT(c_img, c_img.width(), c_img.height(), error_description)) {
     std::cerr << "FFT error: " << error_description;
     std::abort();
   }
@@ -174,8 +162,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto Fft2d(
 }
 
 HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
-    const Image<std::complex<double>>& fft_img) noexcept
-    -> Image<std::complex<double>> {
+  const Image<std::complex<double>> &fft_img) noexcept -> Image<std::complex<double>>
+{
   if (!(fft_img.width() % 2 == 0 && fft_img.height() % 2 == 0)) {
     std::cerr << "FFT shift error: odd dimension";
     std::abort();
@@ -191,16 +179,12 @@ HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
   //
   // Shift rows.
   for (auto j = 0U; j < h; ++j) {
-    for (auto i = 0U; i < half_w; ++i) {
-      std::swap(shift_img(i, j), shift_img(half_w + i, j));
-    }
+    for (auto i = 0U; i < half_w; ++i) { std::swap(shift_img(i, j), shift_img(half_w + i, j)); }
   }
 
   // Shift cols.
   for (auto i = 0U; i < w; ++i) {
-    for (auto j = 0U; j < half_h; ++j) {
-      std::swap(shift_img(i, j), shift_img(i, half_h + j));
-    }
+    for (auto j = 0U; j < half_h; ++j) { std::swap(shift_img(i, j), shift_img(i, half_h + j)); }
   }
 
   return shift_img;
@@ -208,7 +192,8 @@ HEDLEY_WARN_UNUSED_RESULT static auto FftShift2d(
 
 // The periodogram is the squared magnitude of the FFT bins.
 HEDLEY_WARN_UNUSED_RESULT static auto Periodogram(
-    const Image<std::complex<double>>& fft_img) noexcept -> Image<double> {
+  const Image<std::complex<double>> &fft_img) noexcept -> Image<double>
+{
   auto img = Image<double>(fft_img.width(), fft_img.height());
   const auto w = img.width();
   const auto h = img.height();
@@ -221,27 +206,26 @@ HEDLEY_WARN_UNUSED_RESULT static auto Periodogram(
   return img;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto CreateSampleImage(
-    const std::size_t width, const std::size_t height,
-    const std::array<double, 2>& sample_min,
-    const std::array<double, 2>& sample_max,
-    const std::vector<std::array<double, 2>>& samples) noexcept
-    -> Image<double> {
+HEDLEY_WARN_UNUSED_RESULT static auto CreateSampleImage(const std::size_t width,
+  const std::size_t height,
+  const std::array<double, 2> &sample_min,
+  const std::array<double, 2> &sample_max,
+  const std::vector<std::array<double, 2>> &samples) noexcept -> Image<double>
+{
   Image<double> img(width, height);
-  for (const auto& sample : samples) {
+  for (const auto &sample : samples) {
     const auto i = static_cast<std::size_t>(
-        Reinterval(sample[0], sample_min[0], sample_max[0], 0.0,
-                   static_cast<double>(width - 1)));
+      Reinterval(sample[0], sample_min[0], sample_max[0], 0.0, static_cast<double>(width - 1)));
     const auto j = static_cast<std::size_t>(
-        Reinterval(sample[1], sample_min[1], sample_max[1], 0.0,
-                   static_cast<double>(height - 1)));
+      Reinterval(sample[1], sample_min[1], sample_max[1], 0.0, static_cast<double>(height - 1)));
     img(i, j) = 1.0;
   }
   return img;
 }
 
-HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
-    -> Image<std::uint8_t> {
+HEDLEY_WARN_UNUSED_RESULT static auto To8bits(
+  const Image<double> &img) noexcept -> Image<std::uint8_t>
+{
   double min_pixel = std::numeric_limits<double>::max();
   double max_pixel = std::numeric_limits<double>::lowest();
   const auto w = img.width();
@@ -258,15 +242,16 @@ HEDLEY_WARN_UNUSED_RESULT static auto To8bits(const Image<double>& img) noexcept
   Image<std::uint8_t> out(w, h);
   for (auto i = 0U; i < w; ++i) {
     for (auto j = 0U; j < h; ++j) {
-      out(i, j) = static_cast<std::uint8_t>(Reinterval(
-          img(i, j), min_pixel, max_pixel, kMinMappedPixel, kMaxMappedPixel));
+      out(i, j) = static_cast<std::uint8_t>(
+        Reinterval(img(i, j), min_pixel, max_pixel, kMinMappedPixel, kMaxMappedPixel));
     }
   }
   return out;
 }
 
-static void WriteImage(const std::string& filename, const Image<double>& img) {
-  constexpr auto kComp = 1; // Greyscale.
+static void WriteImage(const std::string &filename, const Image<double> &img)
+{
+  constexpr auto kComp = 1;// Greyscale.
 
   const auto w = static_cast<int>(img.width());
   const auto h = static_cast<int>(img.height());
@@ -282,30 +267,34 @@ static void WriteImage(const std::string& filename, const Image<double>& img) {
   }
 }
 
-int main(int /*argc*/, char* /*argv*/[]) {  // NOLINT
+int main(int /*argc*/, char * /*argv*/[])
+{// NOLINT
   try {
     constexpr auto kImageCount = 100U;
     constexpr auto kPixelSize = 2048U;
 
     constexpr auto kRadius = 1.0;
-    constexpr std::array<double, 2> kXMin = {0.0, 0.0};
-    constexpr std::array<double, 2> kXMax = {128.0, 128.0};
-    constexpr auto kMaxSampleAttempts = std::uint32_t{30};
+    constexpr std::array<double, 2> kXMin = { 0.0, 0.0 };
+    constexpr std::array<double, 2> kXMax = { 128.0, 128.0 };
+    constexpr auto kMaxSampleAttempts = std::uint32_t{ 30 };
 
     Image<double> avg_periodogram_img(kPixelSize, kPixelSize);
     for (auto i = 0U; i < kImageCount; ++i) {
-      AddEq(
-          Scaled(Periodogram(FftShift2d(Fft2d(SubtractAverage(CreateSampleImage(
-                     avg_periodogram_img.width(), avg_periodogram_img.height(),
-                     kXMin, kXMax,
-                     thinks::PoissonDiskSampling(kRadius, kXMin, kXMax,
-                                                 kMaxSampleAttempts,
-                                                 /* seed */ i)))))),
-                 1.0 / kImageCount),
-          &avg_periodogram_img);
+      AddEq(Scaled(Periodogram(
+                     FftShift2d(Fft2d(SubtractAverage(CreateSampleImage(avg_periodogram_img.width(),
+                       avg_periodogram_img.height(),
+                       kXMin,
+                       kXMax,
+                       thinks::PoissonDiskSampling(kRadius,
+                         kXMin,
+                         kXMax,
+                         kMaxSampleAttempts,
+                         /* seed */ i)))))),
+              1.0 / kImageCount),
+        &avg_periodogram_img);
     }
     WriteImage("avg_periodogram.png", avg_periodogram_img);
-  } catch (std::exception& e) {
+  } catch (std::exception &e) {
     std::cerr << "std::exception: " << e.what();
     std::abort();
   } catch (...) {

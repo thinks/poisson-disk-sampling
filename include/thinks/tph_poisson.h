@@ -13,6 +13,7 @@
 /*
  * TODOS:
  * - Build and run tests with sanitizers!!
+ * - clang-tidy
  */
 
 #include <stddef.h>// size_t, ptrdiff_t, NULL
@@ -21,6 +22,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* BEGIN PUBLIC API --------------------------------------------------------- */
 
 /* clang-format off */
 #if (defined(TPH_POISSON_REAL_TYPE)                                                                    \
@@ -95,22 +98,23 @@ struct tph_poisson_sampling_
 /* clang-format on */
 
 /**
- * Generates a list of samples with the guarantees: (1) No two samples are closer to each other than
- * args.radius; (2) No sample is outside the region [args.bounds_min, args.bounds_max].
+ * Generates a list of samples with the guarantees:
+ *   (1) No two samples are closer to each other than args.radius;
+ *   (2) No sample is outside the region [args.bounds_min, args.bounds_max].
  *
  * The algorithm tries to fit as many samples as possible into the region without violating the
- * above requirements. The samples are accessed using the tph_poisson_get_samples function.
-
- * If the arguments are invalid TPH_POISSON_INVALID_ARGS is returned.
- * The arguments are invalid if:
- * - args.radius is <= 0, or
- * - args.ndims is < 1, or
- * - args.bounds_min[i] >= args.bounds_max[i], or
- * - args.max_sample_attempts == 0, or
- * - an invalid allocator is provided.
+ * above requirements. After creation, the samples are accessed using the
+ * tph_poisson_get_samples function.
  *
- * If a memory allocation fails TPH_POISSON_BAD_ALLOC is returned.
- * If the number of samples exceeds the maximum number TPH_POISSON_OVERFLOW is returned.
+ * Errors:
+ *   TPH_POISSON_BAD_ALLOC - Failed memory allocation.
+ *   TPH_POISSON_INVALID_ARGS - The arguments are invalid if:
+ *   - args.radius is <= 0, or
+ *   - args.ndims is < 1, or
+ *   - args.bounds_min[i] >= args.bounds_max[i], or
+ *   - args.max_sample_attempts == 0, or
+ *   - an invalid allocator is provided.
+ *   TPH_POISSON_OVERFLOW - The number of samples exceeds the maximum number.
  *
  * @param sampling Sampling to store samples.
  * @param args     Arguments.
@@ -122,7 +126,7 @@ extern int tph_poisson_create(tph_poisson_sampling *sampling,
   tph_poisson_allocator *alloc);
 
 /**
- * @brief Frees all memory used by the sampling.
+ * @brief Frees all memory used by the sampling. Note that the sampling itself is not free'd.
  * @param sampling Sampling to store samples.
  */
 extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
@@ -136,15 +140,15 @@ extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
  */
 extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling);
 
+/* END PUBLIC API ----------------------------------------------------------- */
+
 #ifdef __cplusplus
 }// extern "C"
 #endif
 
 #endif// TPH_POISSON_H
 
-/*
- * IMPLEMENTATION
- */
+/* BEGIN IMPLEMENTATION ------------------------------------------------------*/
 
 #ifdef TPH_POISSON_IMPLEMENTATION
 #undef TPH_POISSON_IMPLEMENTATION
@@ -750,20 +754,15 @@ static int tph_poisson_add_sample(tph_poisson_context *ctx,
     return TPH_POISSON_OVERFLOW;
   }
 
-  int ret = TPH_POISSON_SUCCESS;
-  if ((ret = tph_poisson_vec_append(
-         tph_poisson_real, &internal->samples, &internal->alloc, sample, ctx->ndims))
-      != TPH_POISSON_SUCCESS) {
-    return ret;
-  }
-  if ((ret = tph_poisson_vec_append(ptrdiff_t,
-         &ctx->active_indices,
-         &internal->alloc,
-         &sample_index,
-         /*count=*/1))
-      != TPH_POISSON_SUCCESS) {
-    return ret;
-  }
+  int ret = tph_poisson_vec_append(
+    tph_poisson_real, &internal->samples, &internal->alloc, sample, ctx->ndims);
+  if (ret != TPH_POISSON_SUCCESS) { return ret; }
+  ret = tph_poisson_vec_append(ptrdiff_t,
+    &ctx->active_indices,
+    &internal->alloc,
+    &sample_index,
+    /*count=*/1);
+  if (ret != TPH_POISSON_SUCCESS) { return ret; }
 
   /* Compute linear grid index. */
   tph_poisson_assert(ctx->grid_stride[0] == 1);
@@ -1037,8 +1036,8 @@ int tph_poisson_create(tph_poisson_sampling *s,
     active_index_count = tph_poisson_vec_size(ptrdiff_t, &ctx.active_indices);
   }
 
-  if ((ret = tph_poisson_vec_shrink_to_fit(tph_poisson_real, &internal->samples, &internal->alloc))
-      != TPH_POISSON_SUCCESS) {
+  ret = tph_poisson_vec_shrink_to_fit(tph_poisson_real, &internal->samples, &internal->alloc);
+  if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_context_destroy(&ctx, &internal->alloc);
     tph_poisson_destroy(s);
     return ret;
@@ -1053,28 +1052,30 @@ int tph_poisson_create(tph_poisson_sampling *s,
   return TPH_POISSON_SUCCESS;
 }
 
-void tph_poisson_destroy(tph_poisson_sampling *s)
+void tph_poisson_destroy(tph_poisson_sampling *sampling)
 {
-  if (s) {
-    s->ndims = 0;
-    s->nsamples = 0;
-    if (s->internal) {
-      tph_poisson_sampling_internal *internal = s->internal;
+  if (sampling) {
+    sampling->ndims = 0;
+    sampling->nsamples = 0;
+    if (sampling->internal) {
+      tph_poisson_sampling_internal *internal = sampling->internal;
       tph_poisson_vec_free(&internal->samples, &internal->alloc);
       tph_poisson_free_fn free_fn = internal->alloc.free;
       void *alloc_ctx = internal->alloc.ctx;
       free_fn(internal->mem, internal->mem_size, alloc_ctx);
 
       /* Protects from destroy being called more than once causing a double-free error. */
-      s->internal = NULL;
+      sampling->internal = NULL;
     }
   }
 }
 
-const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *s)
+const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
 {
   /* Make sure that a 'destroyed' sampling does not return any samples. */
-  return (s && s->internal) ? (const tph_poisson_real *)s->internal->samples.begin : NULL;
+  return (sampling && sampling->internal)
+           ? (const tph_poisson_real *)sampling->internal->samples.begin
+           : NULL;
 }
 
 /* Clean up internal macros. */
@@ -1100,6 +1101,7 @@ ABOUT:
     A single file implementation of Poisson disk sampling in arbitrary dimensions.
 
 HISTORY:
+
     0.4     2024-08-XYZ  - ...
 
 LICENSE:
@@ -1132,8 +1134,9 @@ DISCLAIMER:
 
 USAGE:
 
-    Generates a list of samples with the guarantees: (1) No two samples are closer to each other
-    than some radius; (2) No sample is outside the region bounds.
+    Generates a list of samples with the guarantees:
+      (1) No two samples are closer to each other than some radius;
+      (2) No sample is outside the region bounds.
 
     The algorithm tries to fit as many samples as possible into the region without violating the
     above requirements.
@@ -1158,6 +1161,7 @@ USAGE:
 
     // To use double:
     // #define TPH_POISSON_REAL_TYPE double
+    // #include <math.h>
     // #define TPH_POISSON_SQRT  sqrt
     // #define TPH_POISSON_CEIL  ceil
     // #define TPH_POISSON_FLOOR floor

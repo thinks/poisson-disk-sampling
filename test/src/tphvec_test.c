@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     print_vecf(v2);
     printf("\n");
     tphvec_erase_unordered(v2, 1, 2);
-    //tphvec_erase_unordered(v2, 4, 3);
+    // tphvec_erase_unordered(v2, 4, 3);
     print_vecf(v2);
     printf("\n");
   }
