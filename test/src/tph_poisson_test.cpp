@@ -260,15 +260,19 @@ static void TestVaryingSeed()
 
 static void TestInvalidArgs()
 {
-  constexpr int32_t ndims = 2;
-  constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
-  constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
+  // Work-around for MSVC compiler not being able to handle constexpr 
+  // capture in lambdas.
+  // constexpr int32_t ndims = 2;
+  #define NDIMS INT32_C(2)
+
+  constexpr std::array<Real, NDIMS> bounds_min{ -10, -10 };
+  constexpr std::array<Real, NDIMS> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
   for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args valid_args = {};
     valid_args.radius = 1;
-    valid_args.ndims = ndims;
+    valid_args.ndims = NDIMS;
     valid_args.bounds_min = bounds_min.data();
     valid_args.bounds_max = bounds_max.data();
     valid_args.max_sample_attempts = UINT32_C(30);
@@ -276,7 +280,7 @@ static void TestInvalidArgs()
     // Verify valid arguments.
     unique_poisson_ptr sampling = make_unique_poisson();
     REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling.get(), &valid_args, alloc));
-    REQUIRE(sampling->ndims == ndims);
+    REQUIRE(sampling->ndims == NDIMS);
     REQUIRE(sampling->nsamples > 0);
     REQUIRE(tph_poisson_get_samples(sampling.get()) != nullptr);
     // Reset sampling.
@@ -349,38 +353,38 @@ static void TestInvalidArgs()
       args.bounds_max = nullptr;
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
 
-      constexpr std::array<Real, ndims> invalid_bounds_min0{ 10, 10 };
-      constexpr std::array<Real, ndims> invalid_bounds_max0{ 10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_min0{ 10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max0{ 10, 10 };
       args.bounds_min = invalid_bounds_min0.data();
       args.bounds_max = invalid_bounds_max0.data();
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
 
-      constexpr std::array<Real, ndims> invalid_bounds_min1{ 10, -10 };
-      constexpr std::array<Real, ndims> invalid_bounds_max1{ 10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_min1{ 10, -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max1{ 10, 10 };
       args.bounds_min = invalid_bounds_min1.data();
       args.bounds_max = invalid_bounds_max1.data();
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
 
-      constexpr std::array<Real, ndims> invalid_bounds_min2{ -10, 10 };
-      constexpr std::array<Real, ndims> invalid_bounds_max2{ 10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_min2{ -10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max2{ 10, 10 };
       args.bounds_min = invalid_bounds_min2.data();
       args.bounds_max = invalid_bounds_max2.data();
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
 
-      constexpr std::array<Real, ndims> invalid_bounds_min3{ 10, 10 };
-      constexpr std::array<Real, ndims> invalid_bounds_max3{ -10, -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_min3{ 10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max3{ -10, -10 };
       args.bounds_min = invalid_bounds_min3.data();
       args.bounds_max = invalid_bounds_max3.data();
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
 
-      constexpr std::array<Real, ndims> invalid_bounds_min4{ 10, -10 };
-      constexpr std::array<Real, ndims> invalid_bounds_max4{ -10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_min4{ 10, -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max4{ -10, 10 };
       args.bounds_min = invalid_bounds_min4.data();
       args.bounds_max = invalid_bounds_max4.data();
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
 
-      constexpr std::array<Real, ndims> invalid_bounds_min5{ -10, 10 };
-      constexpr std::array<Real, ndims> invalid_bounds_max5{ 10, -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_min5{ -10, 10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max5{ 10, -10 };
       args.bounds_min = invalid_bounds_min5.data();
       args.bounds_max = invalid_bounds_max5.data();
       REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
@@ -391,6 +395,7 @@ static void TestInvalidArgs()
     REQUIRE(sampling->nsamples == 0);
     REQUIRE(tph_poisson_get_samples(sampling.get()) == nullptr);
   }
+  #undef NDIMS
 }
 
 static void TestDestroy()
