@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 # message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-# Allow calling FetchContent_Populate directly.
-if(POLICY CMP0169)
-  cmake_policy(SET CMP0169 OLD)
-endif()
-
 include(cmake/prelude.cmake)
 include(cmake/version.cmake)
 

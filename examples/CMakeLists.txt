@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.14)
 
 project(tph_poissonExamples C CXX)
 
-# Allow calling FetchContent_Populate directly.
-if(POLICY CMP0169)
-  cmake_policy(SET CMP0169 OLD)
-endif()
-
 function(add_example NAME)
   set(options)
   set(oneValueArgs)

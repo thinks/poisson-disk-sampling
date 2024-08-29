@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.14)
 
 project(tph_poissonTests LANGUAGES C CXX)
 
-# Allow calling FetchContent_Populate directly.
-if(POLICY CMP0169)
-  cmake_policy(SET CMP0169 OLD)
-endif()
-
 include(../cmake/project-is-top-level.cmake)
 include(../cmake/folders.cmake)
 

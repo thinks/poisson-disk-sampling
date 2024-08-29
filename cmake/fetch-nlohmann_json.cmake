@@ -1,3 +1,10 @@
+cmake_policy(PUSH)
+
+# Allow calling FetchContent_Populate directly.
+if(POLICY CMP0169)
+  cmake_policy(SET CMP0169 OLD)
+endif()
+
 include(FetchContent)
 
 function(fetch_nlohmann_json)
@@ -70,3 +77,5 @@ function(fetch_nlohmann_json)
     message(FATAL_ERROR "nlohmann_json-${args_VERSION} not found")
   endif()
 endfunction()
+
+cmake_policy(POP)

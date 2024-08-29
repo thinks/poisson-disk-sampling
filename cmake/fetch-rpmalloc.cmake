@@ -1,3 +1,10 @@
+cmake_policy(PUSH)
+
+# Allow calling FetchContent_Populate directly.
+if(POLICY CMP0169)
+  cmake_policy(SET CMP0169 OLD)
+endif()
+
 include(FetchContent)
 
 function(fetch_rpmalloc)
@@ -71,3 +78,5 @@ function(fetch_rpmalloc)
     message(FATAL_ERROR "rpmalloc-${args_VERSION} not found")
   endif()
 endfunction()
+
+cmake_policy(POP)
