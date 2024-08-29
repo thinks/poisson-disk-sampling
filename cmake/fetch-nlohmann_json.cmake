@@ -66,7 +66,7 @@ function(fetch_nlohmann_json)
     PATHS "${nlohmann_json_BINARY_DIR}/install"
     NO_DEFAULT_PATH 
   )
-  if(NOT nlohmann_json_FOUND) 
+  if (NOT nlohmann_json_FOUND) 
     message(FATAL_ERROR "nlohmann_json-${args_VERSION} not found")
   endif()
 endfunction()
