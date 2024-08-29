@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include <rpmalloc/rpmalloc.h>
+// #include <rpmalloc/rpmalloc.h>
 
 #ifdef TPH_POISSON_TEST_USE_DOUBLE
 #include "tph_poisson_d.h"
@@ -50,12 +50,14 @@ static auto make_rpalloc() -> tph_poisson_allocator
   tph_poisson_allocator a = {};
   a.malloc = [](ptrdiff_t size, void *ctx) {
     static_cast<void>(ctx);
-    return rpmalloc(static_cast<size_t>(size));
+    // return rpmalloc(static_cast<size_t>(size));
+    return malloc(static_cast<size_t>(size));
   };
   a.free = [](void *ptr, ptrdiff_t size, void *ctx) {
     static_cast<void>(size);
     static_cast<void>(ctx);
-    return rpfree(ptr);
+    // return rpfree(ptr);
+    free(ptr);
   };
   a.ctx = nullptr;
   return a;
@@ -472,7 +474,7 @@ int main(int argc, char *argv[])
   static_cast<void>(argc);
   static_cast<void>(argv);
 
-  rpmalloc_initialize();
+  // rpmalloc_initialize();
 
   std::printf("TestRadius...\n");
   TestRadius();
@@ -495,7 +497,7 @@ int main(int argc, char *argv[])
   std::printf("TestUserAlloc...\n");
   TestUserAlloc();
 
-  rpmalloc_finalize();
+  // rpmalloc_finalize();
 
   return EXIT_SUCCESS;
 }

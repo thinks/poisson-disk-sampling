@@ -22,8 +22,8 @@ add_library(thinks::tph_poisson_d ALIAS tph_poisson_d)
 target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson)
 target_compile_features(tph_poisson_d PRIVATE c_std_11)
 
-include(../cmake/fetch-rpmalloc.cmake)
-fetch_rpmalloc(VERSION "6800c43fb2f22626bb043369698ee862e60710c2")
+#include(../cmake/fetch-rpmalloc.cmake)
+#fetch_rpmalloc(VERSION "6800c43fb2f22626bb043369698ee862e60710c2")
 
 # ---- Tests ----
 
@@ -37,16 +37,16 @@ fetch_rpmalloc(VERSION "6800c43fb2f22626bb043369698ee862e60710c2")
 
 # add_test(NAME tph_poisson_test COMMAND tph_poisson_test)
 
-# float
+# <float>
 add_executable(tph_poisson_f_test "src/tph_poisson_test.cpp")
-target_link_libraries(tph_poisson_f_test PRIVATE thinks::tph_poisson_f rpmalloc)
+target_link_libraries(tph_poisson_f_test PRIVATE thinks::tph_poisson_f)# rpmalloc)
 target_compile_features(tph_poisson_f_test PRIVATE c_std_11)
 target_compile_features(tph_poisson_f_test PRIVATE cxx_std_17)
 add_test(NAME tph_poisson_f_test COMMAND tph_poisson_f_test)
 
-# double
+# <double>
 add_executable(tph_poisson_d_test "src/tph_poisson_test.cpp")
-target_link_libraries(tph_poisson_d_test PRIVATE thinks::tph_poisson_d rpmalloc)
+target_link_libraries(tph_poisson_d_test PRIVATE thinks::tph_poisson_d)# rpmalloc)
 target_compile_definitions(tph_poisson_d_test PRIVATE TPH_POISSON_TEST_USE_DOUBLE)
 target_compile_features(tph_poisson_d_test PRIVATE c_std_11)
 target_compile_features(tph_poisson_d_test PRIVATE cxx_std_17)
