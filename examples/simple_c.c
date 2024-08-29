@@ -21,16 +21,14 @@ int main(int argc, char *argv[])
 
   const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-100, (tph_poisson_real)-100 };
   const tph_poisson_real bounds_max[2] = { (tph_poisson_real)100, (tph_poisson_real)100 };
-  const tph_poisson_real radius = 10;
-  tph_poisson_args args = { NULL };
-  args.bounds_min = bounds_min;
-  args.bounds_max = bounds_max;
-  args.radius = radius;
-  args.ndims = INT32_C(2);
-  args.max_sample_attempts = UINT32_C(30);
-  args.seed = UINT64_C(1981);
+  const tph_poisson_args args = { .bounds_min = bounds_min,
+    .bounds_max = bounds_max,
+    .radius = (tph_poisson_real)10,
+    .ndims = INT32_C(2),
+    .max_sample_attempts = UINT32_C(30),
+    .seed = UINT64_C(1981) };
 
-  tph_poisson_sampling sampling = { NULL };
+  tph_poisson_sampling sampling = { .internal = NULL, .ndims = INT32_C(0), .nsamples = 0 };
   tph_poisson_allocator *alloc = NULL;
   int ret = tph_poisson_create(&sampling, &args, alloc);
   if (ret != TPH_POISSON_SUCCESS) {
