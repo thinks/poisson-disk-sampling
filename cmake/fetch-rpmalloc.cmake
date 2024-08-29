@@ -24,8 +24,9 @@ function(fetch_rpmalloc)
 
     set(rpmalloc_CACHE_ARGS
         "-DCMAKE_INSTALL_PREFIX:STRING=${rpmalloc_BINARY_DIR}/install" 
-        "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"         
-        "-DBUILD_TESTS=OFF"
+        "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"     
+        "-DCMAKE_BUILD_TYPE:STRING=Release"     
+        "-DBUILD_TESTS:BOOL=OFF"
     )
 
     set(rpmalloc_GENERATOR_ARGS "")
