@@ -9,6 +9,9 @@
 
 int main(int argc, char *argv[])
 {
+  static_cast<void>(argc);
+  static_cast<void>(argv);
+
   constexpr std::array<tph_poisson_real, 2> bounds_min{ -100.F, -100.F };
   constexpr std::array<tph_poisson_real, 2> bounds_max{ 100.F, 100.F };
 
@@ -35,8 +38,8 @@ int main(int argc, char *argv[])
   for (ptrdiff_t i = 0; i < sampling->nsamples; ++i) {
     std::printf("samples[%td] = ( %.3f, %.3f )\n",
       i,
-      samples[i * sampling->ndims],
-      samples[i * sampling->ndims + 1]);
+      static_cast<double>(samples[i * sampling->ndims]),
+      static_cast<double>(samples[i * sampling->ndims + 1]));
   }
 
   return EXIT_SUCCESS;

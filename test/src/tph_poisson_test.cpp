@@ -158,7 +158,8 @@ static void TestBounds()
     for (ptrdiff_t i = 0; i < sampling->nsamples; ++i) {
       const Real *p = &samples[i * sampling->ndims];
       for (int32_t j = 0; j < sampling->ndims; ++j) {
-        if (!((p[j] >= bounds_min[j]) & (p[j] <= bounds_max[j]))) { return false; }
+        const size_t jj = static_cast<size_t>(j);
+        if (!((p[j] >= bounds_min[jj]) & (p[jj] <= bounds_max[jj]))) { return false; }
       }
     }
     return true;
@@ -260,10 +261,10 @@ static void TestVaryingSeed()
 
 static void TestInvalidArgs()
 {
-  // Work-around for MSVC compiler not being able to handle constexpr 
-  // capture in lambdas.
-  // constexpr int32_t ndims = 2;
-  #define NDIMS INT32_C(2)
+// Work-around for MSVC compiler not being able to handle constexpr
+// capture in lambdas.
+// constexpr int32_t ndims = 2;
+#define NDIMS INT32_C(2)
 
   constexpr std::array<Real, NDIMS> bounds_min{ -10, -10 };
   constexpr std::array<Real, NDIMS> bounds_max{ 10, 10 };
@@ -395,7 +396,7 @@ static void TestInvalidArgs()
     REQUIRE(sampling->nsamples == 0);
     REQUIRE(tph_poisson_get_samples(sampling.get()) == nullptr);
   }
-  #undef NDIMS
+#undef NDIMS
 }
 
 static void TestDestroy()
@@ -468,11 +469,10 @@ static void TestUserAlloc()
   REQUIRE(samples_alloc != nullptr);
   REQUIRE(std::memcmp(reinterpret_cast<const void *>(samples),
             reinterpret_cast<const void *>(samples_alloc),
-            sampling->nsamples * sampling->ndims * sizeof(tph_poisson_real))
+            static_cast<size_t>(sampling->nsamples) * static_cast<size_t>(sampling->ndims)
+              * sizeof(tph_poisson_real))
           == 0);
 }
-
-extern "C" const char *__ubsan_default_options() { return "print_stacktrace=1"; }
 
 int main(int argc, char *argv[])
 {
