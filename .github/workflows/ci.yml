@@ -19,11 +19,15 @@ jobs:
     - uses: actions/setup-python@v5
       with: { python-version: "3.12" }
 
-    - name: Install codespell
-      run: pip3 install codespell
+    - name: Install clang-format
+      run: sudo apt-get update -q
+        && sudo apt-get install clang-format -q -y        
 
     - name: Lint
       run: cmake -D FORMAT_COMMAND=clang-format-14 -P cmake/lint.cmake
+
+    # - name: Install codespell
+    #   run: pip3 install codespell
 
     # - name: Spell check
     #   if: always()
