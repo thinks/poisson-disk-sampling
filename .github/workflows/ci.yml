@@ -17,9 +17,8 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install clang-format
-      run: >-
-        sudo apt update -q && sudo apt install clang-format -q -y        
-        clang-format --version
+      run: sudo apt update -q 
+        && sudo apt install clang-format -q -y        
 
     - name: Lint
       run: cmake -D FORMAT_COMMAND=clang-format -P cmake/lint.cmake
