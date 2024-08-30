@@ -24,7 +24,7 @@ jobs:
         && sudo apt-get install clang-format -q -y        
 
     - name: Lint
-      run: cmake -D FORMAT_COMMAND=clang-format-14 -P cmake/lint.cmake
+      run: cmake -D FORMAT_COMMAND=clang-format -P cmake/lint.cmake
 
     # - name: Install codespell
     #   run: pip3 install codespell
