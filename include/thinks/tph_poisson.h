@@ -656,6 +656,7 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
 #ifdef TPH_POISSON_CTX_ALLOC
 #error "TPH_POISSON_CTX_ALLOC already defined!"
 #endif
+  /* clang-format off */
 #define TPH_POISSON_CTX_ALLOC(type, count, var)                                           \
   do {                                                                                    \
     tph_poisson_assert((uintptr_t)ptr < (uintptr_t)ctx->mem + (size_t)ctx->mem_size);     \
@@ -664,6 +665,7 @@ static int tph_poisson_context_init(tph_poisson_context *ctx,
                        < (uintptr_t)ctx->mem + (size_t)ctx->mem_size);                    \
     tph_poisson_assert(((uintptr_t)(var) & (alignof(type) - 1)) == 0);                    \
   } while (0)
+  /* clang-format on */
 
   ptr = tph_poisson_align(ptr, alignof(ptrdiff_t));
   TPH_POISSON_CTX_ALLOC(ptrdiff_t, ctx->ndims, ctx->grid_index);
