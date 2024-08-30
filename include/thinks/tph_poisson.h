@@ -844,12 +844,14 @@ static void tph_poisson_grid_index_bounds(tph_poisson_context *ctx,
 #ifdef TPH_POISSON_GRID_CLAMP
 #error "TPH_POISSON_GRID_CLAMP already defined!"
 #endif
+  /* clang-format off */
 #define TPH_POISSON_GRID_CLAMP(grid_index, grid_size) \
   if ((grid_index) < 0) {                             \
     (grid_index) = 0;                                 \
   } else if ((grid_index) >= (grid_size)) {           \
     (grid_index) = (grid_size) - 1;                   \
   }
+  /* clang-format on */
 
   tph_poisson_real si = 0;
   for (int32_t i = 0; i < ctx->ndims; ++i) {
