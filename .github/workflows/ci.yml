@@ -16,16 +16,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with: { python-version: "3.12" }
-
     - name: Install clang-format
       run: >-
-        sudo apt-get update -q && sudo apt-get install clang-format -q -y        
+        sudo apt update -q && sudo apt install clang-format -q -y        
         clang-format --version
 
     - name: Lint
       run: cmake -D FORMAT_COMMAND=clang-format -P cmake/lint.cmake
+
+    # - uses: actions/setup-python@v5
+    #  with: { python-version: "3.12" }
 
     # - name: Install codespell
     #   run: pip3 install codespell
