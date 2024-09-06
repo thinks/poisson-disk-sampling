@@ -98,10 +98,9 @@ jobs:
           halt_on_error=1"
         UBSAN_OPTIONS: "print_stacktrace=1:\
           halt_on_error=1"
-      run: ctest --output-on-failure --no-tests=error -j 2
-
-    - name: Examples
-      run: cmake --build build/sanitize --target run-examples
+      run: |
+        ctest --output-on-failure --no-tests=error -j 2
+        cmake --build . --target run-examples
 
   test:
     needs: [lint]
