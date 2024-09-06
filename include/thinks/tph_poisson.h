@@ -118,7 +118,7 @@ struct tph_poisson_sampling_
  *
  * Note that when an error is returned the sampling does not need to be destroyed
  * using the tph_poisson_destroy function.
- * 
+ *
  * @param sampling Sampling to store samples.
  * @param args     Arguments.
  * @param alloc    Optional custom allocator (may be null).

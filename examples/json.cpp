@@ -2,6 +2,7 @@
 #include <cstdint>// UINT32_C, etc
 #include <cstdlib>// std::abort, EXIT_FAILURE
 #include <fstream>
+#include <functional>// std::function
 #include <iomanip>// std::setw
 #include <memory>// std::unique_ptr
 #include <vector>
