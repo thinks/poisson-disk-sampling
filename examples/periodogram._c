@@ -39,7 +39,6 @@ _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"")
 #endif
 #include "simple_fft/fft.h"
 HEDLEY_DIAGNOSTIC_POP
-  // clang-format on
 
   HEDLEY_WARN_UNUSED_RESULT static HEDLEY_CONSTEXPR auto Reinterval(const double in_val,
     const double old_min,
