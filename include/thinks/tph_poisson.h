@@ -1209,7 +1209,7 @@ USAGE:
 
       tph_poisson_sampling sampling = { NULL };
       tph_poisson_allocator *alloc = NULL;
-      int ret = tph_poisson_create(&sampling, &args, alloc);
+      int ret = tph_poisson_create(&args, alloc, &sampling);
       if (ret != TPH_POISSON_SUCCESS) {
         // No need to destroy sampling here!
         printf("Failed creating Poisson sampling! Error code: %d", ret);

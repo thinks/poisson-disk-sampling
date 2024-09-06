@@ -7,4 +7,4 @@
 #include "tph_poisson_d.h"
 
 /* Silence clang-tidy warning [misc-include-cleaner] */
-//typedef void *(*dummy)(tph_poisson_real);
+typedef void *(*dummy)(tph_poisson_real);

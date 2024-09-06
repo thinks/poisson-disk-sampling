@@ -2,6 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
+// clang-format off
+
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -11,7 +13,6 @@
 #include "hedley.h"
 #include "thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-// clang-format off
 HEDLEY_DIAGNOSTIC_PUSH
 #if defined(HEDLEY_MSVC_VERSION)
 #define STBI_MSC_SECURE_CRT
