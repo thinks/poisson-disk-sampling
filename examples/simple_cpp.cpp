@@ -59,12 +59,7 @@ int main(int /*argc*/, char * /*argv*/[])
     (double)samples[(sampling->nsamples - 1) * sampling->ndims + 1]);
   // clang-format on
 
-  for (ptrdiff_t i = 0; i < sampling->nsamples; ++i) {
-    std::printf("samples[%td] = ( %.3f, %.3f )\n",
-      i,
-      static_cast<double>(samples[i * sampling->ndims]),
-      static_cast<double>(samples[i * sampling->ndims + 1]));
-  }
+  // tph_poisson_destroy is called by unique_poisson_ptr destructor.
 
   return EXIT_SUCCESS;
 }
