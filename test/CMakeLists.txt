@@ -12,14 +12,22 @@ if(PROJECT_IS_TOP_LEVEL)
   enable_testing()
 endif()
 
+# Build <float> and <double> versions as static libraries used by the tests.
+# The C compiler is used so that linters and other tools recognize that our
+# code is in C and can give appropriate warnings.
+# Note that since the tests are written in C++, we must tag the include directories
+# as SYSTEM, so that we don't get C++ style warnings for our C code.
+
 add_library(tph_poisson_f STATIC "src/tph_poisson_f.c")
 add_library(thinks::tph_poisson_f ALIAS tph_poisson_f)
 target_link_libraries(tph_poisson_f PUBLIC thinks::tph_poisson)
+target_include_directories(tph_poisson_f SYSTEM PUBLIC "include")
 target_compile_features(tph_poisson_f PRIVATE c_std_11)
 
 add_library(tph_poisson_d STATIC "src/tph_poisson_d.c")
 add_library(thinks::tph_poisson_d ALIAS tph_poisson_d)
 target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson)
+target_include_directories(tph_poisson_d SYSTEM PUBLIC "include")
 target_compile_features(tph_poisson_d PRIVATE c_std_11)
 
 #include(../cmake/fetch-rpmalloc.cmake)

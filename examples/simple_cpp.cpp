@@ -1,17 +1,14 @@
 #include <array>//std::array
 #include <cassert>
 #include <cstdio>// std::printf
+#include <functional>// std::function
 #include <memory>// std::unique_ptr
 
 #define TPH_POISSON_IMPLEMENTATION
-// #define TPH_POISSON_REAL_TYPE float /*double*/
 #include <thinks/tph_poisson.h>
 
-int main(int argc, char *argv[])
+int main(int /*argc*/, char * /*argv*/[])
 {
-  static_cast<void>(argc);
-  static_cast<void>(argv);
-
   constexpr std::array<tph_poisson_real, 2> bounds_min{ -100.F, -100.F };
   constexpr std::array<tph_poisson_real, 2> bounds_max{ 100.F, 100.F };
 
@@ -22,11 +19,15 @@ int main(int argc, char *argv[])
   args.bounds_max = bounds_max.data();
   args.max_sample_attempts = 30;
   args.seed = 1981;
-  auto sampling = std::unique_ptr<tph_poisson_sampling, decltype(&tph_poisson_destroy)>{
-    new tph_poisson_sampling{}, tph_poisson_destroy
-  };
 
-  if (const int ret = tph_poisson_create(sampling.get(), &args, /*alloc=*/nullptr);
+  using unique_poisson_ptr =
+    std::unique_ptr<tph_poisson_sampling, std::function<void(tph_poisson_sampling *)>>;
+  auto sampling = unique_poisson_ptr{ new tph_poisson_sampling{}, [](tph_poisson_sampling *s) {
+                                       tph_poisson_destroy(s);
+                                       delete s;
+                                     } };
+
+  if (const int ret = tph_poisson_create(&args, /*alloc=*/nullptr, sampling.get());
       ret != TPH_POISSON_SUCCESS) {
     printf("Failed creating Poisson sampling! Error code: %d", ret);
     return EXIT_FAILURE;

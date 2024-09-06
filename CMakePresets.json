@@ -34,7 +34,8 @@
       "name": "cppcheck",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_CPPCHECK": "cppcheck;--inline-suppr"
+        "CMAKE_C_CPPCHECK": "cppcheck;--inline-suppr",
+        "CMAKE_CXX_CPPCHECK": "cppcheck;--inline-suppr"
       }
     },
     {

@@ -9,6 +9,7 @@ Checks: "-*,\
   -bugprone-easily-swappable-parameters,\
   concurrency-*,\
   misc-*,\
+  -misc-definitions-in-headers,\
   portability-*,\
   openmp-*,\
   readability-*,\

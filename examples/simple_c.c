@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
   tph_poisson_sampling sampling = { .internal = NULL, .ndims = INT32_C(0), .nsamples = 0 };
   tph_poisson_allocator *alloc = NULL;
-  int ret = tph_poisson_create(&sampling, &args, alloc);
+  int ret = tph_poisson_create(&args, alloc, &sampling);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy sampling here! */
     printf("Failed creating Poisson sampling! Error code: %d", ret);
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
   }
 
   const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
-  assert(samples);
+  if (samples == NULL) { return EXIT_FAILURE; }
 
   /* Print sample positions. */
   for (ptrdiff_t i = 0; i < sampling.nsamples; ++i) {

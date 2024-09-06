@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>// std::memcmp
+#include <functional>// std::function
 #include <future>
 #include <limits>
 #include <thread>
@@ -80,7 +81,7 @@ static void TestRadius()
     args.seed = UINT64_C(1981);
     args.max_sample_attempts = UINT32_C(30);
     unique_poisson_ptr sampling = make_unique_poisson();
-    if (tph_poisson_create(sampling.get(), &args, alloc) != TPH_POISSON_SUCCESS) { return false; }
+    if (tph_poisson_create(&args, alloc, sampling.get()) != TPH_POISSON_SUCCESS) { return false; }
     const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
     if (samples == nullptr) { return false; }
 
@@ -130,7 +131,7 @@ static void TestRadius()
   };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
+  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     REQUIRE(valid_radius(/*bounds_min=*/{ -100, -100 }, /*bounds_max=*/{ 100, 100 }, alloc));
     REQUIRE(valid_radius({ -20, -20, -20 }, { 20, 20, 20 }, alloc));
     REQUIRE(valid_radius({ -10, -10, -10, -10 }, { 10, 10, 10, 10 }, alloc));
@@ -152,21 +153,26 @@ static void TestBounds()
     args.seed = UINT64_C(1981);
     args.max_sample_attempts = UINT32_C(30);
     unique_poisson_ptr sampling = make_unique_poisson();
-    if (tph_poisson_create(sampling.get(), &args, alloc) != TPH_POISSON_SUCCESS) { return false; }
+    if (tph_poisson_create(&args, alloc, sampling.get()) != TPH_POISSON_SUCCESS) { return false; }
     const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
     if (samples == nullptr) { return false; }
     for (ptrdiff_t i = 0; i < sampling->nsamples; ++i) {
       const Real *p = &samples[i * sampling->ndims];
       for (int32_t j = 0; j < sampling->ndims; ++j) {
         const size_t jj = static_cast<size_t>(j);
-        if (!((p[j] >= bounds_min[jj]) & (p[jj] <= bounds_max[jj]))) { return false; }
+        // clang-format off
+        if ((static_cast<int>(p[jj] >= bounds_min[jj]) & 
+             static_cast<int>(p[jj] <= bounds_max[jj])) == 0) {
+          return false;
+        }
+        // clang-format on
       }
     }
     return true;
   };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
+  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     REQUIRE(valid_bounds(/*bounds_min=*/{ -100, -100 }, /*bounds_max=*/{ 100, 100 }, alloc));
     REQUIRE(valid_bounds({ -20, -20, -20 }, { 20, 20, 20 }, alloc));
     REQUIRE(valid_bounds({ -10, -10, -10, -10 }, { 10, 10, 10, 10 }, alloc));
@@ -183,7 +189,7 @@ static void TestVaryingMaxSampleAttempts()
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
+  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args args_10 = {};
     args_10.ndims = ndims;
     args_10.radius = static_cast<Real>(0.5);
@@ -196,8 +202,8 @@ static void TestVaryingMaxSampleAttempts()
 
     unique_poisson_ptr sampling_10 = make_unique_poisson();
     unique_poisson_ptr sampling_40 = make_unique_poisson();
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling_10.get(), &args_10, alloc));
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling_40.get(), &args_40, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&args_10, alloc, sampling_10.get()));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&args_40, alloc, sampling_40.get()));
 
     REQUIRE(sampling_10->nsamples < sampling_40->nsamples);
   }
@@ -212,7 +218,7 @@ static void TestVaryingSeed()
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
+  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args args_1981 = {};
     args_1981.ndims = ndims;
     args_1981.radius = static_cast<Real>(0.5);
@@ -225,8 +231,8 @@ static void TestVaryingSeed()
 
     unique_poisson_ptr sampling_1981 = make_unique_poisson();
     unique_poisson_ptr sampling_1337 = make_unique_poisson();
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling_1981.get(), &args_1981, alloc));
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling_1337.get(), &args_1337, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&args_1981, alloc, sampling_1981.get()));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&args_1337, alloc, sampling_1337.get()));
 
     const tph_poisson_real *samples_1981 = tph_poisson_get_samples(sampling_1981.get());
     const tph_poisson_real *samples_1337 = tph_poisson_get_samples(sampling_1337.get());
@@ -270,7 +276,7 @@ static void TestInvalidArgs()
   constexpr std::array<Real, NDIMS> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
+  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args valid_args = {};
     valid_args.radius = 1;
     valid_args.ndims = NDIMS;
@@ -280,7 +286,7 @@ static void TestInvalidArgs()
     valid_args.seed = UINT64_C(333);
     // Verify valid arguments.
     unique_poisson_ptr sampling = make_unique_poisson();
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling.get(), &valid_args, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, sampling.get()));
     REQUIRE(sampling->ndims == NDIMS);
     REQUIRE(sampling->nsamples > 0);
     REQUIRE(tph_poisson_get_samples(sampling.get()) != nullptr);
@@ -292,59 +298,58 @@ static void TestInvalidArgs()
     // sampling == NULL
     [&]() {
       tph_poisson_args args = valid_args;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(/*sampling=*/nullptr, &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, /*sampling=*/nullptr));
     }();
 
     // Incomplete (custom) allocator.
     if (alloc != nullptr) {
       [&]() {
         tph_poisson_args args = valid_args;
-        {
-          tph_poisson_allocator incomplete_alloc = *alloc;
-          incomplete_alloc.malloc = nullptr;
-          REQUIRE(TPH_POISSON_INVALID_ARGS
-                  == tph_poisson_create(sampling.get(), &args, &incomplete_alloc));
-        }
-        {
-          tph_poisson_allocator incomplete_alloc = *alloc;
-          incomplete_alloc.free = nullptr;
-          REQUIRE(TPH_POISSON_INVALID_ARGS
-                  == tph_poisson_create(sampling.get(), &args, &incomplete_alloc));
-        }
+        tph_poisson_allocator incomplete_alloc = *alloc;
+        incomplete_alloc.malloc = nullptr;
+        REQUIRE(
+          TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+      }();
+      [&]() {
+        tph_poisson_args args = valid_args;
+        tph_poisson_allocator incomplete_alloc = *alloc;
+        incomplete_alloc.free = nullptr;
+        REQUIRE(
+          TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
       }();
     }
 
     // args == NULL
     [&]() {
       REQUIRE(
-        TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), /*args=*/nullptr, alloc));
+        TPH_POISSON_INVALID_ARGS == tph_poisson_create(/*args=*/nullptr, alloc, sampling.get()));
     }();
 
     // radius <= 0
     [&]() {
       tph_poisson_args args = valid_args;
       args.radius = 0;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       args.radius = -1;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
     }();
 
     // ndims <= 0
     [&]() {
       tph_poisson_args args = valid_args;
       args.ndims = 0;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       args.ndims = -1;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
     }();
 
     // max_sample_attempts == 0
     [&]() {
       tph_poisson_args args = valid_args;
       args.max_sample_attempts = 0;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
     }();
 
     // bounds_min >= bounds_max
@@ -352,43 +357,73 @@ static void TestInvalidArgs()
       tph_poisson_args args = valid_args;
       args.bounds_min = nullptr;
       args.bounds_max = nullptr;
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       constexpr std::array<Real, NDIMS> invalid_bounds_min0{ 10, 10 };
       constexpr std::array<Real, NDIMS> invalid_bounds_max0{ 10, 10 };
       args.bounds_min = invalid_bounds_min0.data();
       args.bounds_max = invalid_bounds_max0.data();
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       constexpr std::array<Real, NDIMS> invalid_bounds_min1{ 10, -10 };
       constexpr std::array<Real, NDIMS> invalid_bounds_max1{ 10, 10 };
       args.bounds_min = invalid_bounds_min1.data();
       args.bounds_max = invalid_bounds_max1.data();
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       constexpr std::array<Real, NDIMS> invalid_bounds_min2{ -10, 10 };
       constexpr std::array<Real, NDIMS> invalid_bounds_max2{ 10, 10 };
       args.bounds_min = invalid_bounds_min2.data();
       args.bounds_max = invalid_bounds_max2.data();
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       constexpr std::array<Real, NDIMS> invalid_bounds_min3{ 10, 10 };
       constexpr std::array<Real, NDIMS> invalid_bounds_max3{ -10, -10 };
       args.bounds_min = invalid_bounds_min3.data();
       args.bounds_max = invalid_bounds_max3.data();
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       constexpr std::array<Real, NDIMS> invalid_bounds_min4{ 10, -10 };
       constexpr std::array<Real, NDIMS> invalid_bounds_max4{ -10, 10 };
       args.bounds_min = invalid_bounds_min4.data();
       args.bounds_max = invalid_bounds_max4.data();
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
 
       constexpr std::array<Real, NDIMS> invalid_bounds_min5{ -10, 10 };
       constexpr std::array<Real, NDIMS> invalid_bounds_max5{ 10, -10 };
       args.bounds_min = invalid_bounds_min5.data();
       args.bounds_max = invalid_bounds_max5.data();
-      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(sampling.get(), &args, alloc));
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+
+      // clang-format off
+      constexpr std::array<Real, NDIMS> invalid_bounds_min6{ 
+        -10, std::numeric_limits<Real>::quiet_NaN() };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max6{ 10, 10 };
+      args.bounds_min = invalid_bounds_min6.data();
+      args.bounds_max = invalid_bounds_max6.data();
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+
+      constexpr std::array<Real, NDIMS> invalid_bounds_min7{ 
+        std::numeric_limits<Real>::quiet_NaN(), -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max7{ 10, 10 };
+      args.bounds_min = invalid_bounds_min7.data();
+      args.bounds_max = invalid_bounds_max7.data();
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+
+      constexpr std::array<Real, NDIMS> invalid_bounds_min8{ -10, -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max8{ 
+        std::numeric_limits<Real>::quiet_NaN(), 10 };
+      args.bounds_min = invalid_bounds_min8.data();
+      args.bounds_max = invalid_bounds_max8.data();
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+
+      constexpr std::array<Real, NDIMS> invalid_bounds_min9{ -10, -10 };
+      constexpr std::array<Real, NDIMS> invalid_bounds_max9{ 
+        10, std::numeric_limits<Real>::quiet_NaN()};
+      args.bounds_min = invalid_bounds_min9.data();
+      args.bounds_max = invalid_bounds_max9.data();
+      REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+      // clang-format on
     }();
 
     // Verify that no output was written by failed attempts.
@@ -406,7 +441,7 @@ static void TestDestroy()
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
 
   tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
+  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
     tph_poisson_args valid_args = {};
     valid_args.radius = 1;
     valid_args.ndims = ndims;
@@ -415,7 +450,7 @@ static void TestDestroy()
     valid_args.max_sample_attempts = UINT32_C(30);
     valid_args.seed = UINT64_C(333);
     tph_poisson_sampling sampling = {};
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&sampling, &valid_args, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
     REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
 
     tph_poisson_destroy(&sampling);
@@ -425,9 +460,9 @@ static void TestDestroy()
     REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
 
     // Double create without intermediate destroy.
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&sampling, &valid_args, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
     REQUIRE(sampling.internal != nullptr);
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&sampling, &valid_args, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
     REQUIRE(sampling.internal != nullptr);
 
     // Double destroy (no crash).
@@ -452,7 +487,7 @@ static void TestUserAlloc()
     valid_args.max_sample_attempts = UINT32_C(30);
     valid_args.seed = UINT64_C(333);
     unique_poisson_ptr sampling = make_unique_poisson();
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(sampling.get(), &valid_args, alloc));
+    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, sampling.get()));
     return sampling;
   };
 
@@ -481,6 +516,9 @@ int main(int argc, char *argv[])
 
   // rpmalloc_initialize();
 
+  std::printf("TestInvalidArgs...\n");
+  TestInvalidArgs();
+
   std::printf("TestRadius...\n");
   TestRadius();
 
@@ -492,9 +530,6 @@ int main(int argc, char *argv[])
 
   std::printf("TestVaryingSeed...\n");
   TestVaryingSeed();
-
-  std::printf("TestInvalidArgs...\n");
-  TestInvalidArgs();
 
   std::printf("TestDestroy...\n");
   TestDestroy();

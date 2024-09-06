@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(tph_poissonExamples C CXX)
 
-function(add_example NAME)
+function(add_example SRC)
   set(options)
   set(oneValueArgs)
   set(multiValueArgs DEPS)
@@ -13,23 +13,27 @@ function(add_example NAME)
     ${ARGN}
   )
 
-  add_executable("${NAME}" "${NAME}")
+  get_filename_component(_name "${SRC}" NAME_WE)
+  get_filename_component(_last_ext "${SRC}" LAST_EXT)
 
-  get_filename_component(_last_ext "${NAME}" LAST_EXT)
+  add_executable("${_name}" "${SRC}")
+
   if("${_last_ext}" STREQUAL ".cpp")
-    target_compile_features("${NAME}" PRIVATE cxx_std_20)
+    target_compile_features("${_name}" PRIVATE cxx_std_17)
   elseif("${_last_ext}" STREQUAL ".c")
-    target_compile_features("${NAME}" PRIVATE c_std_11)
+    target_compile_features("${_name}" PRIVATE c_std_11)
   endif()
   unset(_last_ext)
 
-  target_link_libraries("${NAME}" PRIVATE thinks::tph_poisson ${args_DEPS})
+  # All examples depend on the main target.  
+  target_link_libraries("${_name}" PRIVATE thinks::tph_poisson ${args_DEPS})
   if(NOT MSVC)
-    target_link_libraries("${NAME}" PRIVATE m)
-  endif()  
-  add_custom_target("run_${NAME}" COMMAND "${NAME}" VERBATIM)
-  add_dependencies("run_${NAME}" "${NAME}")
-  add_dependencies(run-examples "run_${NAME}")
+    target_link_libraries("${_name}" PRIVATE m)
+  endif()
+
+  add_custom_target("run_${_name}" COMMAND "${_name}" VERBATIM)
+  add_dependencies("run_${_name}" "${_name}")
+  add_dependencies(run-examples "run_${_name}")
 endfunction()
 
 include(../cmake/project-is-top-level.cmake)
@@ -43,30 +47,12 @@ add_custom_target(run-examples)
 
 include(../cmake/fetch-nlohmann_json.cmake)
 fetch_nlohmann_json(VERSION "3.7.0")
-add_example(json.cpp
-  DEPS nlohmann_json::nlohmann_json
-)
-# add_example(periodogram.c
-#   DEPS fftw
-# )
+add_example(json.cpp DEPS nlohmann_json::nlohmann_json)
+# add_example(periodogram.c DEPS fftw3f nothings::stb)
 add_example(simple_c.c)
 add_example(simple_cpp.cpp)
 
 add_folders(Examples)
-
-# Default to c++20.
-if (DEFINED CMAKE_CXX_STANDARD)
-  set(_cxx_standard ${CMAKE_CXX_STANDARD})
-else()
-  set(_cxx_standard 20)
-endif()
-
-# Default to c11.
-if (DEFINED CMAKE_C_STANDARD)
-  set(_c_standard ${CMAKE_C_STANDARD})
-else()
-  set(_c_standard 11)
-endif()
 
 
 # FetchFFTW(
@@ -94,17 +80,3 @@ endif()
 #   CXX_STANDARD_REQUIRED ON
 #   CXX_EXTENSIONS OFF
 # )
-
-# add_executable(tph_poisson_simple_c "simple.c")
-# target_link_libraries(tph_poisson_simple_c PRIVATE thinks::tph_poisson)
-# if(NOT MSVC)
-#   target_link_libraries(tph_poisson_simple_c PRIVATE m)
-# endif()
-# set_target_properties(tph_poisson_simple_c PROPERTIES
-#   C_STANDARD ${_c_standard}
-#   C_STANDARD_REQUIRED ON
-#   C_EXTENSIONS OFF
-# )
-
-unset(_cxx_standard)
-unset(_c_standard)

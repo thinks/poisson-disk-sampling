@@ -12,7 +12,7 @@ default(
     # source/*.c source/*.h
     include/*.h
     test/*.c test/*.cpp test/*.h
-    example/*.c example/*.cpp example/*.h 
+    examples/*.c examples/*.cpp examples/*.h 
 )
 default(FIX NO)
 

@@ -57,17 +57,6 @@ endif()
 
 include(cmake/dev-mode.cmake)
 
-# ##
-# ## Options
-# ##
-# # Determine if building as a subproject (using add_subdirectory) or 
-# # if it is the main project.
-# set(_main_project OFF)
-# set(_sub_project ON)
-# if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-#     set(_main_project ON)
-#     set(_sub_project OFF)
-# endif()
 
 # option(TPH_POISSON_WARNINGS_AS_ERRORS "Treat warnings as errors." OFF)
 # option(TPH_POISSON_USE_ASAN           "Enable sanitizers." OFF)
