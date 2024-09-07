@@ -1,86 +1,156 @@
-# Copyright (C) Tommy Hinks <tommy.hinks@gmail.com>
-# This file is subject to the license terms in the LICENSE file
-# found in the top-level directory of this distribution.
+cmake_minimum_required(VERSION 3.14)
+# message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-cmake_minimum_required(VERSION 3.5)
-project(poisson_disk_sampling CXX)
+include(cmake/prelude.cmake)
+include(cmake/version.cmake)
 
-message(STATUS "CMake version: ${CMAKE_VERSION}")
+project(tph_poisson
+  VERSION "${tph_poisson_MAJOR_VERSION}.${tph_poisson_MINOR_VERSION}.${tph_poisson_PATCH_VERSION}"
+  DESCRIPTION "A single file implementation of Poisson disk sampling in arbitrary dimensions."
+  HOMEPAGE_URL "https://github.com/thinks/poisson-disk-sampling"
+  LANGUAGES C CXX)
+# message(STATUS "${PROJECT_NAME}-${PROJECT_VERSION}")
 
-# if command can use IN_LIST
-cmake_policy(SET CMP0057 NEW)
+include(cmake/project-is-top-level.cmake)
+include(cmake/variables.cmake)
 
-# For cmake > 3.15 don't add warning levels by default.
-# Probably a little early to enable this for now.
-# cmake_policy(SET CMP0092 NEW)
+# ---- Declare library ----
 
-list(APPEND CMAKE_MODULE_PATH
-  ${CMAKE_CURRENT_LIST_DIR}/CMake
+add_library(thinks_tph_poisson INTERFACE)
+add_library(thinks::tph_poisson ALIAS thinks_tph_poisson)
+
+set_property(
+  TARGET thinks_tph_poisson PROPERTY
+  EXPORT_NAME tph_poisson
 )
 
-include(ThinksHelpers)
+target_include_directories(thinks_tph_poisson ${warning_guard}
+  INTERFACE
+  "\$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+)
 
-# Include current path
-list(APPEND THINKS_COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+# ---- Install rules ----
 
-option(THINKS_CLANG_TIDY "If ON, clang-tidy is used." OFF)
+if(NOT CMAKE_SKIP_INSTALL_RULES)
+  include(cmake/install-rules.cmake)
+endif()
 
-if (${THINKS_CLANG_TIDY})
-  find_program(CLANG_TIDY NAMES clang-tidy clang-tidy-9)
-  if (NOT CLANG_TIDY)
-    message(FATAL_ERROR "clang-tidy not found")
-  else()
-    message(STATUS "clang-tidy = ${CLANG_TIDY}")
-    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+# ---- Examples ----
+
+if(PROJECT_IS_TOP_LEVEL)
+  option(BUILD_EXAMPLES "Build examples tree." "${tph_poisson_DEVELOPER_MODE}")
+  if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
   endif()
 endif()
 
+# ---- Developer mode ----
+
+if(NOT tph_poisson_DEVELOPER_MODE)
+  return()
+elseif(NOT PROJECT_IS_TOP_LEVEL)
+  message(
+      AUTHOR_WARNING
+      "Developer mode is intended for developers of tph_poisson"
+  )
+endif()
+
+include(cmake/dev-mode.cmake)
+
+
+# option(TPH_POISSON_WARNINGS_AS_ERRORS "Treat warnings as errors." OFF)
+# option(TPH_POISSON_USE_ASAN           "Enable sanitizers." OFF)
+# option(TPH_POISSON_BUILD_TESTS        "Enable test build targets when BUILD_TESTING is enabled." ${_main_project})
+# option(TPH_POISSON_BUILD_EXAMPLES     "Enable example build targets." ${_main_project})
+
+# unset(_main_project)
+# unset(_sub_project)
+
+
+# ##
+# ## Examples
+# ##
+# if(TPH_POISSON_BUILD_EXAMPLES)
+#   add_subdirectory(examples)
+# endif() 
+
+
+# ##
+# ## Tests
+# ##
+# if(TPH_POISSON_BUILD_TESTS)
+#   include(CTest)
+#   enable_testing()
+#   add_subdirectory(test)
+# endif()
+
+
+# ## 
+# ## Install.
+# ## 
+# if(CMAKE_SKIP_INSTALL_RULES)
+#   return()
+# endif()
+
+# include(CMakePackageConfigHelpers)
+# include(GNUInstallDirs) # Standard install variables, e.g. CMAKE_INSTALL_INCLUDEDIR.
+
+# configure_file(
+#   "cmake/tph_poissonConfigVersion.cmake.in"
+#   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+#   @ONLY
+# )
+# configure_file(
+#   "cmake/config.cmake.in"
+#   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+#   @ONLY
+# )
+
+# install(
+#   DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+#   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+# )
+# install(
+#   FILES 
+#     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
+#     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" 
+#   DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
+# )
+# export(
+#   TARGETS ${PROJECT_NAME}
+#   NAMESPACE thinks::
+#   FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
+# )
+# install(
+#   TARGETS ${PROJECT_NAME}
+#   EXPORT "${PROJECT_NAME}Targets"
+#   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+# )
+# install(
+#   EXPORT "${PROJECT_NAME}Targets"
+#   NAMESPACE thinks::
+#   DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/${PROJECT_NAME}"
+# )
+
+
+
+#include(cmake/PreventInSourceBuilds.cmake)
+
+
+# option(THINKS_CLANG_TIDY "If ON, clang-tidy is used." OFF)
+
+# if (${THINKS_CLANG_TIDY})
+#   find_program(CLANG_TIDY NAMES clang-tidy clang-tidy-9)
+#   if (NOT CLANG_TIDY)
+#     message(FATAL_ERROR "clang-tidy not found")
+#   else()
+#     message(STATUS "clang-tidy = ${CLANG_TIDY}")
+#     set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+#   endif()
+# endif()
+
 # Find dependencies
 ## pthread
-find_package(Threads REQUIRED)
+# find_package(Threads REQUIRED)
 
-option(THINKS_RUN_TESTS "If ON, tests will be run." OFF)
 
-if(${THINKS_RUN_TESTS})
-  # Enable CTest. This will set BUILD_TESTING to ON unless otherwise specified
-  # on the command line.
-  include(CTest)
-  enable_testing()
-  message(STATUS "BUILD_TESTING = ${BUILD_TESTING}")
-endif()
-
-# Build tests and examples only when NOT included as subproject.
-if (BUILD_TESTING)
-  # JSON
-  set(JSON_BuildTests OFF CACHE INTERNAL "")
-  set(JSON_Install OFF CACHE INTERNAL "")
-  add_subdirectory(external/json)
-  check_target(nlohmann_json::nlohmann_json)
- 
-  # Catch
-  add_subdirectory(external/Catch2)
-  check_target(Catch2::Catch2)
-
-  # Simple-FFT
-  add_library(simple_fft INTERFACE)
-  target_include_directories(simple_fft
-    INTERFACE
-      external/Simple-FFT/include)
-  add_library(d1vanov::simple_fft ALIAS simple_fft)
-
-  # Hedley
-  add_library(hedley INTERFACE)
-  target_include_directories(hedley
-    INTERFACE
-      external/hedley)
-  add_library(nemequ::hedley ALIAS hedley)
-
-  # STB
-  add_library(stb INTERFACE)
-  target_include_directories(stb
-    INTERFACE
-      external/stb)
-  add_library(nothings::stb ALIAS stb)
-endif()
-
-add_subdirectory(thinks)

@@ -1,0 +1,230 @@
+name: CI
+
+on: push
+
+jobs:
+  ci:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    env:
+      CMAKE_GENERATOR: Ninja  
+      VERBOSE: ON #-DCMAKE_VERBOSE_MAKEFILE
+      CTEST_OUTPUT_ON_FAILURE: ON
+      CTEST_PARALLEL_LEVEL: 2
+      ASAN_OPTIONS: strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Github Actions requires a single row to be added to the build matrix.
+        # See https://help.github.com/en/articles/workflow-syntax-for-github-actions.
+        name: [
+          ubuntu-18.04-gcc-9-cxx-11,
+          ubuntu-18.04-gcc-9-cxx-14,
+          ubuntu-18.04-gcc-9-cxx-17,
+          ubuntu-18.04-clang-9-cxx-17,
+          # macOS-latest-xcode-cxx-11,
+          # macOS-latest-xcode-cxx-14,
+          # macOS-latest-xcode-cxx-17,
+          # windows-2019-cl-cxx-11,
+          # windows-2019-cl-cxx-14,
+          # windows-2019-cl-cxx-17
+        ]
+        include:
+          - name: ubuntu-18.04-gcc-9-cxx-11
+            os: ubuntu-latest
+            compiler: gcc
+            version: "9"
+            cxx_std: 11        
+          - name: ubuntu-18.04-gcc-9-cxx-14
+            os: ubuntu-latest
+            compiler: gcc
+            version: "9"
+            cxx_std: 14
+          - name: ubuntu-18.04-gcc-9-cxx-17
+            os: ubuntu-latest
+            compiler: gcc
+            version: "9"
+            cxx_std: 17
+          - name: ubuntu-18.04-clang-9-cxx-17
+            os: ubuntu-latest
+            compiler: clang
+            version: "9"
+            cxx_std: 17
+          # - name: macOS-latest-xcode-cxx-11
+          #   os: macOS-latest
+          #   compiler: xcode
+          #   cxx_std: 11
+          # - name: macOS-latest-xcode-cxx-14
+          #   os: macOS-latest
+          #   compiler: xcode
+          #   cxx_std: 14
+          # - name: macOS-latest-xcode-cxx-17
+          #   os: macOS-latest
+          #   compiler: xcode
+          #   cxx_std: 17
+          # - name: windows-2019-cl-cxx-11
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 11
+          # - name: windows-2019-cl-cxx-17
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 17
+          # - name: windows-2019-cl-cxx-14
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 14
+          # - name: windows-2019-cl-cxx-17
+          #   os: windows-latest
+          #   compiler: cl    
+          #   cxx_std: 17
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Submodules
+        run: git submodule update --init --recursive      
+      - name: Install (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          # CMake 3.15 allows specifying the generator using the CMAKE_GENERATOR
+          # environment variable.
+          curl -sSL https://github.com/Kitware/CMake/releases/download/v3.15.4/cmake-3.15.4-Linux-x86_64.tar.gz -o cmake.tar.gz
+          sudo tar xf cmake.tar.gz --strip 1 -C /usr/local
+
+
+          # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
+          if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
+            sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
+          fi
+
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+            sudo apt-get install -y g++-${{ matrix.version }}
+            echo "::set-env name=CC::gcc-${{ matrix.version }}"
+            echo "::set-env name=CXX::g++-${{ matrix.version }}"          
+          else
+            # clang-tidy
+            #curl -sSL http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -o llvm.tar.gz
+            #sudo tar xf llvm.tar.gz --strip 1 -C /usr/local
+
+            sudo apt-get install -y clang-${{ matrix.version }} clang-tidy-${{ matrix.version }} 
+            echo "::set-env name=CC::clang-${{ matrix.version }}"
+            echo "::set-env name=CXX::clang++-${{ matrix.version }}"          
+          fi
+
+      - name: Install (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake ninja
+          #if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          #  brew install gcc@${{ matrix.version }}
+          #  echo "::set-env name=CC::gcc-${{ matrix.version }}"
+          #  echo "::set-env name=CXX::g++-${{ matrix.version }}"
+          #else
+            #sudo xcode-select -switch /Applications/Xcode_${{ matrix.version }}.app
+            echo "::set-env name=CC::clang"
+            echo "::set-env name=CXX::clang++"
+          #fi    
+
+      - name: Install (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop install ninja --global
+          #if ("${{ matrix.compiler }}".StartsWith("clang")) {
+          #  scoop install llvm --global
+          #}
+          #if ("${{ matrix.compiler }}" -eq "gcc") {
+            # Chocolatey GCC is broken on the windows-2019 image.
+            # See: https://github.com/DaanDeMeyer/doctest/runs/231595515
+            # See: https://github.community/t5/GitHub-Actions/Something-is-wrong-with-the-chocolatey-installed-version-of-gcc/td-p/32413
+          #  scoop install gcc --global
+          #  echo "::set-env name=CC::gcc"
+          #  echo "::set-env name=CXX::g++"
+          #} elseif ("${{ matrix.compiler }}" -eq "clang") {
+          #  echo "::set-env name=CC::clang"
+          #  echo "::set-env name=CXX::clang++"
+          #} else {
+            echo "::set-env name=CC::${{ matrix.compiler }}"
+            echo "::set-env name=CXX::${{ matrix.compiler }}"
+          #}
+          # Scoop modifies the PATH so we make the modified PATH global.
+          echo "::set-env name=PATH::$env:PATH"    
+
+      - name: Configure x64 (Windows)
+        if: runner.os == 'Windows'
+        run: .github\workflows\vsenv.bat -arch=x64 -host_arch=x64      
+
+      - name: Configure ASAN/UBSAN (Linux || macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          # https://stackoverflow.com/a/37939589/11900641
+          #function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+          
+          # Disable sanitizers in configurations where we know they are buggy.
+          # TODO: Move these conditions to the if clause if Github Actions ever
+          # adds support for comparing versions.
+          # See: https://github.community/t5/GitHub-Actions/Allow-comparing-versions-in-if-conditions/m-p/33912#M1710
+          #if [ "${{ runner.os }}" = "Linux" ] && \
+          #   [ "${{ matrix.compiler }}" = "gcc" ] && \
+          #   [ $(version ${{ matrix.version }}) -le $(version "5.0") ]; then
+          #  exit 0
+          #fi
+          #if [ "${{ runner.os }}" = "Linux" ] && \
+          #   [ "${{ matrix.compiler }}" = "clang" ] && \
+          #   [ $(version ${{ matrix.version }}) -le $(version "6.0") ]; then
+          #  exit 0
+          #fi
+          #if [ "${{ runner.os }}" = "macOS" ] && \
+          #   [ "${{ matrix.compiler }}" = "xcode" ] && \
+          #   [ $(version ${{ matrix.version }}) -le $(version "9.4.1") ]; then
+          #  exit 0
+          #fi
+          if [ "${{ runner.os }}" = "macOS" ] && \
+             [ "${{ matrix.compiler }}" = "gcc" ]; then
+            exit 0
+          fi
+
+          ASAN_UBSAN_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+
+          # Link statically against ASAN libraries because dynamically linking
+          # against ASAN libraries causes problems when using dlopen on Ubuntu.
+          # See: https://github.com/DaanDeMeyer/doctest/runs/249002713
+          if [ "${{ runner.os }}" = "Linux" ] && [ "${{ matrix.compiler }}" = "gcc" ]; then
+            ASAN_UBSAN_FLAGS="$ASAN_UBSAN_FLAGS -static-libasan"
+          fi
+
+          # Compiling in bash on Windows doesn't work and powershell doesn't
+          # exit on non-zero exit codes so we're forced to use cmd which means
+          # we don't have a cross platform way to access environment variables.
+          # To circumvent this, we put the sanitizer flags in an environment
+          # variable that is automatically picked up by CMake.
+          echo "::set-env name=CXXFLAGS::$ASAN_UBSAN_FLAGS"
+
+      - name: Build & Test Debug x64
+        run: |
+          cmake -E remove_directory build
+          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
+          cmake --build build
+          cd build 
+          ctest --verbose
+
+      - name: Build & Test Release x64
+        run: |
+          cmake -E remove_directory build
+          cmake -B build -S . -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }}
+          cmake --build build
+          cd build 
+          ctest --verbose
+
+      - name: clang-tidy (Linux && clang)
+        if: runner.os == 'Linux' && matrix.compiler == 'clang'
+        run: |
+          cmake -E remove_directory build
+          cmake -B build -S . -DTHINKS_CLANG_TIDY=ON -DTHINKS_RUN_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx_std }} 
+          cmake --build build
