@@ -21,13 +21,11 @@ endif()
 add_library(tph_poisson_f STATIC "src/tph_poisson_f.c")
 add_library(thinks::tph_poisson_f ALIAS tph_poisson_f)
 target_link_libraries(tph_poisson_f PUBLIC thinks::tph_poisson)
-target_include_directories(tph_poisson_f SYSTEM PUBLIC "include")
 target_compile_features(tph_poisson_f PRIVATE c_std_11)
 
 add_library(tph_poisson_d STATIC "src/tph_poisson_d.c")
 add_library(thinks::tph_poisson_d ALIAS tph_poisson_d)
 target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson)
-target_include_directories(tph_poisson_d SYSTEM PUBLIC "include")
 target_compile_features(tph_poisson_d PRIVATE c_std_11)
 
 #include(../cmake/fetch-rpmalloc.cmake)
@@ -65,19 +63,6 @@ add_test(NAME tph_poisson_d_test COMMAND tph_poisson_d_test)
 add_folders(Test)
 
 
-# # Default to c++20.
-# if(DEFINED CMAKE_CXX_STANDARD)
-#   set(_cxx_standard ${CMAKE_CXX_STANDARD})
-# else()
-#   set(_cxx_standard 20)
-# endif()
-
-# # Default to c11.
-# if(DEFINED CMAKE_C_STANDARD)
-#   set(_c_standard ${CMAKE_C_STANDARD})
-# else()
-#   set(_c_standard 11)
-# endif()
 
 # if(MSVC)
 #   set(_c_warnings

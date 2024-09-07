@@ -52,6 +52,8 @@ add_example(json.cpp DEPS nlohmann_json::nlohmann_json)
 add_example(simple_c.c)
 add_example(simple_cpp.cpp)
 
+# ---- End-of-file commands ----
+
 add_folders(Examples)
 
 
