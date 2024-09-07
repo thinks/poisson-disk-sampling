@@ -606,9 +606,9 @@ static tph_poisson_sampling_internal *tph_poisson_alloc_internal(const tph_poiss
  * @param args  Arguments.
  * @return TPH_POISSON_SUCCESS, or a non-zero error code.
  */
-static int tph_poisson_context_init(tph_poisson_context *ctx,
-  tph_poisson_allocator *alloc,
-  const tph_poisson_args *args)
+static int tph_poisson_context_init(const tph_poisson_allocator *alloc,
+  const tph_poisson_args *args,
+  tph_poisson_context *ctx)
 {
   /* clang-format off */
   bool valid_args = (args != NULL);
@@ -989,8 +989,9 @@ int tph_poisson_create(const tph_poisson_args *args,
   tph_poisson_sampling_internal *internal = sampling->internal;
 
   /* Initialize context. Validates arguments and allocates buffers. */
-  tph_poisson_context ctx = { 0 };
-  int ret = tph_poisson_context_init(&ctx, &internal->alloc, args);
+  tph_poisson_context ctx;
+  TPH_POISSON_MEMSET(&ctx, 0, sizeof(tph_poisson_context));
+  int ret = tph_poisson_context_init(&internal->alloc, args, &ctx);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy context here. */
     tph_poisson_destroy(sampling);
