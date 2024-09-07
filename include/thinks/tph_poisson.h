@@ -387,9 +387,7 @@ static TPH_POISSON_INLINE void tph_poisson_vec_free(tph_poisson_vec *vec,
 static TPH_POISSON_INLINE ptrdiff_t tph_poisson_vec_size_impl(const tph_poisson_vec *vec,
   const size_t elem_size)
 {
-  return (ptrdiff_t)((uintptr_t)vec->begin == (uintptr_t)vec->end
-                       ? 0
-                       : ((uintptr_t)vec->end - (uintptr_t)vec->begin) / elem_size);
+  return (ptrdiff_t)(((uintptr_t)vec->end - (uintptr_t)vec->begin) / elem_size);
 }
 
 /**
