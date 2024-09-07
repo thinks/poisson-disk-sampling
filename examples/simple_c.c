@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   if (samples == NULL) {
     /* This should not happen since we checked the return value of tph_poisson_create! */
     printf("Bad samples!\n");
-    tph_poisson_destroy(&sampling);  
+    tph_poisson_destroy(&sampling);
     return EXIT_FAILURE;
   }
 
