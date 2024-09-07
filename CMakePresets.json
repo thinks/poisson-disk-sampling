@@ -83,7 +83,7 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_C_FLAGS": "/sdl /guard:cf /utf-8 /diagnostics:caret /w14165 /w44242 /w44254 /w34287 /w44296 /w44365 /w44388 /w44464 /w14545 /w14546 /w14547 /w14549 /w14555 /w34619 /w44774 /w44777 /w24826 /w14905 /w14906 /w14928 /WX /W4 /permissive- /volatile:iso /Zc:inline /Zc:preprocessor",
-        "CMAKE_CXX_FLAGS": "/sdl /guard:cf /utf-8 /diagnostics:caret /w14165 /w44242 /w44254 /w34287 /w44296 /w44365 /w44388 /w44464 /w14545 /w14546 /w14547 /w14549 /w14555 /w34619 /w44774 /w44777 /w24826 /w14905 /w14906 /w14928 /WX /W4 /permissive- /volatile:iso /Zc:inline /Zc:preprocessor",
+        "CMAKE_CXX_FLAGS": "/sdl /guard:cf /utf-8 /diagnostics:caret /w14165 /w44242 /w44254 /w34287 /w44296 /w44365 /w44388 /w44464 /w14545 /w14546 /w14547 /w14549 /w14555 /w34619 /w44774 /w44777 /w24826 /w14905 /w14906 /w14928 /WX /EHsc /W4 /permissive- /volatile:iso /Zc:inline /Zc:preprocessor",
         "CMAKE_EXE_LINKER_FLAGS": "/machine:x64 /guard:cf"
       }
     },
