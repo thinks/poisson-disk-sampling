@@ -529,14 +529,15 @@ static void TestBadAlloc()
   // Verify that default allocator is fine.
   REQUIRE(TPH_POISSON_SUCCESS == create_sampling(/*alloc=*/nullptr));
 
-  struct AllocCtx {
+  struct AllocCtx
+  {
     ptrdiff_t count = 0;
   };
   tph_poisson_allocator alloc = {};
   alloc.malloc = [](ptrdiff_t size, void *ctx) {
     // NOTE: The constant 3 is very specifically set to cause the bad_alloc
     //       when adding the first sample to improve code coverage.
-    AllocCtx* alloc_ctx = reinterpret_cast<AllocCtx*>(ctx);
+    AllocCtx *alloc_ctx = reinterpret_cast<AllocCtx *>(ctx);
     return alloc_ctx->count++ < 3 ? std::malloc(static_cast<size_t>(size)) : nullptr;
   };
   alloc.free = [](void *ptr, ptrdiff_t size, void *ctx) {
