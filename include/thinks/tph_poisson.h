@@ -337,7 +337,7 @@ typedef struct tph_poisson_vec_
  * debugging.
  * @param ElemT Vector element type.
  * @param vec   Vector.
- * @return Non-zero if the vector is in a valid state; otherwise zero.
+ * @return True if the vector is in a valid state; otherwise false.
  */
 #define tph_poisson_vec_invariants(ElemT, vec) \
   (tph_poisson_vec_invariants_impl((vec), sizeof(ElemT), alignof(ElemT)))
@@ -772,14 +772,18 @@ static int tph_poisson_add_sample(tph_poisson_context *ctx,
     return TPH_POISSON_OVERFLOW;
   }
 
+  tph_poisson_assert(tph_poisson_vec_invariants(tph_poisson_real, &internal->samples));
   int ret = tph_poisson_vec_append(
     tph_poisson_real, &internal->samples, &internal->alloc, sample, ctx->ndims);
+  tph_poisson_assert(tph_poisson_vec_invariants(tph_poisson_real, &internal->samples));
   if (ret != TPH_POISSON_SUCCESS) { return ret; }
+  tph_poisson_assert(tph_poisson_vec_invariants(ptrdiff_t, &ctx->active_indices));
   ret = tph_poisson_vec_append(ptrdiff_t,
     &ctx->active_indices,
     &internal->alloc,
     &sample_index,
     /*count=*/1);
+  tph_poisson_assert(tph_poisson_vec_invariants(ptrdiff_t, &ctx->active_indices));
   if (ret != TPH_POISSON_SUCCESS) { return ret; }
 
   /* Compute linear grid index. */
@@ -1060,7 +1064,9 @@ int tph_poisson_create(const tph_poisson_args *args,
     active_index_count = tph_poisson_vec_size(ptrdiff_t, &ctx.active_indices);
   }
 
+  tph_poisson_assert(tph_poisson_vec_invariants(tph_poisson_real, &internal->samples));
   ret = tph_poisson_vec_shrink_to_fit(tph_poisson_real, &internal->samples, &internal->alloc);
+  tph_poisson_assert(tph_poisson_vec_invariants(tph_poisson_real, &internal->samples));
   if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_context_destroy(&ctx, &internal->alloc);
     tph_poisson_destroy(sampling);
