@@ -509,6 +509,47 @@ static void TestUserAlloc()
           == 0);
 }
 
+static void TestBadAlloc()
+{
+  const auto create_sampling = [](tph_poisson_allocator *alloc) {
+    constexpr int32_t ndims = 2;
+    constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
+    constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
+    tph_poisson_args valid_args = {};
+    valid_args.radius = 1;
+    valid_args.ndims = ndims;
+    valid_args.bounds_min = bounds_min.data();
+    valid_args.bounds_max = bounds_max.data();
+    valid_args.max_sample_attempts = UINT32_C(30);
+    valid_args.seed = UINT64_C(333);
+    unique_poisson_ptr sampling = make_unique_poisson();
+    return tph_poisson_create(&valid_args, alloc, sampling.get());
+  };
+
+  // Verify that default allocator is fine.
+  REQUIRE(TPH_POISSON_SUCCESS == create_sampling(/*alloc=*/nullptr));
+
+  struct AllocCtx {
+    ptrdiff_t count = 0;
+  };
+  tph_poisson_allocator alloc = {};
+  alloc.malloc = [](ptrdiff_t size, void *ctx) {
+    // NOTE: The constant 3 is very specifically set to cause the bad_alloc
+    //       when adding the first sample to improve code coverage.
+    AllocCtx* alloc_ctx = reinterpret_cast<AllocCtx*>(ctx);
+    return alloc_ctx->count++ < 3 ? std::malloc(static_cast<size_t>(size)) : nullptr;
+  };
+  alloc.free = [](void *ptr, ptrdiff_t size, void *ctx) {
+    static_cast<void>(size);
+    static_cast<void>(ctx);
+    std::free(ptr);
+  };
+  AllocCtx a_ctx;
+  alloc.ctx = &a_ctx;
+
+  REQUIRE(TPH_POISSON_BAD_ALLOC == create_sampling(&alloc));
+}
+
 int main(int argc, char *argv[])
 {
   static_cast<void>(argc);
@@ -536,6 +577,9 @@ int main(int argc, char *argv[])
 
   std::printf("TestUserAlloc...\n");
   TestUserAlloc();
+
+  std::printf("TestBadAlloc...\n");
+  TestBadAlloc();
 
   // rpmalloc_finalize();
 
