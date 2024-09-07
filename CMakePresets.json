@@ -63,18 +63,19 @@
       "description": "These flags are supported by both GCC and Clang. Warnings are treated as errors.",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_FLAGS": "-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Werror=float-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Werror=strict-prototypes -Wwrite-strings -Wno-missing-field-initializers",
-        "CMAKE_CXX_FLAGS": "-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Werror=float-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Wwrite-strings -Wno-missing-field-initializers",
+        "CMAKE_C_FLAGS": "-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Wfloat-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers",
+        "CMAKE_CXX_FLAGS": "-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Wfloat-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Wwrite-strings -Wno-missing-field-initializers",
         "CMAKE_EXE_LINKER_FLAGS": "-Wl,--allow-shlib-undefined,--as-needed,-z,noexecstack,-z,relro,-z,now,-z,nodlopen",
         "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--allow-shlib-undefined,--as-needed,-z,noexecstack,-z,relro,-z,now,-z,nodlopen"
       }
     },
     {
       "name": "flags-appleclang",
+      "description": "Warnings are treated as errors.",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_FLAGS": "-fstack-protector-strong -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Werror=float-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Werror=strict-prototypes -Wwrite-strings",
-        "CMAKE_CXX_FLAGS": "-fstack-protector-strong -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Werror=float-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Wwrite-strings"
+        "CMAKE_C_FLAGS": "-fstack-protector-strong -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Wfloat-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Wstrict-prototypes -Wwrite-strings",
+        "CMAKE_CXX_FLAGS": "-fstack-protector-strong -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wcast-qual -Wformat=2 -Wundef -Wfloat-equal -Wshadow -Wcast-align -Wunused -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Wwrite-strings"
       }
     },
     {
