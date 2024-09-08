@@ -563,8 +563,8 @@ static void TestBadAlloc()
 
 static void TestVec()
 {
-//  tph_poisson_vec v;
-//  REQUIRE(false);
+  //  tph_poisson_vec v;
+  //  REQUIRE(false);
 }
 
 int main(int argc, char *argv[])
