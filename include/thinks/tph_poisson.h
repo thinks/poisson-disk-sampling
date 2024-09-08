@@ -966,9 +966,10 @@ static void tph_poisson_rand_sample(tph_poisson_context *ctx, tph_poisson_real *
       + (tph_poisson_real)(tph_poisson_to_double(tph_poisson_xoshiro256p_next(&ctx->prng_state)))
           * (ctx->bounds_max[i] - ctx->bounds_min[i]);
     /* Clamp to avoid numerical issues. */
-    sample[i] = sample[i] < ctx->bounds_min[i]
-                  ? ctx->bounds_min[i]
+    /* clang-format off */
+    sample[i] = sample[i] < ctx->bounds_min[i] ? ctx->bounds_min[i]
                   : (ctx->bounds_max[i] < sample[i] ? ctx->bounds_max[i] : sample[i]);
+    /* clang-format on */
   }
 }
 
