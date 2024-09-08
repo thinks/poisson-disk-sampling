@@ -1100,9 +1100,10 @@ void tph_poisson_destroy(tph_poisson_sampling *sampling)
 const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
 {
   /* Make sure that a 'destroyed' sampling does not return any samples. */
-  return (sampling != NULL && sampling->internal != NULL)
-           ? (const tph_poisson_real *)sampling->internal->samples.begin
-           : NULL;
+  if (sampling != NULL && sampling->internal != NULL) {
+    return (const tph_poisson_real *)sampling->internal->samples.begin;
+  }
+  return NULL;
 }
 
 /* Clean up internal macros. */
@@ -1113,11 +1114,13 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
 #undef TPH_POISSON_MALLOC
 #undef TPH_POISSON_FREE
 
+#ifndef TPH_POISSON_VEC_TEST
 #undef tph_poisson_vec_invariants
 #undef tph_poisson_vec_size
 #undef tph_poisson_vec_append
 #undef tph_poisson_vec_erase_unordered
 #undef tph_poisson_vec_shrink_to_fit
+#endif
 
 #endif// TPH_POISSON_IMPLEMENTATION
 

@@ -11,6 +11,7 @@
 
 // #include <rpmalloc/rpmalloc.h>
 
+#define TPH_POISSON_VEC_TEST 1
 #ifdef TPH_POISSON_TEST_USE_DOUBLE
 #include "tph_poisson_d.h"
 #else
@@ -560,6 +561,13 @@ static void TestBadAlloc()
   add_sample_fail(/*max_count=*/5);
 }
 
+static void TestVec()
+{
+  tph_poisson_vec v;
+  REQUIRE(false);
+
+}
+
 int main(int argc, char *argv[])
 {
   static_cast<void>(argc);
@@ -590,6 +598,9 @@ int main(int argc, char *argv[])
 
   std::printf("TestBadAlloc...\n");
   TestBadAlloc();
+
+  std::printf("TestVec...\n");
+  TestVec();
 
   // rpmalloc_finalize();
 

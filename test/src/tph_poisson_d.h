@@ -7,6 +7,6 @@
 #define TPH_POISSON_CEIL ceil
 #define TPH_POISSON_FLOOR floor
 
-#include <thinks/tph_poisson.h>
+#include "thinks/tph_poisson.h"
 
 #endif /* TPH_POISSON_D_H */
