@@ -5,11 +5,11 @@
 #include <memory>// std::unique_ptr
 
 #define TPH_POISSON_IMPLEMENTATION
-//#define TPH_POISSON_REAL_TYPE double
-//#include <cmath>
-//#define TPH_POISSON_SQRT std::sqrt
-//#define TPH_POISSON_CEIL std::ceil
-//#define TPH_POISSON_FLOOR std::floor
+// #define TPH_POISSON_REAL_TYPE double
+// #include <cmath>
+// #define TPH_POISSON_SQRT std::sqrt
+// #define TPH_POISSON_CEIL std::ceil
+// #define TPH_POISSON_FLOOR std::floor
 #include "thinks/tph_poisson.h"
 
 int main(int /*argc*/, char * /*argv*/[])

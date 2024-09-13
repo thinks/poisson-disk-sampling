@@ -1,7 +1,10 @@
 #include <algorithm>// std::all_of
 #include <array>
+#include <cinttypes>// PRIXPTR
 #include <cmath>
 #include <cstdint>
+#include <cstdio>// std::printf
+#include <cstdlib>// EXIT_SUCCESS
 #include <cstring>// std::memcmp
 #include <functional>// std::function
 #include <future>
@@ -11,7 +14,6 @@
 
 // #include <rpmalloc/rpmalloc.h>
 
-#define TPH_POISSON_VEC_TEST 1
 #ifdef TPH_POISSON_TEST_USE_DOUBLE
 #include "tph_poisson_d.h"
 #else
@@ -19,6 +21,7 @@
 #endif
 using Real = TPH_POISSON_REAL_TYPE;
 
+[[noreturn]]
 static void
   require_fail(const char *expr, const char *file, unsigned int line, const char *function)
 {
@@ -530,48 +533,51 @@ static void TestBadAlloc()
   // Verify that default allocator is fine.
   REQUIRE(TPH_POISSON_SUCCESS == create_sampling(/*alloc=*/nullptr));
 
-  const auto add_sample_fail = [&](const ptrdiff_t max_count) {
-    struct AllocCtx
-    {
-      ptrdiff_t count = 0;
-      ptrdiff_t max_count = 0;
-    };
+  struct AllocCtx
+  {
+    ptrdiff_t nsamples = 0;
+    ptrdiff_t max_samples = 0;
+  };
+
+  const auto add_sample_fail = [&](AllocCtx *alloc_ctx) {
     tph_poisson_allocator alloc = {};
-    alloc.malloc = [](ptrdiff_t size, void *ctx) {
-      AllocCtx *alloc_ctx = reinterpret_cast<AllocCtx *>(ctx);
-      return alloc_ctx->count++ < alloc_ctx->max_count ? std::malloc(static_cast<size_t>(size))
-                                                       : nullptr;
+    alloc.malloc = [](ptrdiff_t size, void *ctx) -> void * {
+      AllocCtx *a_ctx = reinterpret_cast<AllocCtx *>(ctx);
+#if 1
+      if (size == (2 * sizeof(Real) + alignof(Real))) {
+        ++a_ctx->nsamples;
+        if (a_ctx->nsamples >= a_ctx->max_samples) { return nullptr; }
+      }
+#else
+      std::printf("[0x%" PRIXPTR "] malloc: %td [bytes]\n", (uintptr_t)a_ctx, size);
+#endif
+      return std::malloc(static_cast<size_t>(size));
+
+      // AllocCtx *a_ctx = reinterpret_cast<AllocCtx *>(ctx);
+      // return a_ctx->count++ < a_ctx->max_count ? std::malloc(static_cast<size_t>(size)) :
+      // nullptr;
     };
     alloc.free = [](void *ptr, ptrdiff_t size, void *ctx) {
       static_cast<void>(size);
       static_cast<void>(ctx);
       std::free(ptr);
     };
-    AllocCtx alloc_ctx;
-    alloc_ctx.max_count = max_count;
-    alloc.ctx = &alloc_ctx;
+    alloc.ctx = alloc_ctx;
     REQUIRE(TPH_POISSON_BAD_ALLOC == create_sampling(&alloc));
   };
 
   // NOTE: The constant 3 is very specifically set to cause the bad_alloc
   //       when adding the first sample to improve code coverage.
-  add_sample_fail(/*max_count=*/3);
+  AllocCtx alloc_ctx{ /*nsamples=*/0, /*.max_samples=*/1 };
+  add_sample_fail(&alloc_ctx);
   // NOTE: The constant 5 is very specifically set to cause the bad_alloc
   //       when adding the second (or later) sample to improve code coverage.
-  add_sample_fail(/*max_count=*/5);
+  // AllocCtx alloc_ctx2{ /*nsamples=*/0, /*.max_samples=*/5 };
+  // add_sample_fail(&alloc_ctx2);
 }
 
-static void TestVec()
+int main(int /*argc*/, char * /*argv*/[])
 {
-  //  tph_poisson_vec v;
-  //  REQUIRE(false);
-}
-
-int main(int argc, char *argv[])
-{
-  static_cast<void>(argc);
-  static_cast<void>(argv);
-
   // rpmalloc_initialize();
 
   std::printf("TestInvalidArgs...\n");
@@ -597,9 +603,6 @@ int main(int argc, char *argv[])
 
   std::printf("TestBadAlloc...\n");
   TestBadAlloc();
-
-  std::printf("TestVec...\n");
-  TestVec();
 
   // rpmalloc_finalize();
 
