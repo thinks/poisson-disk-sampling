@@ -21,8 +21,7 @@
 #endif
 using Real = TPH_POISSON_REAL_TYPE;
 
-[[noreturn]]
-static void
+[[noreturn]] static void
   require_fail(const char *expr, const char *file, unsigned int line, const char *function)
 {
   std::printf(
