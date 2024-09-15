@@ -281,11 +281,12 @@ static void test_reserve(void)
     REQUIRE(flt_eq(iter + 6, &values[6]));
 
     /* Reserve less than existing capacity is a no-op. */
-    void * const mem0 = vec.mem;
+    void *const mem0 = vec.mem;
     const ptrdiff_t mem_size0 = vec.mem_size;
-    void* const begin0 = vec.begin;
-    void* const end0 = vec.end;
-    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*new_cap=*/my_vec_capacity(float, &vec) / 2) == TPH_POISSON_SUCCESS);
+    void *const begin0 = vec.begin;
+    void *const end0 = vec.end;
+    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*new_cap=*/my_vec_capacity(float, &vec) / 2)
+            == TPH_POISSON_SUCCESS);
     REQUIRE(vec.mem == mem0);
     REQUIRE(vec.mem_size == mem_size0);
     REQUIRE(vec.begin == begin0);
