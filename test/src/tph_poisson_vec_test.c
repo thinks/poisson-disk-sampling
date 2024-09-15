@@ -28,7 +28,6 @@ static void vec_test_free(void *ptr, ptrdiff_t size, void *ctx)
   free((void *)((intptr_t)ptr - a_ctx->align_offset));
 }
 
-
 static bool flt_eq(const float *a, const float *b)
 {
   return memcmp((const void *)a, (const void *)b, sizeof(float)) == 0 ? true : false;
@@ -293,7 +292,7 @@ static void print_my_vec_f(const my_vec *vec)
     vec->mem_size,
     (uintptr_t)vec->begin,
     (uintptr_t)vec->end,
-    my_vec_size(float, vec), (intptr_t)vec->end - (intptr_t)vec->begin,
+    my_vec_size(float, vec), (ptrdiff_t)((intptr_t)vec->end - (intptr_t)vec->begin),
     my_vec_capacity(float, vec));
   /* clang-format on */
   printf("data     = [ ");
