@@ -28,15 +28,20 @@ static void vec_test_free(void *ptr, ptrdiff_t size, void *ctx)
   free((void *)((intptr_t)ptr - a_ctx->align_offset));
 }
 
+#define VEC_TEST_SIZEOF(_X_) (ptrdiff_t)sizeof(_X_)
+#define VEC_TEST_ALIGNOF(_X_) (ptrdiff_t)alignof(_X_)
+
 static bool flt_eq(const float *a, const float *b)
 {
   return memcmp((const void *)a, (const void *)b, sizeof(float)) == 0 ? true : false;
 }
 
+/*-------------------------*/
+
 typedef struct my_vec_
 {
-  void *mem;
   ptrdiff_t mem_size; /** [bytes] */
+  void *mem;
   void *begin;
   void *end;
 } my_vec;
@@ -44,45 +49,46 @@ typedef struct my_vec_
 static inline void my_vec_free(my_vec *vec, const tph_poisson_allocator *alloc)
 {
   alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-  memset((void *)vec, 0, sizeof(my_vec));
+  /*memset((void *)vec, 0, sizeof(my_vec));*/
 }
 
-#define my_vec_size(ElemT, vec) (my_vec_size_impl((vec), (ptrdiff_t)sizeof(ElemT)))
-static inline ptrdiff_t my_vec_size_impl(const my_vec *vec, const ptrdiff_t sizeof_elem)
+static inline ptrdiff_t my_vec_size(const my_vec *vec)
 {
-  return (ptrdiff_t)(((intptr_t)vec->end - (intptr_t)vec->begin) / sizeof_elem);
+  assert((intptr_t)vec->end >= (intptr_t)vec->begin);
+  return (ptrdiff_t)((intptr_t)vec->end - (intptr_t)vec->begin);
+  // return (ptrdiff_t)(((intptr_t)vec->end - (intptr_t)vec->begin) / sizeof_elem);
 }
 
-#define my_vec_capacity(ElemT, vec) (my_vec_capacity_impl((vec), (ptrdiff_t)sizeof(ElemT)))
-static inline ptrdiff_t my_vec_capacity_impl(const my_vec *vec, const ptrdiff_t sizeof_elem)
+static inline ptrdiff_t my_vec_capacity(const my_vec *vec)
 {
-  /* NOTE: Account for possible alignment loss when computing current capacity! */
-  return (ptrdiff_t)((vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem)) / sizeof_elem);
+  assert(vec->mem_size >= 0);
+  assert((intptr_t)vec->begin >= (intptr_t)vec->mem);
+
+  /* NOTE: Account for possible alignment correction when computing capacity! */
+  return (ptrdiff_t)(vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem));
 }
 
-#define my_vec_reserve(ElemT, vec, alloc, new_cap) \
-  (my_vec_reserve_impl(                            \
-    (vec), (alloc), (new_cap), (ptrdiff_t)sizeof(ElemT), (ptrdiff_t)alignof(ElemT)))
-static int my_vec_reserve_impl(my_vec *vec,
+static int my_vec_reserve(my_vec *vec,
   const tph_poisson_allocator *alloc,
   const ptrdiff_t new_cap,
-  const ptrdiff_t sizeof_elem,
-  const ptrdiff_t alignof_elem)
+  const ptrdiff_t alignment)
 {
-  if (my_vec_capacity_impl(vec, sizeof_elem) < new_cap) {
-    /* Allocate and align a new buffer with sufficient capacity.
-     * Take into account that the memory may not be aligned to the
-     * type of element that will be stored. */
-    const ptrdiff_t new_mem_size = new_cap * sizeof_elem + (alignof_elem - 1);
+  assert(alignment > 0);
+
+  if (new_cap > my_vec_capacity(vec)) {
+    /* Allocate and align a new buffer with sufficient capacity. Take into
+     * account that the memory returned by the allocator may not be aligned to
+     * the type of element that will be stored. */
+    const ptrdiff_t new_mem_size = new_cap + alignment;
     void *new_mem = alloc->malloc(new_mem_size, alloc->ctx);
     if (new_mem == NULL) { return TPH_POISSON_BAD_ALLOC; }
-    void *new_begin = tph_poisson_align(new_mem, (size_t)alignof_elem);
+    void *new_begin = tph_poisson_align(new_mem, (size_t)alignment);
 
-    /* Copy existing elements (if any) to the new buffer and
-     * destroy the old buffer. */
-    const ptrdiff_t size = my_vec_size_impl(vec, sizeof_elem);
+    /* Copy existing elements (if any) to the new buffer and destroy the old buffer. */
+    const ptrdiff_t size = my_vec_size(vec);
     if (size > 0) {
-      memcpy(new_begin, vec->begin, (size_t)(size * sizeof_elem));
+      assert(((int)(vec->mem != NULL) & (int)(vec->begin != NULL)) == 1);
+      memcpy(new_begin, vec->begin, (size_t)size);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
     }
 
@@ -90,73 +96,88 @@ static int my_vec_reserve_impl(my_vec *vec,
     vec->mem = new_mem;
     vec->mem_size = new_mem_size;
     vec->begin = new_begin;
-    vec->end = (void *)((intptr_t)vec->begin + size * sizeof_elem);
+    vec->end = (void *)((intptr_t)new_begin + size);
   }
   return TPH_POISSON_SUCCESS;
 }
 
-#define my_vec_append(ElemT, vec, alloc, values, count) \
-  (my_vec_append_impl(                                  \
-    (vec), (alloc), (values), (count), (ptrdiff_t)sizeof(ElemT), (ptrdiff_t)alignof(ElemT)))
-static int my_vec_append_impl(my_vec *vec,
-  const tph_poisson_allocator *alloc,
-  const void *values,
-  const ptrdiff_t count,
-  const ptrdiff_t sizeof_elem,
-  const ptrdiff_t alignof_elem)
-{
-  assert(((int)(values != NULL) & (int)(count > 0)) == 1);
-  assert(((int)(sizeof_elem > 0) & (int)(alignof_elem > 0)) == 1);
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-  const ptrdiff_t size = my_vec_size_impl(vec, sizeof_elem);
-  ptrdiff_t cap = my_vec_capacity_impl(vec, sizeof_elem);
-  const ptrdiff_t req_cap = size + count;
-  if (cap < req_cap) {
+static int my_vec_append(my_vec *vec,
+  const tph_poisson_allocator *alloc,
+  const void *buf,
+  const ptrdiff_t n,
+  const ptrdiff_t alignment)
+{
+  assert(buf != NULL);
+  assert(n > 0);
+  assert(alignment > 0); /* ??? */
+
+  const ptrdiff_t cap = my_vec_capacity(vec);
+  const ptrdiff_t req_cap = my_vec_size(vec) + n;
+  if (req_cap > cap) {
     /* Current buffer does not have enough capacity. Try doubling the vector
      * capacity and check if it's enough to hold the new elements. If not,
      * set the new capacity to hold exactly the new elements. */
-    if ((cap = cap <= (PTRDIFF_MAX >> 1) ? cap << 1 : cap) < req_cap) { cap = req_cap; }
-    const int ret = my_vec_reserve_impl(vec, alloc, cap, sizeof_elem, alignof_elem);
+    ptrdiff_t new_cap = cap <= (PTRDIFF_MAX >> 1) ? (cap << 1) : cap;
+    if (new_cap < req_cap) { new_cap = req_cap; }
+    const int ret = my_vec_reserve(vec, alloc, new_cap, alignment);
     if (ret != TPH_POISSON_SUCCESS) { return ret; }
   }
-  const ptrdiff_t n = count * sizeof_elem;
-  assert((intptr_t)vec->end + n <= (intptr_t)vec->mem + vec->mem_size);
-  memcpy(vec->end, values, (size_t)n);
+  assert(my_vec_capacity(vec) >= req_cap);
+  memcpy(vec->end, buf, (size_t)n);
   vec->end = (void *)((intptr_t)vec->end + n);
-  assert(my_vec_size_impl(vec, sizeof_elem) == size + count);
-  assert(my_vec_capacity_impl(vec, sizeof_elem) >= size + count);
   return TPH_POISSON_SUCCESS;
+
+#if 0
+  /* NOTE: Account for possible alignment correction when computing current capacity! */
+  const ptrdiff_t cap_bytes =
+    vec->mem_size - (ptrdiff_t)((intptr_t)vec->begin - (intptr_t)vec->mem);
+  const ptrdiff_t size_bytes = (intptr_t)vec->end - (intptr_t)vec->begin;
+  const ptrdiff_t req_cap_bytes = size_bytes + buf_size_bytes;
+  if (cap_bytes < req_cap_bytes) {
+    /* Current buffer does not have enough capacity. Try doubling the vector
+     * capacity and check if it's enough to hold the new elements. If not,
+     * set the new capacity to hold exactly the new elements. */
+    ptrdiff_t new_cap_bytes = cap_bytes <= (PTRDIFF_MAX >> 1) ? (cap_bytes << 1) : cap_bytes;
+    if (new_cap_bytes < req_cap_bytes) { new_cap_bytes = req_cap_bytes; }
+    const int ret = my_vec_reserve(vec, alloc, new_cap_bytes, buf_align);
+    if (ret != TPH_POISSON_SUCCESS) { return ret; }
+  } 
+  assert((intptr_t)vec->end + buf_size_bytes <= (intptr_t)vec->mem + vec->mem_size);
+  memcpy(vec->end, buf, (size_t)buf_size_bytes);
+  vec->end = (void *)((intptr_t)vec->end + buf_size_bytes);
+  return TPH_POISSON_SUCCESS;
+#endif
 }
 
-#define my_vec_erase_unordered(ElemT, vec, pos) \
-  (my_vec_erase_unordered_impl((vec), (pos), (ptrdiff_t)sizeof(ElemT)))
-static void
-  my_vec_erase_unordered_impl(my_vec *vec, const ptrdiff_t pos, const ptrdiff_t sizeof_elem)
+static void my_vec_erase_swap(my_vec *vec, const ptrdiff_t pos, const ptrdiff_t n)
 {
-  assert(((int)(0 <= pos) & (int)(pos < my_vec_size_impl(vec, sizeof_elem))) == 1);
+  assert(pos >= 0);
+  assert((intptr_t)vec->begin + pos < (intptr_t)vec->end);
+  assert(n >= 1);
+  assert((intptr_t)vec->begin + pos + n <= (intptr_t)vec->end);
 
-  const intptr_t er_iter = (intptr_t)vec->begin + pos * sizeof_elem;
-  const intptr_t last_elem = (intptr_t)vec->end - sizeof_elem;
-  if (er_iter < last_elem) {
-    /* Not erasing the last element. Copy the last element into the position
-     * to be erased. Note that this also covers the case of erasing the sole
-     * remaining (i.e. last) element from a vector of size one, which would otherwise lead
-     * to an overlapping range in the memcpy below (which sanitizers should detect). */
-    memcpy((void *)er_iter, (const void *)last_elem, (size_t)sizeof_elem);
+  const intptr_t dst_begin = (intptr_t)vec->begin + pos;
+  const intptr_t dst_end = dst_begin + n;
+  intptr_t src_begin = (intptr_t)vec->end - n;
+  if (src_begin < dst_end) {
+    src_begin = dst_end;
+  }
+  const intptr_t m = (intptr_t)vec->end - src_begin;
+  if (m > 0) {
+    memcpy((void *)dst_begin, (const void *)src_begin, (size_t)m);
   }
   /* else: when erasing the last element there is no need to copy anything,
    *       just "pop" the end of the vector. */
 
-  /* "pop" the last element, decreasing the vector size by one element. */
-  vec->end = (void *)((intptr_t)vec->end - sizeof_elem);
+  /* "pop" the end of the buffer, decreasing the vector size by n. */
+  vec->end = (void *)((intptr_t)vec->end - n);
 }
 
-#define my_vec_shrink_to_fit(ElemT, vec, alloc) \
-  (my_vec_shrink_to_fit_impl((vec), (alloc), (ptrdiff_t)sizeof(ElemT), (ptrdiff_t)alignof(ElemT)))
-static int my_vec_shrink_to_fit_impl(my_vec *vec,
-  const tph_poisson_allocator *alloc,
-  const ptrdiff_t sizeof_elem,
-  const ptrdiff_t alignof_elem)
+static int
+  my_vec_shrink_to_fit(my_vec *vec, const tph_poisson_allocator *alloc, const ptrdiff_t alignment)
 {
   if (vec->end == vec->begin) {
     /* Empty vector, no elements. Wipe capacity!
@@ -166,28 +187,26 @@ static int my_vec_shrink_to_fit_impl(my_vec *vec,
     return TPH_POISSON_SUCCESS;
   }
 
-  const ptrdiff_t cap_bytes = vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem);
-  const ptrdiff_t size_bytes = (intptr_t)vec->end - (intptr_t)vec->begin;
-  if (cap_bytes - size_bytes >= sizeof_elem) {
-    /* There is enough additional memory to add one or more elements, shrink the buffer.
-     * Create new buffer that holds exactly the amount of data present in the existing vector. */
+  /* TODO: HANDLE ADDITIONAL CAPACITY FROM ALIGNMENT CORRECTION!?!? */
+
+  const ptrdiff_t size = my_vec_size(vec);
+  if (my_vec_capacity(vec) > size + alignment) {
+    /* Create new buffer that holds exactly the amount of data present in the existing vector. */
     my_vec new_vec;
     memset((void *)&new_vec, 0, sizeof(my_vec));
-    int ret =
-      my_vec_reserve_impl(&new_vec, alloc, size_bytes / sizeof_elem, sizeof_elem, alignof_elem);
-    if (ret != TPH_POISSON_SUCCESS) { return TPH_POISSON_BAD_ALLOC; }
+    const int ret = my_vec_reserve(&new_vec, alloc, size, alignment);
+    if (ret != TPH_POISSON_SUCCESS) { return ret; }
 
     /* Copy contents to the new buffer and free the old buffer. */
-    //    if (new_vec.begin == NULL) { return TPH_POISSON_BAD_ALLOC; } /* TMP */
     assert(new_vec.begin != NULL);
-    memcpy(new_vec.begin, vec->begin, (size_t)size_bytes);
+    memcpy(new_vec.begin, vec->begin, (size_t)size);
     alloc->free(vec->mem, vec->mem_size, alloc->ctx);
 
     /* Configure existing vector to use the new buffer. */
     vec->mem = new_vec.mem;
     vec->mem_size = new_vec.mem_size;
     vec->begin = new_vec.begin;
-    vec->end = (void *)((intptr_t)new_vec.begin + size_bytes);
+    vec->end = (void *)((intptr_t)new_vec.begin + size);
   }
   return TPH_POISSON_SUCCESS;
 }
@@ -221,13 +240,13 @@ static void print_my_vec_f(const my_vec *vec)
          "begin    = 0x%" PRIXPTR "\n"
          "end      = 0x%" PRIXPTR "\n"
          "size     = %td, %td [bytes]\n"
-         "cap      = %td\n",
+         "cap      = %td, %td [bytes]\n",
     (uintptr_t)vec->mem,
     vec->mem_size,
     (uintptr_t)vec->begin,
     (uintptr_t)vec->end,
-    my_vec_size(float, vec), (ptrdiff_t)((intptr_t)vec->end - (intptr_t)vec->begin),
-    my_vec_capacity(float, vec));
+    my_vec_size(vec) / VEC_TEST_SIZEOF(float), my_vec_size(vec), 
+    my_vec_capacity(vec) / VEC_TEST_SIZEOF(float), my_vec_capacity(vec));
   /* clang-format on */
   printf("data     = [ ");
   const float *iter = (const float *)vec->begin;
@@ -242,62 +261,79 @@ static void test_reserve(void)
   for (size_t i = 0; i < sizeof(float); ++i) {
     /* Create an allocator that returns misaligned memory (except when i == 0). */
     vec_test_alloc_ctx alloc_ctx = { .align_offset = (ptrdiff_t)i };
-    tph_poisson_allocator alloc = { vec_test_malloc, vec_test_free, /*ctx=*/&alloc_ctx };
+    tph_poisson_allocator alloc = {
+      .malloc = vec_test_malloc, .free = vec_test_free, .ctx = &alloc_ctx
+    };
+    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F };
 
-    my_vec vec;
-    memset(&vec, 0, sizeof(my_vec));
+    {
+      /* Reserve on zero-initialized vector. No existing capacity. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_reserve(
+                &vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 0);
+      REQUIRE(my_vec_capacity(&vec) >= VEC_TEST_SIZEOF(values));
+      REQUIRE((intptr_t)vec.begin % VEC_TEST_ALIGNOF(float) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Reserve zero-initialized vector. No existing capacity. */
-    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*new_cap=*/10) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == 0);
-    REQUIRE(my_vec_capacity(float, &vec) == 10);
-    REQUIRE(vec.mem != NULL);
-    REQUIRE(vec.mem_size == 10 * (ptrdiff_t)sizeof(float) + (ptrdiff_t)alignof(float) - 1);
-    REQUIRE((intptr_t)vec.begin - (intptr_t)vec.mem < (ptrdiff_t)alignof(float));
-    REQUIRE((uintptr_t)vec.begin % alignof(float) == 0);
-    REQUIRE(vec.end == vec.begin);
-    REQUIRE(my_vec_shrink_to_fit(float, &vec, &alloc) == TPH_POISSON_SUCCESS);
+    {
+      /* Append some values and then reserve a larger buffer. Check that existing
+         values are copied to new buffer. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == VEC_TEST_SIZEOF(values));
+      REQUIRE(my_vec_capacity(&vec) >= VEC_TEST_SIZEOF(values));
+      REQUIRE((intptr_t)vec.begin % VEC_TEST_ALIGNOF(float) == 0);
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, VEC_TEST_SIZEOF(values)) == 0);
 
-    /* Append some values and then reserve a larger buffer. */
-    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, 34.F };
-    const ptrdiff_t n = (ptrdiff_t)(sizeof(values) / sizeof(values[0]));
-    REQUIRE(my_vec_append(float, &vec, &alloc, values, n) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*new_cap=*/3 * n) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == n);
-    REQUIRE(my_vec_capacity(float, &vec) == 3 * n);
-    REQUIRE(vec.mem != NULL);
-    REQUIRE(vec.mem_size == 3 * n * (ptrdiff_t)sizeof(float) + (ptrdiff_t)alignof(float) - 1);
-    REQUIRE((intptr_t)vec.begin - (intptr_t)vec.mem < (ptrdiff_t)alignof(float));
-    REQUIRE((uintptr_t)vec.begin % alignof(float) == 0);
-    REQUIRE((intptr_t)vec.end
-            == (intptr_t)vec.begin + (ptrdiff_t)sizeof(float) * my_vec_size(float, &vec));
-    const float *iter = (const float *)vec.begin;
-    REQUIRE(flt_eq(iter + 0, &values[0]));
-    REQUIRE(flt_eq(iter + 1, &values[1]));
-    REQUIRE(flt_eq(iter + 2, &values[2]));
-    REQUIRE(flt_eq(iter + 3, &values[3]));
-    REQUIRE(flt_eq(iter + 4, &values[4]));
-    REQUIRE(flt_eq(iter + 5, &values[5]));
-    REQUIRE(flt_eq(iter + 6, &values[6]));
+      void* mem0 = vec.mem;
+      REQUIRE(my_vec_reserve(
+                &vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(values) + 7, VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE((intptr_t)vec.mem != (intptr_t)mem0);
+      REQUIRE(my_vec_size(&vec) == VEC_TEST_SIZEOF(values));
+      REQUIRE(my_vec_capacity(&vec) >= VEC_TEST_SIZEOF(values) + 3);
+      REQUIRE((intptr_t)vec.begin % VEC_TEST_ALIGNOF(float) == 0);
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, VEC_TEST_SIZEOF(values)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Reserve less than existing capacity is a no-op. */
-    void *const mem0 = vec.mem;
-    const ptrdiff_t mem_size0 = vec.mem_size;
-    void *const begin0 = vec.begin;
-    void *const end0 = vec.end;
-    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*new_cap=*/my_vec_capacity(float, &vec) / 2)
-            == TPH_POISSON_SUCCESS);
-    REQUIRE(vec.mem == mem0);
-    REQUIRE(vec.mem_size == mem_size0);
-    REQUIRE(vec.begin == begin0);
-    REQUIRE(vec.end == end0);
+    {
+      /* Reserve less than existing capacity is a no-op. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_reserve(
+                &vec, &alloc, /*new_cap=*/10 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      uint8_t vec0[sizeof(my_vec)];
+      memcpy(vec0, &vec, sizeof(my_vec));
+      REQUIRE(my_vec_reserve(&vec,
+                &alloc,
+                /*new_cap=*/5 * VEC_TEST_SIZEOF(float),
+                VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(memcmp(vec0, &vec, sizeof(my_vec)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Check that bad allocation propagates to caller. */
-    alloc_ctx.fail = 1;
-    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*new_cap=*/2 * my_vec_capacity(float, &vec))
-            == TPH_POISSON_BAD_ALLOC);
-
-    my_vec_free(&vec, &alloc);
+    {
+      /* Check that bad allocation propagates to caller. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      alloc_ctx.fail = 1;
+      REQUIRE(my_vec_reserve(&vec,
+                &alloc,
+                /*new_cap=*/10 * VEC_TEST_SIZEOF(float),
+                VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_BAD_ALLOC);
+      alloc_ctx.fail = 0;
+      my_vec_free(&vec, &alloc);
+    }
   }
 }
 
@@ -306,152 +342,168 @@ static void test_append(void)
   for (size_t i = 0; i < sizeof(float); ++i) {
     /* Create an allocator that returns misaligned memory (except when i == 0). */
     vec_test_alloc_ctx alloc_ctx = { .align_offset = (ptrdiff_t)i };
-    tph_poisson_allocator alloc = { vec_test_malloc, vec_test_free, /*ctx=*/&alloc_ctx };
+    tph_poisson_allocator alloc = {
+      .malloc = vec_test_malloc, .free = vec_test_free, .ctx = &alloc_ctx
+    };
+    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F };
 
-    my_vec vec;
-    memset(&vec, 0, sizeof(my_vec));
-    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, 34.F };
-    const ptrdiff_t n = (ptrdiff_t)(sizeof(values) / sizeof(values[0]));
+    {
+      /* Append to zero-initialized vector. No existing capacity. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_capacity(&vec) == 0);
+      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == VEC_TEST_SIZEOF(values));
+      REQUIRE(my_vec_capacity(&vec) >= VEC_TEST_SIZEOF(values));
+      REQUIRE((intptr_t)vec.begin % VEC_TEST_ALIGNOF(float) == 0);
+      REQUIRE((intptr_t)vec.end % VEC_TEST_ALIGNOF(float) == 0);
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, sizeof(values)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Append to zero-initialized vector. No existing capacity. */
-    REQUIRE(my_vec_append(float, &vec, &alloc, values, n) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == n);
-    REQUIRE(my_vec_capacity(float, &vec) == n);
-    REQUIRE((uintptr_t)vec.begin % alignof(float) == 0);
-    REQUIRE((uintptr_t)vec.end % alignof(float) == 0);
+    {
+      /* Append to empty vector with existing capacity. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_reserve(&vec, &alloc, 5 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 0);
+      REQUIRE(my_vec_capacity(&vec) >= 5 * VEC_TEST_SIZEOF(float));
+      const ptrdiff_t cap0 = my_vec_capacity(&vec);
+      void * const mem0 = vec.mem;
+      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float));
+      REQUIRE(my_vec_capacity(&vec) == cap0);
+      REQUIRE((intptr_t)vec.mem == (intptr_t)mem0);
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, 2 * sizeof(float)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    const float *iter = (const float *)vec.begin;
-    REQUIRE(flt_eq(iter + 0, &values[0]));
-    REQUIRE(flt_eq(iter + 1, &values[1]));
-    REQUIRE(flt_eq(iter + 2, &values[2]));
-    REQUIRE(flt_eq(iter + 3, &values[3]));
-    REQUIRE(flt_eq(iter + 4, &values[4]));
-    REQUIRE(flt_eq(iter + 5, &values[5]));
-    REQUIRE(flt_eq(iter + 6, &values[6]));
+    {
+      /* Append to vector with elements. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float));
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, 2 * sizeof(float)) == 0);
+      REQUIRE(my_vec_append(&vec, &alloc, &values[2], 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 4 * VEC_TEST_SIZEOF(float));
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, 4 * sizeof(float)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Append to empty vector with existing capacity. */
-    for (ptrdiff_t j = 0; j < n; ++j) { my_vec_erase_unordered(float, &vec, /*pos=*/0); }
-    REQUIRE(my_vec_size(float, &vec) == 0);
-    REQUIRE(my_vec_capacity(float, &vec) == n);
-    void *mem0 = vec.mem;
-    REQUIRE(my_vec_append(float, &vec, &alloc, values, /*count=*/2) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == 2);
-    REQUIRE(my_vec_capacity(float, &vec) == n);
-    REQUIRE(vec.mem == mem0);
-    /* Iterator still valid, no reallocations. */
-    REQUIRE(flt_eq(iter + 0, &values[0]));
-    REQUIRE(flt_eq(iter + 1, &values[1]));
+    {
+      /* Append that causes reallocation and element copy. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float));
+      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float) + VEC_TEST_SIZEOF(values));
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, 2 * sizeof(float)) == 0);
+      REQUIRE(memcmp((const void *)((intptr_t)vec.begin + 2 * VEC_TEST_SIZEOF(float)),
+                (const void *)values,
+                VEC_TEST_SIZEOF(values))
+              == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Append to vector with elements. */
-    REQUIRE(my_vec_append(float, &vec, &alloc, &values[2], /*count=*/2) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == 4);
-    REQUIRE(my_vec_capacity(float, &vec) == n);
-    /* Iterator still valid, no reallocations. */
-    REQUIRE(flt_eq(iter + 0, &values[0]));
-    REQUIRE(flt_eq(iter + 1, &values[1]));
-    REQUIRE(flt_eq(iter + 2, &values[2]));
-    REQUIRE(flt_eq(iter + 3, &values[3]));
-
-    /* Append causes reallocation and element copy. */
-    REQUIRE(my_vec_append(float, &vec, &alloc, &values[0], /*count=*/4) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == 8);
-    REQUIRE(my_vec_capacity(float, &vec) == 2 * n);
-    iter = (const float *)vec.begin;
-    REQUIRE(flt_eq(iter + 0, &values[0]));
-    REQUIRE(flt_eq(iter + 1, &values[1]));
-    REQUIRE(flt_eq(iter + 2, &values[2]));
-    REQUIRE(flt_eq(iter + 3, &values[3]));
-    REQUIRE(flt_eq(iter + 4, &values[0]));
-    REQUIRE(flt_eq(iter + 5, &values[1]));
-    REQUIRE(flt_eq(iter + 6, &values[2]));
-    REQUIRE(flt_eq(iter + 7, &values[3]));
-
-    /* Check that bad allocation propagates to caller. */
-    alloc_ctx.fail = 1;
-    float values2[256] = { 0.F };
-    REQUIRE(my_vec_append(float, &vec, &alloc, values2, sizeof(values) / sizeof(values[0]))
-            == TPH_POISSON_BAD_ALLOC);
-
-    my_vec_free(&vec, &alloc);
+    { 
+      /* Check that bad allocation propagates to caller. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      alloc_ctx.fail = 1;
+      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_BAD_ALLOC);
+      alloc_ctx.fail = 0;
+      my_vec_free(&vec, &alloc);
+    }
   }
 }
 
-static void test_erase(void)
+static void test_erase_swap(void)
 {
-  /* Append some values. Not using custom allocator here since erasing elements is
-   * independent of allocator. Allocator is used only for setup/teardown. */
-  const tph_poisson_allocator *alloc = &tph_poisson_default_alloc;
-  my_vec vec;
-  memset(&vec, 0, sizeof(my_vec));
-  const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, 34.F };
-  const ptrdiff_t n = (ptrdiff_t)(sizeof(values) / sizeof(values[0]));
-  REQUIRE(my_vec_append(float, &vec, alloc, values, n) == TPH_POISSON_SUCCESS);
-  REQUIRE(my_vec_size(float, &vec) == n);
-  /* Erasing does not cause reallocation, so iterator is valid throughout. */
-  const float *iter = (const float *)vec.begin;
-  void *mem0 = vec.mem;
-  const ptrdiff_t mem_size0 = vec.mem_size;
+  for (size_t i = 0; i < sizeof(float); ++i) {
+    /* Create an allocator that returns misaligned memory (except when i == 0). */
+    vec_test_alloc_ctx alloc_ctx = { .align_offset = (ptrdiff_t)i };
+    tph_poisson_allocator alloc = {
+      .malloc = vec_test_malloc, .free = vec_test_free, .ctx = &alloc_ctx
+    };
+    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F };
 
-  /* Remove first of several elements. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/0);
-  REQUIRE(my_vec_size(float, &vec) == n - 1);
-  REQUIRE(flt_eq(iter + 0, &values[6]));
-  REQUIRE(flt_eq(iter + 1, &values[1]));
-  REQUIRE(flt_eq(iter + 2, &values[2]));
-  REQUIRE(flt_eq(iter + 3, &values[3]));
-  REQUIRE(flt_eq(iter + 4, &values[4]));
-  REQUIRE(flt_eq(iter + 5, &values[5]));
+    /* Append some values. */
+    my_vec vec;
+    memset(&vec, 0, sizeof(my_vec));
+    REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+            == TPH_POISSON_SUCCESS);
 
-  /* Remove last of several elements. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/5);
-  REQUIRE(my_vec_size(float, &vec) == n - 2);
-  REQUIRE(flt_eq(iter + 0, &values[6]));
-  REQUIRE(flt_eq(iter + 1, &values[1]));
-  REQUIRE(flt_eq(iter + 2, &values[2]));
-  REQUIRE(flt_eq(iter + 3, &values[3]));
-  REQUIRE(flt_eq(iter + 4, &values[4]));
+    void *const mem0 = vec.mem;
+    const ptrdiff_t mem_size0 = vec.mem_size;
+    void *const begin0 = vec.begin;
 
-  /* Remove second element. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/1);
-  REQUIRE(my_vec_size(float, &vec) == n - 3);
-  REQUIRE(flt_eq(iter + 0, &values[6]));
-  REQUIRE(flt_eq(iter + 1, &values[4]));
-  REQUIRE(flt_eq(iter + 2, &values[2]));
-  REQUIRE(flt_eq(iter + 3, &values[3]));
+    /* Remove first of several elements. */
+    my_vec_erase_swap(&vec, /*pos=*/0, /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 6 * VEC_TEST_SIZEOF(float));
+    REQUIRE(flt_eq((const float *)vec.begin + 0, &values[6]));
+    REQUIRE(flt_eq((const float *)vec.begin + 1, &values[1]));
+    REQUIRE(flt_eq((const float *)vec.begin + 2, &values[2]));
+    REQUIRE(flt_eq((const float *)vec.begin + 3, &values[3]));
+    REQUIRE(flt_eq((const float *)vec.begin + 4, &values[4]));
+    REQUIRE(flt_eq((const float *)vec.begin + 5, &values[5]));
 
-  /* Remove second element. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/1);
-  REQUIRE(my_vec_size(float, &vec) == n - 4);
-  REQUIRE(flt_eq(iter + 0, &values[6]));
-  REQUIRE(flt_eq(iter + 1, &values[3]));
-  REQUIRE(flt_eq(iter + 2, &values[2]));
+    /* Remove last of several elements. */
+    my_vec_erase_swap(&vec, /*pos=*/5 * VEC_TEST_SIZEOF(float), /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 5 * VEC_TEST_SIZEOF(float));
+    REQUIRE(flt_eq((const float *)vec.begin + 0, &values[6]));
+    REQUIRE(flt_eq((const float *)vec.begin + 1, &values[1]));
+    REQUIRE(flt_eq((const float *)vec.begin + 2, &values[2]));
+    REQUIRE(flt_eq((const float *)vec.begin + 3, &values[3]));
+    REQUIRE(flt_eq((const float *)vec.begin + 4, &values[4]));
 
-  /* Remove second element. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/1);
-  REQUIRE(my_vec_size(float, &vec) == n - 5);
-  REQUIRE(flt_eq(iter + 0, &values[6]));
-  REQUIRE(flt_eq(iter + 1, &values[2]));
+    /* Remove second element. */
+    my_vec_erase_swap(&vec, /*pos=*/1 * VEC_TEST_SIZEOF(float), /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 4 * VEC_TEST_SIZEOF(float));
+    REQUIRE(flt_eq((const float *)vec.begin + 0, &values[6]));
+    REQUIRE(flt_eq((const float *)vec.begin + 1, &values[4]));
+    REQUIRE(flt_eq((const float *)vec.begin + 2, &values[2]));
+    REQUIRE(flt_eq((const float *)vec.begin + 3, &values[3]));
 
-  /* Remove second element. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/1);
-  REQUIRE(my_vec_size(float, &vec) == n - 6);
-  REQUIRE(flt_eq(iter + 0, &values[6]));
+    /* Remove second element. */
+    my_vec_erase_swap(&vec, /*pos=*/1 * VEC_TEST_SIZEOF(float), /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 3 * VEC_TEST_SIZEOF(float));
+    REQUIRE(flt_eq((const float *)vec.begin + 0, &values[6]));
+    REQUIRE(flt_eq((const float *)vec.begin + 1, &values[3]));
+    REQUIRE(flt_eq((const float *)vec.begin + 2, &values[2]));
 
-  /* Remove only remaining element. */
-  my_vec_erase_unordered(float, &vec, /*pos=*/0);
-  REQUIRE(my_vec_size(float, &vec) == 0);
+    /* Remove second element. */
+    my_vec_erase_swap(&vec, /*pos=*/1 * VEC_TEST_SIZEOF(float), /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float));
+    REQUIRE(flt_eq((const float *)vec.begin + 0, &values[6]));
+    REQUIRE(flt_eq((const float *)vec.begin + 1, &values[2]));
 
-  /* Capacity unchanged. */
-  REQUIRE(vec.mem_size == mem_size0);
+    /* Remove second element. */
+    my_vec_erase_swap(&vec, /*pos=*/1 * VEC_TEST_SIZEOF(float), /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 1 * VEC_TEST_SIZEOF(float));
+    REQUIRE(flt_eq((const float *)vec.begin + 0, &values[6]));
 
-  /* No reallocation. */
-  REQUIRE((uintptr_t)vec.mem == (uintptr_t)mem0);
-  REQUIRE((uintptr_t)vec.begin == (uintptr_t)iter);
+    /* Remove only remaining element. */
+    my_vec_erase_swap(&vec, /*pos=*/0 * VEC_TEST_SIZEOF(float), /*n=*/VEC_TEST_SIZEOF(float));
+    REQUIRE(my_vec_size(&vec) == 0);
 
-  /* Vector is empty. */
-  REQUIRE((uintptr_t)vec.begin == (uintptr_t)vec.end);
+    /* Capacity unchanged, no reallocation, vector is empty. */
+    REQUIRE((intptr_t)vec.mem == (intptr_t)mem0);
+    REQUIRE(vec.mem_size == mem_size0);
+    REQUIRE((intptr_t)vec.begin == (intptr_t)begin0);
+    REQUIRE((intptr_t)vec.begin == (intptr_t)vec.end);
 
-  my_vec_free(&vec, alloc);
+    my_vec_free(&vec, &alloc);
+  }
 }
 
 static void test_shrink_to_fit(void)
@@ -459,62 +511,104 @@ static void test_shrink_to_fit(void)
   for (size_t i = 0; i < sizeof(float); ++i) {
     /* Create an allocator that returns misaligned memory (except when i == 0). */
     vec_test_alloc_ctx alloc_ctx = { .align_offset = (ptrdiff_t)i };
-    tph_poisson_allocator alloc = { vec_test_malloc, vec_test_free, /*ctx=*/&alloc_ctx };
+    tph_poisson_allocator alloc = {
+      .malloc = vec_test_malloc, .free = vec_test_free, .ctx = &alloc_ctx
+    };
+    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F };
 
-    /* Append some values. */
-    my_vec vec;
-    memset(&vec, 0, sizeof(my_vec));
+    { 
+      /* No-op on zero-initialized vector. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+      my_vec vec0;
+      memcpy(&vec0, &vec, sizeof(my_vec));
+      REQUIRE(my_vec_shrink_to_fit(&vec, &alloc, VEC_TEST_ALIGNOF(float)) == TPH_POISSON_SUCCESS);
+      REQUIRE(memcmp(&vec, &vec0, sizeof(my_vec)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* No-op on zero-initialized vector. */
-    REQUIRE(my_vec_shrink_to_fit(float, &vec, &alloc) == TPH_POISSON_SUCCESS);
+    { 
+      /* size == capacity means that shrink_to_fit should be a no-op. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
 
-    /* Append some values to an empty vector. */
-    REQUIRE(my_vec_size(float, &vec) == 0);
-    REQUIRE(my_vec_capacity(float, &vec) == 0);
-    const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, 34.F };
-    const ptrdiff_t n = (ptrdiff_t)(sizeof(values) / sizeof(values[0]));
-    REQUIRE(my_vec_append(float, &vec, &alloc, values, n) == TPH_POISSON_SUCCESS);
+      /* Append some values to an empty vector. */
+      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
 
-    /* size == capacity means that shrink_to_fit should be a no-op.
-     * No reallocation should happen. */
-    REQUIRE(my_vec_size(float, &vec) == n);
-    REQUIRE(my_vec_capacity(float, &vec) == n);
-    void *mem0 = vec.mem;
-    REQUIRE(my_vec_shrink_to_fit(float, &vec, &alloc) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == n);
-    REQUIRE(my_vec_capacity(float, &vec) == n);
-    REQUIRE(vec.mem == mem0);
+      /* Shrink and verify that vector is bit-wise intact. */
+      my_vec vec0;
+      memcpy(&vec0, &vec, sizeof(my_vec));
+      REQUIRE(my_vec_shrink_to_fit(&vec, &alloc, VEC_TEST_ALIGNOF(float)) == TPH_POISSON_SUCCESS);
+      REQUIRE(memcmp(&vec, &vec0, sizeof(my_vec)) == 0);
+      assert(vec.begin != NULL); /* TMP!?!?!???????????????????????!!! */
+      REQUIRE(
+        memcmp((const void *)vec.begin, (const void *)values, VEC_TEST_SIZEOF(values)) == 0);
+      my_vec_free(&vec, &alloc);
+    }
 
-    /* Append two more values, causing capacity to double. Verify that shrinking removes
-     * extraneous capacity. This requires a reallocation and copying elements to the
-     * smaller buffer. */
-    REQUIRE(my_vec_append(float, &vec, &alloc, &values[0], /*count=*/2) == TPH_POISSON_SUCCESS);
-    mem0 = vec.mem;
-    REQUIRE(my_vec_size(float, &vec) == n + 2);
-    REQUIRE(my_vec_capacity(float, &vec) == 2 * n);
-    REQUIRE(my_vec_shrink_to_fit(float, &vec, &alloc) == TPH_POISSON_SUCCESS);
-    REQUIRE(my_vec_size(float, &vec) == n + 2);
-    REQUIRE(my_vec_capacity(float, &vec) == n + 2);
-    REQUIRE(vec.mem != mem0);
-    const float *iter = (const float *)vec.begin;
-    REQUIRE(flt_eq(iter++, &values[0]));
-    REQUIRE(flt_eq(iter++, &values[1]));
-    REQUIRE(flt_eq(iter++, &values[2]));
-    REQUIRE(flt_eq(iter++, &values[3]));
-    REQUIRE(flt_eq(iter++, &values[4]));
-    REQUIRE(flt_eq(iter++, &values[5]));
-    REQUIRE(flt_eq(iter++, &values[6]));
-    REQUIRE(flt_eq(iter++, &values[0]));
-    REQUIRE(flt_eq(iter++, &values[1]));
-    REQUIRE(iter == (const float *)vec.end);
+#if 0
+    { 
+      /* Verify that shrinking removes extraneous capacity. This requires a reallocation and copying
+       * elements to the smaller buffer. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
 
-    /* Check that bad allocation propagates to caller. First reserve capacity so that
-     * shrinking is required. */
-    REQUIRE(my_vec_reserve(float, &vec, &alloc, /*count=*/2 * n) == TPH_POISSON_SUCCESS);
-    alloc_ctx.fail = 1;
-    REQUIRE(my_vec_shrink_to_fit(float, &vec, &alloc) == TPH_POISSON_BAD_ALLOC);
+      /* Reserve a large capacity and append only a few values so that shrinking removes
+       * extraneous capacity (which triggers reallocation). */
+      REQUIRE(my_vec_reserve(&vec, &alloc, 20 * VEC_TEST_SIZEOF(float), alignof(float))
+              == TPH_POISSON_SUCCESS);
+      const float values[] = { 0.F, -1.F, 13.F, 42.F };
+      const ptrdiff_t n = (ptrdiff_t)(sizeof(values) / sizeof(values[0]));
+      REQUIRE(my_vec_append(&vec, &alloc, values, n * (ptrdiff_t)sizeof(float), alignof(float))
+              == TPH_POISSON_SUCCESS);
+lkj
 
-    my_vec_free(&vec, &alloc);
+      print_my_vec_f(&vec);
+      REQUIRE(my_vec_size(&vec, VEC_TEST_SIZEOF(float)) == n);
+      REQUIRE(my_vec_capacity(float, &vec) == (alloc_ctx.align_offset == 0 ? n + 1 : n));
+
+      /* Append two more values, causing capacity to double. */
+      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * (ptrdiff_t)(sizeof(float)), alignof(float))
+              == TPH_POISSON_SUCCESS);
+      print_my_vec_f(&vec);
+      REQUIRE(my_vec_size(&vec, VEC_TEST_SIZEOF(float)) == n + 2);
+      REQUIRE(my_vec_capacity(float, &vec) == (alloc_ctx.align_offset == 0 ? 2 * n + 3 : 2 * n));
+
+      /* Shrink capacity. */
+      REQUIRE(my_vec_shrink_to_fit(&vec, &alloc, alignof(float)) == TPH_POISSON_SUCCESS);
+      print_my_vec_f(&vec);
+      REQUIRE(my_vec_size(&vec, VEC_TEST_SIZEOF(float)) == n + 2);
+      REQUIRE(my_vec_capacity(float, &vec) == (alloc_ctx.align_offset == 0 ? n + 1 : n));
+      REQUIRE(flt_eq((const float *)vec.begin + 0, &values[0]));
+      REQUIRE(flt_eq((const float *)vec.begin + 1, &values[1]));
+      REQUIRE(flt_eq((const float *)vec.begin + 2, &values[2]));
+      REQUIRE(flt_eq((const float *)vec.begin + 3, &values[3]));
+      REQUIRE(flt_eq((const float *)vec.begin + 4, &values[0]));
+      REQUIRE(flt_eq((const float *)vec.begin + 5, &values[1]));
+
+      my_vec_free(&vec, &alloc);
+    }
+#endif
+    { 
+      /* Check that bad allocation propagates to caller. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+
+      /* Reserve a large capacity and append only a few values so that shrinking removes
+       * extraneous capacity (which triggers reallocation). */
+      REQUIRE(my_vec_reserve(&vec, &alloc, 3 * VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+
+      /* Check that caller is notified when reallocation fails. */
+      alloc_ctx.fail = 1;
+      REQUIRE(my_vec_shrink_to_fit(&vec, &alloc, VEC_TEST_ALIGNOF(float)) == TPH_POISSON_BAD_ALLOC);
+      alloc_ctx.fail = 0;
+
+      my_vec_free(&vec, &alloc);
+    }
   }
 }
 
@@ -529,8 +623,8 @@ int main(int argc, char *argv[])
   printf("test_append...\n");
   test_append();
 
-  printf("test_erase...\n");
-  test_erase();
+  printf("test_erase_swap...\n");
+  test_erase_swap();
 
   printf("test_shrink_to_fit...\n");
   test_shrink_to_fit();

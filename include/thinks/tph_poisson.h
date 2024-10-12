@@ -220,12 +220,12 @@ static TPH_POISSON_INLINE void tph_poisson_free(void *ptr, ptrdiff_t size, void 
  * to is a multiple of the alignment. Assumes that alignment is a power of two (which
  * seems to always be the case when querying the value using the alignof function). The
  * alignment is done by (potentially) moving the pointer 'forward' until it satisfies
- * the address is a multiple of alignment.
+ * that the address is a multiple of alignment.
  * @param ptr       Pointer to align.
- * @param alignment Requested alignment. Assumed to be a power of two.
+ * @param alignment Requested alignment. Assumed to be a (non-zero) power of two.
  * @return An aligned pointer.
  */
-static TPH_POISSON_INLINE void *tph_poisson_align(void *ptr, const size_t alignment)
+static TPH_POISSON_INLINE void *tph_poisson_align(void *const ptr, const size_t alignment)
 {
   tph_poisson_assert((alignment > 0) & ((alignment & (alignment - 1)) == 0));
   return (void *)(((uintptr_t)ptr + (alignment - 1)) & ~(alignment - 1));
@@ -233,13 +233,13 @@ static TPH_POISSON_INLINE void *tph_poisson_align(void *ptr, const size_t alignm
 
 static tph_poisson_allocator tph_poisson_default_alloc = { tph_poisson_malloc,
   tph_poisson_free,
-  /*ctx=*/NULL };
+  /*.ctx=*/NULL };
 
 /*
  * PSEUDO-RANDOM NUMBER GENERATION
  */
 
-typedef struct
+typedef struct tph_poisson_splitmix64_state_
 {
   uint64_t s;
 } tph_poisson_splitmix64_state;
