@@ -54,11 +54,12 @@ static bool flt_eq(const float *a, const float *b)
   return memcmp((const void *)a, (const void *)b, sizeof(float)) == 0 ? true : false;
 }
 
-static bool is_zeros(const void* const mem, const ptrdiff_t n) {
-  static const uint8_t test_block [128];
+static bool is_zeros(const void *const mem, const ptrdiff_t n)
+{
+  static const uint8_t test_block[128];
   assert(n > 0);
   assert(n <= 128);
-  return memcmp((const void*)test_block, mem, (size_t)n) == 0;
+  return memcmp((const void *)test_block, mem, (size_t)n) == 0;
 }
 
 /*-------------------------*/
@@ -129,7 +130,7 @@ static int my_vec_reserve(my_vec *vec,
     /* No existing data, destroy the old buffer. */
     assert(vec->mem_size > 0);
     alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-  } 
+  }
 
   /* Configure vector to use the new buffer. */
   vec->mem = new_mem;
@@ -138,7 +139,7 @@ static int my_vec_reserve(my_vec *vec,
   vec->end = (void *)((intptr_t)new_begin + size);
 
   assert(vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem) >= new_cap);
-  
+
   return TPH_POISSON_SUCCESS;
 }
 
@@ -152,7 +153,7 @@ static int my_vec_append(my_vec *vec,
   assert(alloc != NULL);
   assert(buf != NULL);
   assert(n > 0);
-  assert(alignment > 0); 
+  assert(alignment > 0);
 
   const ptrdiff_t cap = vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem);
   const ptrdiff_t req_cap = (intptr_t)vec->end - (intptr_t)vec->begin + n;
@@ -183,7 +184,7 @@ static int my_vec_append(my_vec *vec,
       /* No existing data, destroy the old buffer. */
       assert(vec->mem_size > 0);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-    } 
+    }
 
     /* Configure vector to use the new buffer. */
     vec->mem = new_mem;
@@ -212,9 +213,7 @@ static void my_vec_erase_swap(my_vec *vec, const ptrdiff_t pos, const ptrdiff_t 
   intptr_t src_begin = (intptr_t)vec->end - n;
   if (src_begin < dst_end) { src_begin = dst_end; }
   const intptr_t m = (intptr_t)vec->end - src_begin;
-  if (m > 0) {
-    memcpy((void *)dst_begin, (const void *)src_begin, (size_t)m);
-  }
+  if (m > 0) { memcpy((void *)dst_begin, (const void *)src_begin, (size_t)m); }
   /* else: when erasing up to the last element there is no need to copy anything,
    *       just "pop" the end of the vector. */
 
@@ -263,7 +262,7 @@ static int
       /* Existing vector is empty but has capacity. */
       assert(vec->mem_size > 0);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-    } 
+    }
 
     /* Configure vector to use the new buffer. */
     vec->mem = new_mem;
@@ -300,7 +299,8 @@ static void print_my_vec_f(const my_vec *vec)
 }
 #endif
 
-static bool valid_invariants(my_vec *vec, const ptrdiff_t alignment) {
+static bool valid_invariants(my_vec *vec, const ptrdiff_t alignment)
+{
   if (vec == NULL) { return false; }
 
   /* Zero-initialized. */
@@ -317,9 +317,9 @@ static bool valid_invariants(my_vec *vec, const ptrdiff_t alignment) {
   }
   /* clang-format on */
 
-  if (!(my_vec_capacity(vec) >= my_vec_size(vec))) {return false;}
+  if (!(my_vec_capacity(vec) >= my_vec_size(vec))) { return false; }
 
-  return true;  
+  return true;
 }
 
 static void test_reserve(void)
@@ -331,16 +331,17 @@ static void test_reserve(void)
       .malloc = vec_test_malloc, .free = vec_test_free, .ctx = &alloc_ctx
     };
     const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F };
-    const ptrdiff_t extra_cap = alloc_ctx.align_offset == 0 ? VEC_TEST_ALIGNOF(float) : alloc_ctx.align_offset;
+    const ptrdiff_t extra_cap =
+      alloc_ctx.align_offset == 0 ? VEC_TEST_ALIGNOF(float) : alloc_ctx.align_offset;
 
     {
       /* Reserve on zero-initialized vector. No existing capacity. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
 
-      REQUIRE(my_vec_reserve(
-                &vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+      REQUIRE(
+        my_vec_reserve(&vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
 
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       REQUIRE(my_vec_size(&vec) == 0);
@@ -353,10 +354,10 @@ static void test_reserve(void)
       /* Reserve less than existing capacity is a no-op. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
-      
-      REQUIRE(my_vec_reserve(
-                &vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+
+      REQUIRE(
+        my_vec_reserve(&vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
       uint8_t vec0[sizeof(my_vec)];
       memcpy(vec0, &vec, sizeof(my_vec));
 
@@ -381,12 +382,15 @@ static void test_reserve(void)
       REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
 
-      REQUIRE(my_vec_reserve(
-                &vec, &alloc, /*new_cap=*/VEC_TEST_SIZEOF(values) + 3 * VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+      REQUIRE(my_vec_reserve(&vec,
+                &alloc,
+                /*new_cap=*/VEC_TEST_SIZEOF(values) + 3 * VEC_TEST_SIZEOF(values),
+                VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
 
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
-      REQUIRE(my_vec_capacity(&vec) == VEC_TEST_SIZEOF(values) + 3 * VEC_TEST_SIZEOF(values) + extra_cap);
+      REQUIRE(
+        my_vec_capacity(&vec) == VEC_TEST_SIZEOF(values) + 3 * VEC_TEST_SIZEOF(values) + extra_cap);
       REQUIRE(memcmp((const void *)vec.begin, (const void *)values, VEC_TEST_SIZEOF(values)) == 0);
 
       my_vec_free(&vec, &alloc);
@@ -445,8 +449,9 @@ static void test_append(void)
       REQUIRE(my_vec_reserve(&vec, &alloc, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
 
-      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+      REQUIRE(
+        my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
 
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float));
@@ -460,11 +465,13 @@ static void test_append(void)
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
 
-      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+      REQUIRE(
+        my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
 
-      REQUIRE(my_vec_append(&vec, &alloc, &values[2], 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+      REQUIRE(
+        my_vec_append(&vec, &alloc, &values[2], 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
 
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       REQUIRE(my_vec_size(&vec) == 4 * VEC_TEST_SIZEOF(float));
@@ -478,13 +485,14 @@ static void test_append(void)
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
 
-      REQUIRE(my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+      REQUIRE(
+        my_vec_append(&vec, &alloc, values, 2 * VEC_TEST_SIZEOF(float), VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
 
       REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
 
-      REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));              
+      REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       REQUIRE(my_vec_size(&vec) == 2 * VEC_TEST_SIZEOF(float) + VEC_TEST_SIZEOF(values));
       REQUIRE(memcmp((const void *)vec.begin, (const void *)values, 2 * sizeof(float)) == 0);
       REQUIRE(memcmp((const void *)((intptr_t)vec.begin + 2 * VEC_TEST_SIZEOF(float)),
@@ -495,7 +503,7 @@ static void test_append(void)
       my_vec_free(&vec, &alloc);
     }
 
-    { 
+    {
       /* Check that bad allocation propagates to caller. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
@@ -598,9 +606,10 @@ static void test_shrink_to_fit(void)
       .malloc = vec_test_malloc, .free = vec_test_free, .ctx = &alloc_ctx
     };
     const float values[] = { 0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F };
-    const ptrdiff_t extra_cap = alloc_ctx.align_offset == 0 ? VEC_TEST_ALIGNOF(float) : alloc_ctx.align_offset;
+    const ptrdiff_t extra_cap =
+      alloc_ctx.align_offset == 0 ? VEC_TEST_ALIGNOF(float) : alloc_ctx.align_offset;
 
-    { 
+    {
       /* No-op on zero-initialized vector. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
@@ -627,7 +636,7 @@ static void test_shrink_to_fit(void)
       /* No need to free the vector! */
     }
 
-    { 
+    {
       /* size == capacity means that shrink_to_fit is a no-op. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
@@ -648,8 +657,7 @@ static void test_shrink_to_fit(void)
 
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       REQUIRE(memcmp(&vec, &vec0, sizeof(my_vec)) == 0);
-      REQUIRE(
-        memcmp((const void *)vec.begin, (const void *)values, VEC_TEST_SIZEOF(values)) == 0);
+      REQUIRE(memcmp((const void *)vec.begin, (const void *)values, VEC_TEST_SIZEOF(values)) == 0);
 
       my_vec_free(&vec, &alloc);
     }
@@ -697,7 +705,7 @@ lkj
       my_vec_free(&vec, &alloc);
     }
 #endif
-    { 
+    {
       /* Check that bad allocation propagates to caller. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
@@ -706,8 +714,9 @@ lkj
        * extraneous capacity (which triggers reallocation). */
       REQUIRE(my_vec_reserve(&vec, &alloc, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
-      REQUIRE(my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values) / 2, VEC_TEST_ALIGNOF(float))
-              == TPH_POISSON_SUCCESS);
+      REQUIRE(
+        my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values) / 2, VEC_TEST_ALIGNOF(float))
+        == TPH_POISSON_SUCCESS);
 
       /* Check that caller is notified when reallocation fails. */
       alloc_ctx.fail = 1;
