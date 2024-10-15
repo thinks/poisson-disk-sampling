@@ -304,8 +304,7 @@ static bool valid_invariants(my_vec *vec, const ptrdiff_t alignment)
   if (vec == NULL) { return false; }
 
   /* Zero-initialized. */
-  static const uint8_t vec0[sizeof(my_vec)];
-  if (memcmp(vec, vec0, sizeof(my_vec)) == 0) { return true; }
+  if (is_zeros(vec, VEC_TEST_SIZEOF(my_vec))) { return true; }
 
   /* clang-format off */
   if (!(vec->mem != NULL && 
