@@ -15,8 +15,6 @@ endif()
 # Build <float> and <double> versions as static libraries used by the tests.
 # The C compiler is used so that linters and other tools recognize that our
 # code is in C and can give appropriate warnings.
-# Note that since the tests are written in C++, we must tag the include directories
-# as SYSTEM, so that we don't get C++ style warnings for our C code.
 
 add_library(tph_poisson_f STATIC "src/tph_poisson_f.c")
 add_library(thinks::tph_poisson_f ALIAS tph_poisson_f)
@@ -46,7 +44,6 @@ target_compile_features(tph_poisson_d PRIVATE c_std_11)
 # <float>
 add_executable(tph_poisson_f_test "src/tph_poisson_test.cpp")
 target_link_libraries(tph_poisson_f_test PRIVATE thinks::tph_poisson_f)# rpmalloc)
-target_compile_features(tph_poisson_f_test PRIVATE c_std_11)
 target_compile_features(tph_poisson_f_test PRIVATE cxx_std_17)
 add_test(NAME tph_poisson_f_test COMMAND tph_poisson_f_test)
 
@@ -54,9 +51,17 @@ add_test(NAME tph_poisson_f_test COMMAND tph_poisson_f_test)
 add_executable(tph_poisson_d_test "src/tph_poisson_test.cpp")
 target_link_libraries(tph_poisson_d_test PRIVATE thinks::tph_poisson_d)# rpmalloc)
 target_compile_definitions(tph_poisson_d_test PRIVATE TPH_POISSON_TEST_USE_DOUBLE)
-target_compile_features(tph_poisson_d_test PRIVATE c_std_11)
 target_compile_features(tph_poisson_d_test PRIVATE cxx_std_17)
 add_test(NAME tph_poisson_d_test COMMAND tph_poisson_d_test)
+
+add_executable(tph_poisson_vec_test "src/tph_poisson_vec_test.c")
+target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)# rpmalloc)
+target_compile_definitions(tph_poisson_vec_test PRIVATE TPH_POISSON_VEC_TEST)
+target_compile_features(tph_poisson_vec_test PRIVATE c_std_11)
+add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
+if(NOT MSVC)
+  target_link_libraries(tph_poisson_vec_test PRIVATE m)
+endif()
 
 # ---- End-of-file commands ----
 
