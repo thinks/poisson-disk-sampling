@@ -56,7 +56,7 @@ static bool flt_eq(const float *a, const float *b)
 
 static bool is_zeros(const void *const mem, const ptrdiff_t n)
 {
-  static const uint8_t test_block[128];
+  static const uint8_t test_block[128] = {0};
   assert(n > 0);
   assert(n <= 128);
   return memcmp((const void *)test_block, mem, (size_t)n) == 0;
