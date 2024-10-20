@@ -1,8 +1,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Standard](https://img.shields.io/badge/c-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 [![Standard](https://img.shields.io/badge/c%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
-![CI](https://github.com/thinks/poisson-disk-sampling/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/thinks/poisson-disk-sampling/actions/workflows/ci.yml/badge.svg?branch=master)
 [![codecov](https://codecov.io/github/thinks/poisson-disk-sampling/graph/badge.svg?token=NXIAKWPKAB)](https://codecov.io/github/thinks/poisson-disk-sampling)
+
 ![Version](https://img.shields.io/badge/version-0.4.0-blue)
 
 # tph_poisson
