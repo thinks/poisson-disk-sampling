@@ -396,6 +396,7 @@ static void test_reserve(void)
     }
 
     {
+      /* Reserve additional capacity for a vector with existing capacity but no values. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
 
@@ -496,6 +497,28 @@ static void test_append(void)
       REQUIRE(my_vec_size(&vec) == 4 * VEC_TEST_SIZEOF(float));
       REQUIRE(memcmp((const void *)vec.begin, (const void *)values, 4 * sizeof(float)) == 0);
 
+      my_vec_free(&vec, &alloc);
+    }
+
+    {
+      /* Append to vector with existing capacity but no values. */
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+
+      my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float));
+      my_vec_erase_swap(&vec, 0, VEC_TEST_SIZEOF(values));
+      REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
+      REQUIRE(my_vec_size(&vec) == 0);
+
+      const float values2[] = { 
+        0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F,
+        0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F,
+       };
+
+      REQUIRE(my_vec_append(&vec, &alloc, values2, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+
+      REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       my_vec_free(&vec, &alloc);
     }
 
