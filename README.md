@@ -1,19 +1,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Standard](https://img.shields.io/badge/c-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 [![Standard](https://img.shields.io/badge/c%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
-![CI](https://github.com/thinks/poisson-disk-sampling/workflows/CI/badge.svg)
+![CI](https://github.com/thinks/poisson-disk-sampling/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/github/thinks/poisson-disk-sampling/graph/badge.svg?token=NXIAKWPKAB)](https://codecov.io/github/thinks/poisson-disk-sampling)
 ![Version](https://img.shields.io/badge/version-0.4.0-blue)
 
 # tph_poisson
-This repository contains a [single file](include/thinks/tph_poisson.h), header-only, no-dependencies, C library for generating Poisson disk samplings in arbitrary dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Robert Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007.  
+This repository contains a [single file](include/thinks/tph_poisson.h), header-only, no-dependencies, C library for generating Poisson disk samplings in arbitrary dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Rook Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007.  
 
 ## Usage
 
 Poisson disk sampling aims to generate a set of samples within a bounded region such that no two samples are closer than some user-specified radius to each other. Let's consider a simple [example](examples(simple_c.c)) written in C.
 
 ```C
-// C11
+/* C11 */
 
 #include <assert.h>/* assert */
 #include <stddef.h>/* ptrdiff_t */
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   const int ret = tph_poisson_create(&args, alloc, &sampling);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy sampling here! */
-    printf("Failed creating Poisson sampling! Error code: %d\n", ret);
+    printf("tph_poisson error, code: %d\n", ret);
     return EXIT_FAILURE;
   }
 
