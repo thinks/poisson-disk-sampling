@@ -16,11 +16,12 @@ Poisson disk sampling aims to generate a set of samples within a bounded region 
 ```C
 /* C11 */
 
-#include <assert.h>/* assert */
-#include <stddef.h>/* ptrdiff_t */
-#include <stdint.h>/* UINT64_C, etc */
-#include <stdio.h>/* printf */
-#include <stdlib.h>/* EXIT_FAILURE, etc */
+#include <assert.h> /* assert */
+#include <stddef.h> /* ptrdiff_t */
+#include <stdint.h> /* UINT64_C, etc */
+#include <stdio.h>  /* printf */
+#include <stdlib.h> /* EXIT_FAILURE, etc */
+#include <string.h> /* memset */
 
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
@@ -48,7 +49,8 @@ int main(int argc, char *argv[])
   const tph_poisson_allocator *alloc = NULL;
 
   /* Create samples. */
-  tph_poisson_sampling sampling = { .internal = NULL, .ndims = INT32_C(0), .nsamples = 0 };
+  tph_poisson_sampling sampling;
+  memset(&sampling, 0, sizeof(tph_poisson_sampling));
   const int ret = tph_poisson_create(&args, alloc, &sampling);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy sampling here! */
@@ -61,6 +63,7 @@ int main(int argc, char *argv[])
   assert(samples != NULL);
 
   /* Print first and last sample positions. */
+  printf("\nsimple_c:\n");
   printf("samples[%td] = ( %.3f, %.3f )\n", 
     (ptrdiff_t)0, 
     (double)samples[0], 
@@ -121,7 +124,7 @@ int main(int /*argc*/, char * /*argv*/[])
                                      } };
   if (const int ret = tph_poisson_create(&args, alloc, sampling.get());
       ret != TPH_POISSON_SUCCESS) {
-    std::printf("Failed creating Poisson sampling! Error code: %d\n", ret);
+    std::printf("tph_poisson error, code: %d\n", ret);
     return EXIT_FAILURE;
   };
 
