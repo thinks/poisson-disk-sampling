@@ -119,16 +119,16 @@ static int my_vec_reserve(my_vec *vec,
   void *const new_begin = tph_poisson_align(new_mem, (size_t)alignment);
 
   const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
+
+  /* Copy existing data (if any) to the new buffer. */
   if (size > 0) {
-    /* Copy existing data to the new buffer and destroy the old buffer. */
-    assert(vec->mem != NULL);
-    assert(vec->mem_size > 0);
     assert(vec->begin != NULL);
     memcpy(new_begin, vec->begin, (size_t)size);
-    alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-  } else if (vec->mem != NULL) {
-    /* No existing data, destroy the old buffer. */
-    assert(vec->mem_size > 0);
+  }
+
+  /* Destroy the old buffer (if any). */
+  if (vec->mem_size > 0) {
+    assert(vec->mem != NULL);
     alloc->free(vec->mem, vec->mem_size, alloc->ctx);
   }
 
@@ -173,16 +173,16 @@ static int my_vec_append(my_vec *vec,
     void *new_begin = tph_poisson_align(new_mem, (size_t)alignment);
 
     const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
+
+    /* Copy existing data (if any) to the new buffer. */
     if (size > 0) {
-      /* Copy existing data to the new buffer and destroy the old buffer. */
-      assert(vec->mem != NULL);
-      assert(vec->mem_size > 0);
       assert(vec->begin != NULL);
       memcpy(new_begin, vec->begin, (size_t)size);
-      alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-    } else if (vec->mem != NULL) {
-      /* No existing data, destroy the old buffer. */
-      assert(vec->mem_size > 0);
+    }
+
+    /* Destroy the old buffer (if any). */
+    if (vec->mem_size > 0) {
+      assert(vec->mem != NULL);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
     }
 
@@ -251,16 +251,15 @@ static int
     if (new_mem == NULL) { return TPH_POISSON_BAD_ALLOC; }
     void *const new_begin = tph_poisson_align(new_mem, (size_t)alignment);
 
-    /* Copy existing data (if any) to the new buffer and destroy the old buffer. */
+    /* Copy existing data (if any) to the new buffer. */
     if (size > 0) {
-      assert(vec->mem != NULL);
-      assert(vec->mem_size > 0);
       assert(vec->begin != NULL);
       memcpy(new_begin, vec->begin, (size_t)size);
-      alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-    } else if (vec->mem != NULL) {
-      /* Existing vector is empty but has capacity. */
-      assert(vec->mem_size > 0);
+    }
+
+    /* Destroy the old buffer (if any). */
+    if (vec->mem_size > 0) {
+      assert(vec->mem != NULL);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
     }
 
