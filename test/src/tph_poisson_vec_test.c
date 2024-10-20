@@ -396,6 +396,26 @@ static void test_reserve(void)
     }
 
     {
+      my_vec vec;
+      memset(&vec, 0, sizeof(my_vec));
+
+      my_vec_append(&vec, &alloc, values, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float));
+      my_vec_erase_swap(&vec, 0, VEC_TEST_SIZEOF(values));
+      REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
+      REQUIRE(my_vec_size(&vec) == 0);
+      REQUIRE(my_vec_capacity(&vec) == VEC_TEST_SIZEOF(values) + extra_cap);
+
+      REQUIRE(my_vec_reserve(&vec,
+                &alloc,
+                /*new_cap=*/2 * VEC_TEST_SIZEOF(values),
+                VEC_TEST_ALIGNOF(float))
+              == TPH_POISSON_SUCCESS);
+
+      REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
+      my_vec_free(&vec, &alloc);
+    }
+
+    {
       /* Check that bad allocation propagates to caller. */
       my_vec vec;
       memset(&vec, 0, sizeof(my_vec));
