@@ -701,7 +701,7 @@ static void test_shrink_to_fit(void)
       my_vec_free(&vec, &alloc);
     }
 
-    { 
+    {
       /* Verify that shrinking removes extraneous capacity. This requires a reallocation and copying
        * elements to the smaller buffer. */
       my_vec vec;
