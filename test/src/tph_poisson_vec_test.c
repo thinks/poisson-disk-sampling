@@ -517,7 +517,7 @@ static void test_append(void)
       };
       /* clang-format on */
 
-      REQUIRE(my_vec_append(&vec, &alloc, values2, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
+      REQUIRE(my_vec_append(&vec, &alloc, values2, VEC_TEST_SIZEOF(values2), VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
 
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
