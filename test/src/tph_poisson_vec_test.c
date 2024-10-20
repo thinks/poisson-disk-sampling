@@ -510,10 +510,12 @@ static void test_append(void)
       REQUIRE(valid_invariants(&vec, VEC_TEST_ALIGNOF(float)));
       REQUIRE(my_vec_size(&vec) == 0);
 
+      /* clang-format off */
       const float values2[] = { 
         0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F,
         0.F, 1.F, 13.F, 42.F, 33.F, 18.F, -34.F,
-       };
+      };
+      /* clang-format on */
 
       REQUIRE(my_vec_append(&vec, &alloc, values2, VEC_TEST_SIZEOF(values), VEC_TEST_ALIGNOF(float))
               == TPH_POISSON_SUCCESS);
