@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     (double)samples[0], 
     (double)samples[1]);
   printf("...\n");
-  printf("samples[%td] = ( %.3f, %.3f )\n",
+  printf("samples[%td] = ( %.3f, %.3f )\n\n",
     sampling.nsamples - 1,
     (double)samples[(sampling.nsamples - 1) * sampling.ndims],
     (double)samples[(sampling.nsamples - 1) * sampling.ndims + 1]);
@@ -138,15 +138,15 @@ int main(int /*argc*/, char * /*argv*/[])
 
   // Print first and last sample positions.
   std::printf("\nsimple_cpp:\n");
-  std::printf("sample[%td] = ( %.3f, %.3f )\n", 
-    (ptrdiff_t)0, 
-    (double)samples[0], 
-    (double)samples[1]);
+  std::printf("sample[%td] = ( %.3f, %.3f )\n",
+    static_cast<ptrdiff_t>(0), 
+    static_cast<double>(samples[0]), 
+    static_cast<double>(samples[1]));
   std::printf("...\n");
   std::printf("sample[%td] = ( %.3f, %.3f )\n\n",
-    sampling->nsamples - 1,
-    (double)samples[(sampling->nsamples - 1) * sampling->ndims],
-    (double)samples[(sampling->nsamples - 1) * sampling->ndims + 1]);
+    static_cast<ptrdiff_t>(sampling->nsamples - 1),
+    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims]),
+    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims + 1]));
 
   // tph_poisson_destroy is called by unique_poisson_ptr destructor.
 
