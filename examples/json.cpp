@@ -53,7 +53,7 @@ int main(int /*argc*/, char * /*argv*/[])
     ofs << std::setw(2) << j;
     ofs.close();
   } catch (...) {
-    std::printf("Unknown exception");
+    std::printf("Unknown exception\n");
     return EXIT_FAILURE;
   }
 

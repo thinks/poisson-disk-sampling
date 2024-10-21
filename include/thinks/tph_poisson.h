@@ -12,7 +12,6 @@
 
 /*
  * TODOS:
- * - Build and run tests with sanitizers!!
  * - clang-tidy
  */
 

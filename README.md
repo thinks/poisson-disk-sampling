@@ -86,11 +86,12 @@ When using C++ it is possible to safely manage the memory allocated by the tph_p
 ```C++
 // C++17
 
-#include <array>//std::array
-#include <cstdint>// UINT64_C, etc
-#include <cstdio>// std::printf
-#include <functional>// std::function
-#include <memory>// std::unique_ptr
+#include <array>      // std::array
+#include <cassert>    // assert
+#include <cstdint>    // UINT64_C, etc
+#include <cstdio>     // std::printf
+#include <functional> // std::function
+#include <memory>     // std::unique_ptr
 
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
@@ -130,23 +131,19 @@ int main(int /*argc*/, char * /*argv*/[])
 
   // Retrieve samples.
   const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
-  if (samples == nullptr) {
-    // Cannot happen since we check the return value from tph_poisson_create!
-    std::printf("Failed getting Poisson samples!\n");
-    return EXIT_FAILURE;
-  }
+  assert(samples != nullptr);
 
   // Print first and last sample positions.
   std::printf("\nsimple_cpp:\n");
-  std::printf("sample[%td] = ( %.3f, %.3f )\n",
-    static_cast<ptrdiff_t>(0), 
-    static_cast<double>(samples[0]), 
-    static_cast<double>(samples[1]));
+  std::printf("sample[%td] = ( %.3f, %.3f )\n", 
+    (ptrdiff_t)0, 
+    (double)samples[0], 
+    (double)samples[1]);
   std::printf("...\n");
   std::printf("sample[%td] = ( %.3f, %.3f )\n\n",
-    static_cast<ptrdiff_t>(sampling->nsamples - 1),
-    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims]),
-    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims + 1]));
+    sampling->nsamples - 1,
+    (double)samples[(sampling->nsamples - 1) * sampling->ndims],
+    (double)samples[(sampling->nsamples - 1) * sampling->ndims + 1]);
 
   // tph_poisson_destroy is called by unique_poisson_ptr destructor.
 

@@ -8,7 +8,9 @@ project(tph_poisson
   VERSION "${tph_poisson_MAJOR_VERSION}.${tph_poisson_MINOR_VERSION}.${tph_poisson_PATCH_VERSION}"
   DESCRIPTION "A single file implementation of Poisson disk sampling in arbitrary dimensions."
   HOMEPAGE_URL "https://github.com/thinks/poisson-disk-sampling"
-  LANGUAGES C CXX)
+  LANGUAGES C CXX
+)
+
 # message(STATUS "${PROJECT_NAME}-${PROJECT_VERSION}")
 
 include(cmake/project-is-top-level.cmake)
