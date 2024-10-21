@@ -1042,8 +1042,8 @@ int tph_poisson_create(const tph_poisson_args *args,
 
   /* Heuristically reserve some memory for samples to avoid reallocations while
    * growing the buffer. Estimate that 50% of the grid cells will end up
-   * containing a sample, which is a fairly conservative guess. Most likely the 
-   * actual percentage will be higher, so the first reallocation will double the 
+   * containing a sample, which is a fairly conservative guess. Most likely the
+   * actual percentage will be higher, so the first reallocation will double the
    * memory to 100%, which is the theoretical maximum. */
   ret = tph_poisson_vec_reserve(&internal->samples,
     &internal->alloc,
@@ -1058,8 +1058,10 @@ int tph_poisson_create(const tph_poisson_args *args,
 
   /* Reserve memory for active indices, could use some analysis to find a
    * better estimate here... */
-  ret = tph_poisson_vec_reserve(
-    &ctx.active_indices, &internal->alloc, 100 * (ptrdiff_t)sizeof(ptrdiff_t), (ptrdiff_t)alignof(ptrdiff_t));
+  ret = tph_poisson_vec_reserve(&ctx.active_indices,
+    &internal->alloc,
+    100 * (ptrdiff_t)sizeof(ptrdiff_t),
+    (ptrdiff_t)alignof(ptrdiff_t));
   if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_context_destroy(&ctx, &internal->alloc);
     tph_poisson_destroy(sampling);
@@ -1128,7 +1130,8 @@ int tph_poisson_create(const tph_poisson_args *args,
     active_index_count = tph_poisson_vec_size(&ctx.active_indices) / (ptrdiff_t)sizeof(ptrdiff_t);
   }
 
-  ret = tph_poisson_vec_shrink_to_fit(&internal->samples, &internal->alloc, (ptrdiff_t)alignof(tph_poisson_real));
+  ret = tph_poisson_vec_shrink_to_fit(
+    &internal->samples, &internal->alloc, (ptrdiff_t)alignof(tph_poisson_real));
   if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_context_destroy(&ctx, &internal->alloc);
     tph_poisson_destroy(sampling);
