@@ -1,4 +1,5 @@
-#include <array>//std::array
+#include <array>// std::array
+#include <cassert>// assert
 #include <cstdint>// UINT64_C, etc
 #include <cstdio>// std::printf
 #include <functional>// std::function
@@ -49,11 +50,7 @@ int main(int /*argc*/, char * /*argv*/[])
 
   // Retrieve samples.
   const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
-  if (samples == nullptr) {
-    // Cannot happen since we check the return value from tph_poisson_create!
-    std::printf("Failed getting Poisson samples!\n");
-    return EXIT_FAILURE;
-  }
+  assert(samples != nullptr);
 
   // Print first and last sample positions.
   // clang-format off
