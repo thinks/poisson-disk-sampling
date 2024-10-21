@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     (double)samples[0], 
     (double)samples[1]);
   printf("...\n");
-  printf("samples[%td] = ( %.3f, %.3f )\n",
+  printf("samples[%td] = ( %.3f, %.3f )\n\n",
     sampling.nsamples - 1,
     (double)samples[(sampling.nsamples - 1) * sampling.ndims],
     (double)samples[(sampling.nsamples - 1) * sampling.ndims + 1]);
