@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   /* Retrieve samples. */
   const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
   if (samples == NULL) {
-    /* This should not happen since we checked the return value of tph_poisson_create! */
+    /* Cannot happen since we check the return value from tph_poisson_create! */
     printf("Bad samples!\n");
     tph_poisson_destroy(&sampling);
     return EXIT_FAILURE;
