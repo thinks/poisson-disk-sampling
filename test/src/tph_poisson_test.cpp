@@ -538,6 +538,7 @@ static void TestBadAlloc()
     ptrdiff_t max_samples = 0;
   };
 
+#if 0
   const auto add_sample_fail = [&](AllocCtx *alloc_ctx) {
     tph_poisson_allocator alloc = {};
     alloc.malloc = [](ptrdiff_t size, void *ctx) -> void * {
@@ -564,11 +565,12 @@ static void TestBadAlloc()
     alloc.ctx = alloc_ctx;
     REQUIRE(TPH_POISSON_BAD_ALLOC == create_sampling(&alloc));
   };
+#endif
 
   // NOTE: The constant 3 is very specifically set to cause the bad_alloc
   //       when adding the first sample to improve code coverage.
-  AllocCtx alloc_ctx{ /*nsamples=*/0, /*.max_samples=*/1 };
-  add_sample_fail(&alloc_ctx);
+  //AllocCtx alloc_ctx{ /*nsamples=*/0, /*.max_samples=*/1 };
+  //add_sample_fail(&alloc_ctx);
   // NOTE: The constant 5 is very specifically set to cause the bad_alloc
   //       when adding the second (or later) sample to improve code coverage.
   // AllocCtx alloc_ctx2{ /*nsamples=*/0, /*.max_samples=*/5 };

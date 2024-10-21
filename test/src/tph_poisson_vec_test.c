@@ -1,7 +1,7 @@
-#include <inttypes.h>// PRIXPTR, etc
-#include <stdbool.h>// bool, true, false
-#include <stdio.h>// printf
-#include <stdlib.h>// malloc, free, EXIT_SUCCESS
+#include <inttypes.h> /* PRIXPTR, etc */
+#include <stdbool.h> /* bool, true, false */
+#include <stdio.h> /* printf */
+#include <stdlib.h> /* malloc, free, abort, EXIT_SUCCESS */
 
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
@@ -35,6 +35,7 @@ static void *vec_test_malloc(ptrdiff_t size, void *ctx)
   vec_test_alloc_ctx *a_ctx = (vec_test_alloc_ctx *)ctx;
   if ((size == 0) | (a_ctx->fail != 0)) { return NULL; }
   void *ptr = malloc((size_t)(size + a_ctx->align_offset));
+
   return (void *)((intptr_t)ptr + a_ctx->align_offset);
 }
 
@@ -62,7 +63,7 @@ static bool is_zeros(const void *const mem, const ptrdiff_t n)
   return memcmp((const void *)test_block, mem, (size_t)n) == 0;
 }
 
-/*-------------------------*/
+/* ------------------------- */
 
 typedef struct my_vec_
 {
