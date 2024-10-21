@@ -15,8 +15,8 @@
  * - clang-tidy
  */
 
-#include <stddef.h>// size_t, ptrdiff_t, NULL
-#include <stdint.h>// uint32_t, uintptr_t, etc
+#include <stddef.h> /* size_t, ptrdiff_t, NULL */
+#include <stdint.h> /* uint32_t, uintptr_t, etc */
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,18 +147,18 @@ extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sam
 /* END PUBLIC API ----------------------------------------------------------- */
 
 #ifdef __cplusplus
-}// extern "C"
+} /* extern "C" */
 #endif
 
-#endif// TPH_POISSON_H
+#endif /* TPH_POISSON_H */
 
 /* BEGIN IMPLEMENTATION ------------------------------------------------------*/
 
 #ifdef TPH_POISSON_IMPLEMENTATION
 #undef TPH_POISSON_IMPLEMENTATION
 
-#include <stdalign.h>// alignof
-#include <stdbool.h>// bool, true, false
+#include <stdalign.h> /* alignof */
+#include <stdbool.h> /* bool, true, false */
 
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #define TPH_POISSON_INLINE __inline
@@ -1193,7 +1193,7 @@ const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
 #undef tph_poisson_vec_shrink_to_fit
 #endif
 
-#endif// TPH_POISSON_IMPLEMENTATION
+#endif /* TPH_POISSON_IMPLEMENTATION */
 
 /*
 
