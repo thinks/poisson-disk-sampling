@@ -25,7 +25,7 @@ static inline void *dummy_malloc(ptrdiff_t size, void *ctx)
   (void)ctx;
 
   static int a[2];
-  return (void*)a;
+  return (void *)a;
 }
 
 static inline void dummy_free(void *ptr, ptrdiff_t size, void *ctx)
