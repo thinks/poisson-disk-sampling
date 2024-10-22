@@ -3,10 +3,10 @@
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* malloc, free, abort, EXIT_SUCCESS */
 
-#include "require.h"
-
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
+
+#include "require.h"
 
 typedef struct vec_test_alloc_ctx_
 {
