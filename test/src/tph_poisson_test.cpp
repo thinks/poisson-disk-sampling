@@ -287,7 +287,7 @@ static void TestInvalidArgs()
   [&]() {
     tph_poisson_args args = valid_args;
     tph_poisson_allocator incomplete_alloc = {};
-    incomplete_alloc.free = [](void* ptr, ptrdiff_t /*size*/, void * /*ctx*/) {
+    incomplete_alloc.free = [](void *ptr, ptrdiff_t /*size*/, void * /*ctx*/) {
       return std::free(ptr);
     };
     REQUIRE(incomplete_alloc.malloc == nullptr);
