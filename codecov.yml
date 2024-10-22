@@ -1,2 +1,4 @@
-ignore:
-  - "examples"
+coverage:
+  ignore:
+    - "examples"
+    - "test/src/require.h"
