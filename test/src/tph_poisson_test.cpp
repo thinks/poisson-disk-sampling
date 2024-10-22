@@ -444,7 +444,7 @@ static void TestDestroy()
 
   // Zero-initialized sampling has no samples.
   tph_poisson_sampling sampling = {};
-  constexpr uint8_t zeros [sizeof(tph_poisson_sampling)] = { 0 };
+  constexpr uint8_t zeros[sizeof(tph_poisson_sampling)] = { 0 };
   REQUIRE(std::memcmp(&sampling, zeros, sizeof(tph_poisson_sampling)) == 0);
   REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
 
