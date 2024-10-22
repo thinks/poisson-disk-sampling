@@ -13,8 +13,6 @@
 #include <type_traits>
 #include <vector>
 
-// #include <rpmalloc/rpmalloc.h>
-
 #ifdef TPH_POISSON_TEST_USE_DOUBLE
 #include "tph_poisson_d.h"
 static_assert(std::is_same_v<tph_poisson_real, double>);
@@ -37,9 +35,8 @@ static auto make_unique_poisson() -> unique_poisson_ptr
   });
 }
 
-// Brute-force (with some tricks) verification that the distance between each
-// possible sample pair meets the Poisson requirement, i.e. is greater than some
-// radius.
+// Brute-force (with some tricks) verification that the distance between each possible
+// sample pair meets the Poisson requirement, i.e. is greater than some radius.
 static void TestRadius()
 {
   const auto valid_radius = [](const std::vector<Real> bounds_min,
@@ -59,8 +56,7 @@ static void TestRadius()
     if (samples == nullptr) { return false; }
 
     // Setup threading.
-    // Avoid spawning more threads than there are samples (although very
-    // unlikely).
+    // Avoid spawning more threads than there are samples (although very unlikely).
     const ptrdiff_t thread_count =
       std::thread::hardware_concurrency() > 0
         ? std::min(static_cast<ptrdiff_t>(std::thread::hardware_concurrency()), sampling->nsamples)
@@ -277,9 +273,7 @@ static void TestInvalidArgs()
   [&]() {
     tph_poisson_args args = valid_args;
     tph_poisson_allocator incomplete_alloc = {};
-    incomplete_alloc.malloc = [](ptrdiff_t size, void * /*ctx*/) {
-      return std::malloc(static_cast<size_t>(size));
-    };
+    incomplete_alloc.malloc = dummy_malloc;
     REQUIRE(incomplete_alloc.free == nullptr);
     REQUIRE(
       TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
@@ -287,9 +281,7 @@ static void TestInvalidArgs()
   [&]() {
     tph_poisson_args args = valid_args;
     tph_poisson_allocator incomplete_alloc = {};
-    incomplete_alloc.free = [](void *ptr, ptrdiff_t /*size*/, void * /*ctx*/) {
-      return std::free(ptr);
-    };
+    incomplete_alloc.free = dummy_free;
     REQUIRE(incomplete_alloc.malloc == nullptr);
     REQUIRE(
       TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));

@@ -18,3 +18,21 @@ static inline void
 #define REQUIRE(expr) \
   ((bool)(expr) ? (void)0 : require_fail(#expr, __FILE__, __LINE__, TPH_PRETTY_FUNCTION))
 /* clang-format on */
+
+static inline void *dummy_malloc(ptrdiff_t size, void *ctx)
+{
+  (void)size;
+  (void)ctx;
+
+  static int a[2];
+  return (void*)a;
+}
+
+static inline void dummy_free(void *ptr, ptrdiff_t size, void *ctx)
+{
+  (void)ptr;
+  (void)size;
+  (void)ctx;
+
+  // Do nothing!
+}
