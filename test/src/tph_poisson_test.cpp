@@ -2,7 +2,7 @@
 #include <array>
 #include <cinttypes>// PRIXPTR
 #include <cmath>
-#include <cstdint>
+#include <cstdint>// int32_t, etc
 #include <cstdio>// std::printf
 #include <cstdlib>// EXIT_SUCCESS
 #include <cstring>// std::memcmp
@@ -10,14 +10,17 @@
 #include <future>
 #include <limits>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 // #include <rpmalloc/rpmalloc.h>
 
 #ifdef TPH_POISSON_TEST_USE_DOUBLE
 #include "tph_poisson_d.h"
+static_assert(std::is_same_v<tph_poisson_real, double>);
 #else
 #include "tph_poisson_f.h"
+static_assert(std::is_same_v<tph_poisson_real, float>);
 #endif
 
 #include "require.h"
@@ -424,47 +427,53 @@ static void TestInvalidArgs()
 
 static void TestDestroy()
 {
+  // NOTE: Also verifies correct behaviour of tph_poisson_get_samples().
+
   constexpr int32_t ndims = 2;
   constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
   constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
+  constexpr tph_poisson_allocator *alloc = nullptr;
 
-  tph_poisson_allocator rpalloc = make_rpalloc();
-  for (auto *alloc : std::vector<tph_poisson_allocator *>{ nullptr, &rpalloc }) {
-    tph_poisson_args valid_args = {};
-    valid_args.radius = 1;
-    valid_args.ndims = ndims;
-    valid_args.bounds_min = bounds_min.data();
-    valid_args.bounds_max = bounds_max.data();
-    valid_args.max_sample_attempts = UINT32_C(30);
-    valid_args.seed = UINT64_C(333);
-    tph_poisson_sampling sampling = {};
-    REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
-    REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
+  tph_poisson_args valid_args = {};
+  valid_args.radius = 1;
+  valid_args.ndims = ndims;
+  valid_args.bounds_min = bounds_min.data();
+  valid_args.bounds_max = bounds_max.data();
+  valid_args.max_sample_attempts = UINT32_C(30);
+  valid_args.seed = UINT64_C(333);
 
-    tph_poisson_destroy(&sampling);
-    REQUIRE(sampling.internal == nullptr);
+  // Zero-initialized sampling has no samples.
+  tph_poisson_sampling sampling = {};
+  constexpr uint8_t zeros [sizeof(tph_poisson_sampling)] = { 0 };
+  REQUIRE(std::memcmp(&sampling, zeros, sizeof(tph_poisson_sampling)) == 0);
+  REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
 
-    // No samples after destroy.
-    REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
+  // Successfully created sampling has samples.
+  REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
+  REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
 
-    // Double create without intermediate destroy.
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
-    REQUIRE(sampling.internal != nullptr);
-    REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
-    REQUIRE(sampling.internal != nullptr);
-    REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
+  // Destroyed sampling has no samples.
+  tph_poisson_destroy(&sampling);
+  REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
 
-    // Double destroy (no crash).
-    tph_poisson_destroy(&sampling);
-    REQUIRE(sampling.internal == nullptr);
-    tph_poisson_destroy(&sampling);
-    REQUIRE(sampling.internal == nullptr);
-  }
+  // "No" sampling has no samples...
+  REQUIRE(tph_poisson_get_samples(/*sampling=*/nullptr) == nullptr);
+
+  // Double create without intermediate destroy.
+  REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
+  REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
+  REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, &sampling));
+  REQUIRE(tph_poisson_get_samples(&sampling) != nullptr);
+
+  // Double destroy (no crash).
+  tph_poisson_destroy(&sampling);
+  REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
+  tph_poisson_destroy(&sampling);
+  REQUIRE(tph_poisson_get_samples(&sampling) == nullptr);
 }
 
-static void TestGetSamples() {
+static void TestGetSamples()
+{
   [] {
 
   }();
