@@ -266,22 +266,34 @@ static void TestInvalidArgs()
   }();
 
   // Incomplete (custom) allocator.
-  if (alloc != nullptr) {
-    [&]() {
-      tph_poisson_args args = valid_args;
-      tph_poisson_allocator incomplete_alloc = *alloc;
-      incomplete_alloc.malloc = nullptr;
-      REQUIRE(
-        TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
-    }();
-    [&]() {
-      tph_poisson_args args = valid_args;
-      tph_poisson_allocator incomplete_alloc = *alloc;
-      incomplete_alloc.free = nullptr;
-      REQUIRE(
-        TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
-    }();
-  }
+  [&]() {
+    tph_poisson_args args = valid_args;
+    tph_poisson_allocator incomplete_alloc = {};
+    REQUIRE(incomplete_alloc.malloc == nullptr);
+    REQUIRE(incomplete_alloc.free == nullptr);
+    REQUIRE(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+  }();
+  [&]() {
+    tph_poisson_args args = valid_args;
+    tph_poisson_allocator incomplete_alloc = {};
+    incomplete_alloc.malloc = [](ptrdiff_t size, void * /*ctx*/) {
+      return std::malloc(static_cast<size_t>(size));
+    };
+    REQUIRE(incomplete_alloc.free == nullptr);
+    REQUIRE(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+  }();
+  [&]() {
+    tph_poisson_args args = valid_args;
+    tph_poisson_allocator incomplete_alloc = {};
+    incomplete_alloc.free = [](void* ptr, ptrdiff_t /*size*/, void * /*ctx*/) {
+      return std::free(ptr);
+    };
+    REQUIRE(incomplete_alloc.malloc == nullptr);
+    REQUIRE(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+  }();
 
   // args == NULL
   [&]() {
