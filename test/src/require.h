@@ -1,3 +1,4 @@
+#include <assert.h> /* assert */
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* abort */
 
@@ -19,11 +20,16 @@ static inline void
   ((bool)(expr) ? (void)0 : require_fail(#expr, __FILE__, __LINE__, TPH_PRETTY_FUNCTION))
 /* clang-format on */
 
+/* Dummy malloc/free functions. Used to set up incomplete allocators, should never be called.
+ * Having the function definitions here means that these functions don't show up as missing
+ * code coverage. */
+
 static inline void *dummy_malloc(ptrdiff_t size, void *ctx)
 {
   (void)size;
   (void)ctx;
 
+  assert(false && "called dummy_malloc");
   static int a[2];
   return (void *)a;
 }
@@ -35,4 +41,5 @@ static inline void dummy_free(void *ptr, ptrdiff_t size, void *ctx)
   (void)ctx;
 
   // Do nothing!
+  assert(false && "called dummy_free");
 }

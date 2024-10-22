@@ -207,23 +207,20 @@ static void TestVaryingSeed()
   // we say that the sample from the first point set is distinct
   // from every sample in the second point set. Thus the two
   // distributions must be different.
-  auto distinct_sample_found = false;
-  for (ptrdiff_t i = 0; i < sampling_1981->nsamples; ++i) {
-    const Real *p = &samples_1981[i * sampling_1981->ndims];
-    Real min_sqr_dist = std::numeric_limits<Real>::max();
-    for (ptrdiff_t j = 0; j < sampling_1337->nsamples; ++j) {
-      const Real *q = &samples_1337[j * sampling_1337->ndims];
-      Real sqr_dist = 0;
-      for (int32_t k = 0; k < ndims; ++k) { sqr_dist += (p[k] - q[k]) * (p[k] - q[k]); }
-      min_sqr_dist = std::min(min_sqr_dist, sqr_dist);
+  REQUIRE([&]() {
+    for (ptrdiff_t i = 0; i < sampling_1981->nsamples; ++i) {
+      const Real *p = &samples_1981[i * sampling_1981->ndims];
+      Real min_sqr_dist = std::numeric_limits<Real>::max();
+      for (ptrdiff_t j = 0; j < sampling_1337->nsamples; ++j) {
+        const Real *q = &samples_1337[j * sampling_1337->ndims];
+        Real sqr_dist = 0;
+        for (int32_t k = 0; k < ndims; ++k) { sqr_dist += (p[k] - q[k]) * (p[k] - q[k]); }
+        min_sqr_dist = std::min(min_sqr_dist, sqr_dist);
+      }
+      if (std::sqrt(min_sqr_dist) > static_cast<Real>(0.1)) { return true; }
     }
-    if (std::sqrt(min_sqr_dist) > static_cast<Real>(0.1)) {
-      distinct_sample_found = true;
-      break;
-    }
-  }
-
-  REQUIRE(distinct_sample_found);
+    return false;
+  }());
 }
 
 static void TestInvalidArgs()
