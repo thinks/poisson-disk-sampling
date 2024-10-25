@@ -26,9 +26,6 @@ add_library(thinks::tph_poisson_d ALIAS tph_poisson_d)
 target_link_libraries(tph_poisson_d PUBLIC thinks::tph_poisson)
 target_compile_features(tph_poisson_d PRIVATE c_std_11)
 
-#include(../cmake/fetch-rpmalloc.cmake)
-#fetch_rpmalloc(VERSION "6800c43fb2f22626bb043369698ee862e60710c2")
-
 # ---- Tests ----
 
 # add_executable(tph_poisson_test src/tph_poisson_test.cpp)
@@ -42,25 +39,34 @@ target_compile_features(tph_poisson_d PRIVATE c_std_11)
 # add_test(NAME tph_poisson_test COMMAND tph_poisson_test)
 
 # <float>
-add_executable(tph_poisson_f_test "src/tph_poisson_test.cpp")
-target_link_libraries(tph_poisson_f_test PRIVATE thinks::tph_poisson_f)# rpmalloc)
-target_compile_features(tph_poisson_f_test PRIVATE cxx_std_17)
-add_test(NAME tph_poisson_f_test COMMAND tph_poisson_f_test)
+add_executable(tph_poisson_f32_test "src/tph_poisson_test.cpp")
+target_link_libraries(tph_poisson_f32_test PRIVATE thinks::tph_poisson_f)
+target_compile_features(tph_poisson_f32_test PRIVATE cxx_std_17)
+add_test(NAME tph_poisson_f32_test COMMAND tph_poisson_f32_test)
 
 # <double>
-add_executable(tph_poisson_d_test "src/tph_poisson_test.cpp")
-target_link_libraries(tph_poisson_d_test PRIVATE thinks::tph_poisson_d)# rpmalloc)
-target_compile_definitions(tph_poisson_d_test PRIVATE TPH_POISSON_TEST_USE_DOUBLE)
-target_compile_features(tph_poisson_d_test PRIVATE cxx_std_17)
-add_test(NAME tph_poisson_d_test COMMAND tph_poisson_d_test)
+add_executable(tph_poisson_f64_test "src/tph_poisson_test.cpp")
+target_link_libraries(tph_poisson_f64_test PRIVATE thinks::tph_poisson_d)
+target_compile_definitions(tph_poisson_f64_test PRIVATE TPH_POISSON_TEST_USE_DOUBLE)
+target_compile_features(tph_poisson_f64_test PRIVATE cxx_std_17)
+add_test(NAME tph_poisson_f64_test COMMAND tph_poisson_f64_test)
 
 add_executable(tph_poisson_vec_test "src/tph_poisson_vec_test.c")
-target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)# rpmalloc)
-target_compile_definitions(tph_poisson_vec_test PRIVATE TPH_POISSON_VEC_TEST)
+target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
+# target_compile_definitions(tph_poisson_vec_test PRIVATE TPH_POISSON_VEC_TEST)
 target_compile_features(tph_poisson_vec_test PRIVATE c_std_11)
 add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
 if(NOT MSVC)
   target_link_libraries(tph_poisson_vec_test PRIVATE m)
+endif()
+
+add_executable(tph_poisson_alloc_test "src/tph_poisson_alloc_test.c")
+target_link_libraries(tph_poisson_alloc_test PRIVATE thinks::tph_poisson)
+target_compile_definitions(tph_poisson_alloc_test PRIVATE TPH_POISSON_VEC_TEST)
+target_compile_features(tph_poisson_alloc_test PRIVATE c_std_11)
+add_test(NAME tph_poisson_alloc_test COMMAND tph_poisson_alloc_test)
+if(NOT MSVC)
+  target_link_libraries(tph_poisson_alloc_test PRIVATE m)
 endif()
 
 # ---- End-of-file commands ----
