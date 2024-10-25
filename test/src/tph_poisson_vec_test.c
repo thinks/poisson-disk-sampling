@@ -49,6 +49,8 @@ static bool is_zeros(const void *const mem, const ptrdiff_t n)
 
 /* ------------------------- */
 
+/* This function is reasonable for a vector, but is not required by the implementation.
+ * It is provided here since it is useful for testing purposes. */
 static inline ptrdiff_t tph_poisson_vec_capacity(const tph_poisson_vec *vec)
 {
   assert(vec != NULL);
@@ -60,213 +62,7 @@ static inline ptrdiff_t tph_poisson_vec_capacity(const tph_poisson_vec *vec)
 }
 
 #if 0
-typedef struct my_vec_
-{
-  ptrdiff_t mem_size; /** [bytes] */
-  void *mem;
-  void *begin;
-  void *end;
-} my_vec;
-
-static inline void my_vec_free(my_vec *vec, const tph_poisson_allocator *alloc)
-{
-  assert(vec != NULL);
-  assert(alloc != NULL);
-  if ((vec->mem != NULL) & (vec->mem_size > 0)) {
-    alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-  }
-}
-
-static inline ptrdiff_t my_vec_size(const my_vec *vec)
-{
-  assert((intptr_t)vec->end >= (intptr_t)vec->begin);
-  return (ptrdiff_t)((intptr_t)vec->end - (intptr_t)vec->begin);
-}
-
-static inline ptrdiff_t my_vec_capacity(const my_vec *vec)
-{
-  assert(vec != NULL);
-  assert(vec->mem_size >= 0);
-  assert((intptr_t)vec->begin >= (intptr_t)vec->mem);
-
-  /* NOTE: Account for possible alignment correction when computing capacity! */
-  return (ptrdiff_t)(vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem));
-}
-
-static int my_vec_reserve(my_vec *vec,
-  const tph_poisson_allocator *alloc,
-  const ptrdiff_t new_cap,
-  const ptrdiff_t alignment)
-{
-  assert(vec != NULL);
-  assert(alloc != NULL);
-  assert(new_cap > 0);
-  assert(alignment > 0);
-
-  /* NOTE: For zero-initialized vector cap is 0. */
-  const ptrdiff_t cap = vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem);
-  if (new_cap <= cap) { return TPH_POISSON_SUCCESS; }
-
-  /* Allocate and align a new buffer with sufficient capacity. Take into account that
-   * the memory returned by the allocator may not match the requested alignment. */
-  const ptrdiff_t new_mem_size = new_cap + alignment;
-  void *const new_mem = alloc->malloc(new_mem_size, alloc->ctx);
-  if (new_mem == NULL) { return TPH_POISSON_BAD_ALLOC; }
-  void *const new_begin = tph_poisson_align(new_mem, (size_t)alignment);
-
-  const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
-
-  /* Copy existing data (if any) to the new buffer. */
-  if (size > 0) {
-    assert(vec->begin != NULL);
-    memcpy(new_begin, vec->begin, (size_t)size);
-  }
-
-  /* Destroy the old buffer (if any). */
-  if (vec->mem_size > 0) {
-    assert(vec->mem != NULL);
-    alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-  }
-
-  /* Configure vector to use the new buffer. */
-  vec->mem = new_mem;
-  vec->mem_size = new_mem_size;
-  vec->begin = new_begin;
-  vec->end = (void *)((intptr_t)new_begin + size);
-
-  assert(vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem) >= new_cap);
-
-  return TPH_POISSON_SUCCESS;
-}
-
-static int my_vec_append(my_vec *vec,
-  const tph_poisson_allocator *alloc,
-  const void *buf,
-  const ptrdiff_t n,
-  const ptrdiff_t alignment)
-{
-  assert(vec != NULL);
-  assert(alloc != NULL);
-  assert(buf != NULL);
-  assert(n > 0);
-  assert(alignment > 0);
-
-  const ptrdiff_t cap = vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem);
-  const ptrdiff_t req_cap = (intptr_t)vec->end - (intptr_t)vec->begin + n;
-  if (req_cap > cap) {
-    /* Current buffer does not have enough capacity. Try doubling the vector
-     * capacity and check if it's enough to hold the new elements. If not,
-     * set the new capacity to hold exactly the new elements. */
-    ptrdiff_t new_cap = cap <= (PTRDIFF_MAX >> 1) ? (cap << 1) : cap;
-    if (new_cap < req_cap) { new_cap = req_cap; }
-
-    /* Allocate and align a new buffer with sufficient capacity. Take into
-     * account that the memory returned by the allocator may not be aligned to
-     * the type of element that will be stored. */
-    new_cap += alignment;
-    void *new_mem = alloc->malloc(new_cap, alloc->ctx);
-    if (new_mem == NULL) { return TPH_POISSON_BAD_ALLOC; }
-    void *new_begin = tph_poisson_align(new_mem, (size_t)alignment);
-
-    const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
-
-    /* Copy existing data (if any) to the new buffer. */
-    if (size > 0) {
-      assert(vec->begin != NULL);
-      memcpy(new_begin, vec->begin, (size_t)size);
-    }
-
-    /* Destroy the old buffer (if any). */
-    if (vec->mem_size > 0) {
-      assert(vec->mem != NULL);
-      alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-    }
-
-    /* Configure vector to use the new buffer. */
-    vec->mem = new_mem;
-    vec->mem_size = new_cap;
-    vec->begin = new_begin;
-    vec->end = (void *)((intptr_t)new_begin + size);
-  }
-  assert(vec->mem_size - ((intptr_t)vec->begin - (intptr_t)vec->mem) >= req_cap);
-  assert((intptr_t)vec->end % alignment == 0);
-
-  memcpy(vec->end, buf, (size_t)n);
-  vec->end = (void *)((intptr_t)vec->end + n);
-  return TPH_POISSON_SUCCESS;
-}
-
-static void my_vec_erase_swap(my_vec *vec, const ptrdiff_t pos, const ptrdiff_t n)
-{
-  assert(vec != NULL);
-  assert(pos >= 0);
-  assert((intptr_t)vec->begin + pos < (intptr_t)vec->end);
-  assert(n >= 1);
-  assert((intptr_t)vec->begin + pos + n <= (intptr_t)vec->end);
-
-  const intptr_t dst_begin = (intptr_t)vec->begin + pos;
-  const intptr_t dst_end = dst_begin + n;
-  intptr_t src_begin = (intptr_t)vec->end - n;
-  if (src_begin < dst_end) { src_begin = dst_end; }
-  const intptr_t m = (intptr_t)vec->end - src_begin;
-  if (m > 0) { memcpy((void *)dst_begin, (const void *)src_begin, (size_t)m); }
-  /* else: when erasing up to the last element there is no need to copy anything,
-   *       just "pop" the end of the vector. */
-
-  /* "pop" the end of the buffer, decreasing the vector size by n. */
-  vec->end = (void *)((intptr_t)vec->end - n);
-}
-
-static int
-  my_vec_shrink_to_fit(my_vec *vec, const tph_poisson_allocator *alloc, const ptrdiff_t alignment)
-{
-  assert(vec != NULL);
-  assert(alloc != NULL);
-  assert(alignment > 0);
-
-  const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
-  if (size == 0) {
-    /* Empty vector, no elements. Wipe capacity!
-     * This includes the case of a zero-initialized vector. */
-    if (vec->mem != NULL) {
-      /* Existing vector is empty but has capacity. */
-      assert(vec->mem_size > 0);
-      alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-      memset((void *)vec, 0, sizeof(my_vec));
-    }
-    assert(vec->mem == NULL);
-    assert(vec->mem_size == 0);
-    return TPH_POISSON_SUCCESS;
-  }
-
-  /* Check if allocating a new buffer (size + alignment) would be smaller than
-   * the existing buffer. */
-  assert(vec->mem_size > alignment);
-  const ptrdiff_t new_mem_size = size + alignment;
-  if (vec->mem_size > new_mem_size) {
-    /* Allocate and align a new buffer with sufficient capacity. Take into
-     * account that the memory returned by the allocator may not be aligned to
-     * the type of element that will be stored. */
-    void *const new_mem = alloc->malloc(new_mem_size, alloc->ctx);
-    if (new_mem == NULL) { return TPH_POISSON_BAD_ALLOC; }
-    void *const new_begin = tph_poisson_align(new_mem, (size_t)alignment);
-
-    /* Copy existing data to the new buffer and destroy the old buffer. */
-    memcpy(new_begin, vec->begin, (size_t)size);
-    alloc->free(vec->mem, vec->mem_size, alloc->ctx);
-
-    /* Configure vector to use the new buffer. */
-    vec->mem = new_mem;
-    vec->mem_size = new_mem_size;
-    vec->begin = new_begin;
-    vec->end = (void *)((intptr_t)new_begin + size);
-  }
-  return TPH_POISSON_SUCCESS;
-}
-#endif
-
-#if 0
-static void print_my_vec_f(const my_vec *vec)
+static void print_my_vec_f(const tph_poisson_vec *vec)
 {
   /* clang-format off */
   printf("mem      = 0x%" PRIXPTR "\n"
@@ -279,8 +75,8 @@ static void print_my_vec_f(const my_vec *vec)
     vec->mem_size,
     (uintptr_t)vec->begin,
     (uintptr_t)vec->end,
-    my_vec_size(vec) / VEC_TEST_SIZEOF(float), my_vec_size(vec), 
-    my_vec_capacity(vec) / VEC_TEST_SIZEOF(float), my_vec_capacity(vec));
+    tph_poisson_vec_size(vec) / VEC_TEST_SIZEOF(float), tph_poisson_vec_size(vec), 
+    tph_poisson_vec_capacity(vec) / VEC_TEST_SIZEOF(float), tph_poisson_vec_capacity(vec));
   /* clang-format on */
   printf("data     = [ ");
   const float *iter = (const float *)vec->begin;

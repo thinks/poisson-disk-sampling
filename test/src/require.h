@@ -20,9 +20,9 @@ static inline void
   ((bool)(expr) ? (void)0 : require_fail(#expr, __FILE__, __LINE__, TPH_PRETTY_FUNCTION))
 /* clang-format on */
 
-/* Dummy malloc/free functions. Used to set up incomplete allocators, should never be called.
- * Having the function definitions here means that these functions don't show up as missing
- * code coverage. */
+/* Dummy malloc/free functions. Used to set up incomplete allocators, these functions should never
+ * actually be called. Having the function definitions here means that these functions don't show up
+ * as missing code coverage. */
 
 static inline void *dummy_malloc(ptrdiff_t size, void *ctx)
 {
