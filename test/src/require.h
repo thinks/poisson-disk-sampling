@@ -18,6 +18,8 @@ static inline void
 #endif
 #define REQUIRE(expr) \
   ((bool)(expr) ? (void)0 : require_fail(#expr, __FILE__, __LINE__, TPH_PRETTY_FUNCTION))
+#define REQUIRE_F(expr, func) \
+  ((bool)(expr) ? (void)0 : require_fail(#expr, __FILE__, __LINE__, func))
 /* clang-format on */
 
 /* Dummy malloc/free functions. Used to set up incomplete allocators, these functions should never

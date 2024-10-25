@@ -338,7 +338,7 @@ static TPH_POISSON_INLINE void tph_poisson_vec_free(tph_poisson_vec *vec,
 {
   TPH_POISSON_ASSERT(vec != NULL);
   TPH_POISSON_ASSERT(alloc != NULL);
-  if ((vec->mem != NULL) & (vec->mem_size > 0)) {
+  if (((int)(vec->mem != NULL) & (int)(vec->mem_size > 0)) == 1) {
     alloc->free(vec->mem, vec->mem_size, alloc->ctx);
   }
 }
@@ -1066,11 +1066,7 @@ int tph_poisson_create(const tph_poisson_args *args,
   /* Add first sample randomly within bounds. No need to check (non-existing) neighbors. */
   tph_poisson_rand_sample(&ctx, ctx.sample);
   ret = tph_poisson_add_sample(&ctx, internal, ctx.sample);
-  if (ret != TPH_POISSON_SUCCESS) {
-    tph_poisson_context_destroy(&ctx, &internal->alloc);
-    tph_poisson_destroy(sampling);
-    return ret;
-  }
+  TPH_POISSON_ASSERT(ret != TPH_POISSON_SUCCESS);
 
   TPH_POISSON_ASSERT(tph_poisson_vec_size(&ctx.active_indices) / (ptrdiff_t)sizeof(ptrdiff_t) == 1);
   ptrdiff_t active_index_count = 1;

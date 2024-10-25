@@ -252,113 +252,120 @@ static void TestInvalidArgs()
   REQUIRE(sampling->ndims == 0);
   REQUIRE(sampling->nsamples == 0);
 
+  const char *func = TPH_PRETTY_FUNCTION;
+
   // sampling == NULL
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, /*sampling=*/nullptr));
+    REQUIRE_F(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, /*sampling=*/nullptr), func);
   }();
 
   // Incomplete (custom) allocator.
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     tph_poisson_allocator incomplete_alloc = {};
-    REQUIRE(incomplete_alloc.malloc == nullptr);
-    REQUIRE(incomplete_alloc.free == nullptr);
-    REQUIRE(
-      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+    REQUIRE_F(incomplete_alloc.malloc == nullptr, func);
+    REQUIRE_F(incomplete_alloc.free == nullptr, func);
+    REQUIRE_F(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()),
+      func);
   }();
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     tph_poisson_allocator incomplete_alloc = {};
     incomplete_alloc.malloc = dummy_malloc;
-    REQUIRE(incomplete_alloc.free == nullptr);
-    REQUIRE(
-      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+    REQUIRE_F(incomplete_alloc.free == nullptr, func);
+    REQUIRE_F(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()),
+      func);
   }();
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     tph_poisson_allocator incomplete_alloc = {};
     incomplete_alloc.free = dummy_free;
-    REQUIRE(incomplete_alloc.malloc == nullptr);
-    REQUIRE(
-      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()));
+    REQUIRE_F(incomplete_alloc.malloc == nullptr, func);
+    REQUIRE_F(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, &incomplete_alloc, sampling.get()),
+      func);
   }();
 
   // args == NULL
-  [&]() {
-    REQUIRE(
-      TPH_POISSON_INVALID_ARGS == tph_poisson_create(/*args=*/nullptr, alloc, sampling.get()));
+  [&] {
+    REQUIRE_F(
+      TPH_POISSON_INVALID_ARGS == tph_poisson_create(/*args=*/nullptr, alloc, sampling.get()),
+      func);
   }();
 
   // radius <= 0
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     args.radius = 0;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     args.radius = -1;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
   }();
 
   // ndims <= 0
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     args.ndims = 0;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     args.ndims = -1;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
   }();
 
   // max_sample_attempts == 0
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     args.max_sample_attempts = 0;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
   }();
 
   // bounds_min >= bounds_max
-  [&]() {
+  [&] {
     tph_poisson_args args = valid_args;
     args.bounds_min = nullptr;
     args.bounds_max = nullptr;
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min0{ 10, 10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max0{ 10, 10 };
     args.bounds_min = invalid_bounds_min0.data();
     args.bounds_max = invalid_bounds_max0.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min1{ 10, -10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max1{ 10, 10 };
     args.bounds_min = invalid_bounds_min1.data();
     args.bounds_max = invalid_bounds_max1.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min2{ -10, 10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max2{ 10, 10 };
     args.bounds_min = invalid_bounds_min2.data();
     args.bounds_max = invalid_bounds_max2.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min3{ 10, 10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max3{ -10, -10 };
     args.bounds_min = invalid_bounds_min3.data();
     args.bounds_max = invalid_bounds_max3.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min4{ 10, -10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max4{ -10, 10 };
     args.bounds_min = invalid_bounds_min4.data();
     args.bounds_max = invalid_bounds_max4.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min5{ -10, 10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max5{ 10, -10 };
     args.bounds_min = invalid_bounds_min5.data();
     args.bounds_max = invalid_bounds_max5.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     // clang-format off
     constexpr std::array<Real, NDIMS> invalid_bounds_min6{ 
@@ -366,28 +373,28 @@ static void TestInvalidArgs()
     constexpr std::array<Real, NDIMS> invalid_bounds_max6{ 10, 10 };
     args.bounds_min = invalid_bounds_min6.data();
     args.bounds_max = invalid_bounds_max6.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min7{ 
       std::numeric_limits<Real>::quiet_NaN(), -10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max7{ 10, 10 };
     args.bounds_min = invalid_bounds_min7.data();
     args.bounds_max = invalid_bounds_max7.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min8{ -10, -10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max8{ 
       std::numeric_limits<Real>::quiet_NaN(), 10 };
     args.bounds_min = invalid_bounds_min8.data();
     args.bounds_max = invalid_bounds_max8.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
 
     constexpr std::array<Real, NDIMS> invalid_bounds_min9{ -10, -10 };
     constexpr std::array<Real, NDIMS> invalid_bounds_max9{ 
       10, std::numeric_limits<Real>::quiet_NaN()};
     args.bounds_min = invalid_bounds_min9.data();
     args.bounds_max = invalid_bounds_max9.data();
-    REQUIRE(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()));
+    REQUIRE_F(TPH_POISSON_INVALID_ARGS == tph_poisson_create(&args, alloc, sampling.get()), func);
     // clang-format on
   }();
 

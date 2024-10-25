@@ -120,6 +120,8 @@ typedef struct alloc_test_alloc_ctx_
 static void *alloc_test_malloc(ptrdiff_t size, void *ctx)
 {
   alloc_test_alloc_ctx *a_ctx = (alloc_test_alloc_ctx *)ctx;
+  printf("n = %d | max = %d\n", a_ctx->num_mallocs, a_ctx->max_mallocs);
+
   if ((size == 0) | (a_ctx->num_mallocs >= a_ctx->max_mallocs)) { return NULL; }
   void *ptr = malloc((size_t)(size));
   ++a_ctx->num_mallocs;
@@ -156,6 +158,8 @@ static void test_bad_alloc(void)
     tph_poisson_allocator alloc = {
       .malloc = alloc_test_malloc, .free = alloc_test_free, .ctx = &alloc_ctx
     };
+
+    printf("i = %d\n", i);
 
     ret = tph_poisson_create(&args, &alloc, &sampling);
     REQUIRE(ret == TPH_POISSON_BAD_ALLOC || ret == TPH_POISSON_SUCCESS);
