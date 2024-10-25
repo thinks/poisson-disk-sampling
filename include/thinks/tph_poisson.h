@@ -1036,14 +1036,11 @@ int tph_poisson_create(const tph_poisson_args *args,
   }
 
   /* Heuristically reserve some memory for samples to avoid reallocations while
-   * growing the buffer. Estimate that 50% of the grid cells will end up
-   * containing a sample, which is a fairly conservative guess. Most likely the
-   * actual percentage will be higher, so the first reallocation will double the
-   * memory to 100%, which is the theoretical maximum. */
+   * growing the buffer. Estimate that 25% of the grid cells will end up
+   * containing a sample, which is a fairly conservative guess. */
   ret = tph_poisson_vec_reserve(&internal->samples,
     &internal->alloc,
-    ((ptrdiff_t)TPH_POISSON_FLOOR((tph_poisson_real)ctx.grid_linear_size * (tph_poisson_real)0.5))
-      * ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims),
+    (ctx.grid_linear_size / 4) * ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims),
     (ptrdiff_t)alignof(tph_poisson_real));
   if (ret != TPH_POISSON_SUCCESS) {
     tph_poisson_context_destroy(&ctx, &internal->alloc);
@@ -1144,18 +1141,15 @@ int tph_poisson_create(const tph_poisson_args *args,
 void tph_poisson_destroy(tph_poisson_sampling *sampling)
 {
   if (sampling != NULL) {
-    sampling->ndims = 0;
-    sampling->nsamples = 0;
     if (sampling->internal != NULL) {
       tph_poisson_sampling_internal *internal = sampling->internal;
       tph_poisson_vec_free(&internal->samples, &internal->alloc);
       tph_poisson_free_fn free_fn = internal->alloc.free;
       void *alloc_ctx = internal->alloc.ctx;
       free_fn(internal->mem, internal->mem_size, alloc_ctx);
-
-      /* Protects from destroy being called more than once causing a double-free error. */
-      sampling->internal = NULL;
     }
+    /* Protects from destroy being called more than once causing a double-free error. */
+    TPH_POISSON_MEMSET(sampling, 0, sizeof(tph_poisson_sampling));
   }
 }
 

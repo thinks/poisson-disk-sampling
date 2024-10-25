@@ -143,7 +143,7 @@ static void test_bad_alloc(void)
   const tph_poisson_real bounds_max[2] = { (tph_poisson_real)10, (tph_poisson_real)10 };
   const tph_poisson_args args = { .bounds_min = bounds_min,
     .bounds_max = bounds_max,
-    .radius = (tph_poisson_real)3,
+    .radius = (tph_poisson_real)1,
     .ndims = INT32_C(2),
     .max_sample_attempts = UINT32_C(30),
     .seed = UINT64_C(1981) };
