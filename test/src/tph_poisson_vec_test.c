@@ -1,7 +1,7 @@
 #include <inttypes.h> /* PRIXPTR, etc */
 #include <stdbool.h> /* bool, true, false */
 #include <stdio.h> /* printf */
-#include <stdlib.h> /* malloc, free, abort, EXIT_SUCCESS */
+#include <stdlib.h> /* malloc, free, EXIT_SUCCESS */
 
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"

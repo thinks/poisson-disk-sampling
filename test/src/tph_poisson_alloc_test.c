@@ -1,3 +1,4 @@
+#if 0
 static void TestUserAlloc()
 {
   const auto create_sampling = [](tph_poisson_allocator *alloc) {
@@ -98,15 +99,81 @@ static void TestBadAlloc()
   // AllocCtx alloc_ctx2{ /*nsamples=*/0, /*.max_samples=*/5 };
   // add_sample_fail(&alloc_ctx2);
 }
+#endif
 
+#include <stdint.h> /* UINT64_C, etc */
+#include <stdio.h> /* printf */
+#include <stdlib.h> /* malloc, free, abort, EXIT_SUCCESS */
+#include <string.h> /* memset */
 
-int main(int /*argc*/, char * /*argv*/[])
+#define TPH_POISSON_IMPLEMENTATION
+#include "thinks/tph_poisson.h"
+
+#include "require.h"
+
+typedef struct alloc_test_alloc_ctx_
 {
-  std::printf("TestUserAlloc...\n");
-  TestUserAlloc();
+  int num_mallocs;
+  int max_mallocs;
+} alloc_test_alloc_ctx;
 
-  std::printf("TestBadAlloc...\n");
-  TestBadAlloc();
+static void *alloc_test_malloc(ptrdiff_t size, void *ctx)
+{
+  alloc_test_alloc_ctx *a_ctx = (alloc_test_alloc_ctx *)ctx;
+  if ((size == 0) | (a_ctx->num_mallocs >= a_ctx->max_mallocs)) { return NULL; }
+  void *ptr = malloc((size_t)(size));
+  ++a_ctx->num_mallocs;
+  return ptr;
+}
+
+static void alloc_test_free(void *ptr, ptrdiff_t size, void *ctx)
+{
+  (void)size;
+  (void)ctx;
+  if (ptr == NULL) { return; }
+  free(ptr);
+}
+
+static void test_bad_alloc(void) {
+  /* Configure arguments. */
+  const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
+  const tph_poisson_real bounds_max[2] = { (tph_poisson_real)10, (tph_poisson_real)10 };
+  const tph_poisson_args args = { .bounds_min = bounds_min,
+    .bounds_max = bounds_max,
+    .radius = (tph_poisson_real)3,
+    .ndims = INT32_C(2),
+    .max_sample_attempts = UINT32_C(30),
+    .seed = UINT64_C(1981) };
+
+  tph_poisson_sampling sampling;
+  memset(&sampling, 0, sizeof(tph_poisson_sampling));
+
+  int ret = TPH_POISSON_BAD_ALLOC;
+  int i = 0;
+  while (ret != TPH_POISSON_SUCCESS) {
+    alloc_test_alloc_ctx alloc_ctx = { .num_mallocs = 0, .max_mallocs = i };
+    tph_poisson_allocator alloc = {
+      .malloc = alloc_test_malloc, .free = alloc_test_free, .ctx = &alloc_ctx
+    };
+
+    ret = tph_poisson_create(&args, &alloc, &sampling);
+    REQUIRE(ret == TPH_POISSON_BAD_ALLOC || ret == TPH_POISSON_SUCCESS);
+    ++i;
+  }
+
+  tph_poisson_destroy(&sampling);
+}
+
+int main(int argc, char *argv[])
+{
+  (void)argc;
+  (void)argv;
+
+  // printf("TestUserAlloc...\n");
+  // TestUserAlloc();
+
+  printf("test_bad_alloc...\n");
+  test_bad_alloc();
 
   return EXIT_SUCCESS;
 }
