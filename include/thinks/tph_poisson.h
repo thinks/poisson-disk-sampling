@@ -1066,7 +1066,7 @@ int tph_poisson_create(const tph_poisson_args *args,
   /* Add first sample randomly within bounds. No need to check (non-existing) neighbors. */
   tph_poisson_rand_sample(&ctx, ctx.sample);
   ret = tph_poisson_add_sample(&ctx, internal, ctx.sample);
-  TPH_POISSON_ASSERT(ret != TPH_POISSON_SUCCESS);
+  TPH_POISSON_ASSERT(ret == TPH_POISSON_SUCCESS);
 
   TPH_POISSON_ASSERT(tph_poisson_vec_size(&ctx.active_indices) / (ptrdiff_t)sizeof(ptrdiff_t) == 1);
   ptrdiff_t active_index_count = 1;
