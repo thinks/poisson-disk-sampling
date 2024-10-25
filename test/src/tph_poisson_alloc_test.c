@@ -134,7 +134,8 @@ static void alloc_test_free(void *ptr, ptrdiff_t size, void *ctx)
   free(ptr);
 }
 
-static void test_bad_alloc(void) {
+static void test_bad_alloc(void)
+{
   /* Configure arguments. */
   const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
   const tph_poisson_real bounds_max[2] = { (tph_poisson_real)10, (tph_poisson_real)10 };
