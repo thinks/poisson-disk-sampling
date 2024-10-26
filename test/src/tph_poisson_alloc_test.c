@@ -202,5 +202,8 @@ int main(int argc, char *argv[])
   printf("test_destroyed_alloc...\n");
   test_destroyed_alloc();
 
+  printf("test_arena_alloc");
+  test_arena_alloc();
+
   return EXIT_SUCCESS;
 }
