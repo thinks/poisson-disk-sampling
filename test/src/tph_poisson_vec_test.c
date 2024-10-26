@@ -20,6 +20,7 @@ static void *vec_test_malloc(ptrdiff_t size, void *ctx)
   if ((size == 0) | (a_ctx->fail != 0)) { return NULL; }
   void *ptr = malloc((size_t)(size + a_ctx->align_offset));
 
+  /* cppcheck-suppress memleak */
   return (void *)((intptr_t)ptr + a_ctx->align_offset);
 }
 
