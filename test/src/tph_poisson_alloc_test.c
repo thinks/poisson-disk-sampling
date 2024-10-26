@@ -78,10 +78,10 @@ static void test_bad_alloc(void)
    * we don't know exactly how many allocations will be made (nor would we want
    * to rely on such knowledge for testing, since it may change). Therefore, our
    * custom allocator is configured to fail after 1, 2, 3, ... allocations, until
-   * tph_poisson_create succeeds. This way all possible memory allocation failures 
-   * will be hit. 
-   * 
-   * Note that without this kind of exhaustive test it would be very difficult to 
+   * tph_poisson_create succeeds. This way all possible memory allocation failures
+   * will be hit.
+   *
+   * Note that without this kind of exhaustive test it would be very difficult to
    * achieve full test code coverage. */
 
   /* Configure arguments. */
@@ -146,7 +146,7 @@ static void destroyed_alloc_free(void *ptr, ptrdiff_t size, void *ctx)
   free(ptr);
 }
 
-static void test_destroyed_alloc(void) 
+static void test_destroyed_alloc(void)
 {
   /* Configure arguments. */
   const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
@@ -164,7 +164,7 @@ static void test_destroyed_alloc(void)
 
   /* Set up a simple allocator that count number of allocations/deallocations. */
   destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
-  tph_poisson_allocator* alloc = malloc(sizeof(tph_poisson_default_alloc));
+  tph_poisson_allocator *alloc = malloc(sizeof(tph_poisson_default_alloc));
   alloc->malloc = destroyed_alloc_malloc;
   alloc->free = destroyed_alloc_free;
   alloc->ctx = &alloc_ctx;
@@ -172,13 +172,13 @@ static void test_destroyed_alloc(void)
   REQUIRE(tph_poisson_create(&args, alloc, &sampling) == TPH_POISSON_SUCCESS);
 
   /* Destroy the allocator before deallocating the sampling memory. The sampling
-   * should have stored the malloc/free function pointers and context internally, 
-   * so there should be no errors. Note that the allocator context is not destroyed, 
-   * only the allocator. 
-   * 
-   * This prevent the implementation from storing a pointer to the allocator 
+   * should have stored the malloc/free function pointers and context internally,
+   * so there should be no errors. Note that the allocator context is not destroyed,
+   * only the allocator.
+   *
+   * This prevent the implementation from storing a pointer to the allocator
    * internally. Instead the implementation should copy the malloc/free function
-   * pointers (and context) so that it does not depend on the lifetime of the 
+   * pointers (and context) so that it does not depend on the lifetime of the
    * allocator instance. */
   free(alloc);
   REQUIRE(alloc_ctx.num_mallocs > 0);
