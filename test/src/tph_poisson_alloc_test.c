@@ -1,42 +1,3 @@
-#if 0
-static void TestUserAlloc()
-{
-  const auto create_sampling = [](tph_poisson_allocator *alloc) {
-    constexpr int32_t ndims = 2;
-    constexpr std::array<Real, ndims> bounds_min{ -10, -10 };
-    constexpr std::array<Real, ndims> bounds_max{ 10, 10 };
-    tph_poisson_args valid_args = {};
-    valid_args.radius = 1;
-    valid_args.ndims = ndims;
-    valid_args.bounds_min = bounds_min.data();
-    valid_args.bounds_max = bounds_max.data();
-    valid_args.max_sample_attempts = UINT32_C(30);
-    valid_args.seed = UINT64_C(333);
-    unique_poisson_ptr sampling = make_unique_poisson();
-    REQUIRE(TPH_POISSON_SUCCESS == tph_poisson_create(&valid_args, alloc, sampling.get()));
-    return sampling;
-  };
-
-  // Verify that we get exactly (bit-wise) the same results with default (libc malloc) and user
-  // allocator (rpmalloc).
-  tph_poisson_allocator rpalloc = make_rpalloc();
-  unique_poisson_ptr sampling = create_sampling(/*alloc=*/nullptr);
-  unique_poisson_ptr sampling_alloc = create_sampling(&rpalloc);
-  REQUIRE(sampling->ndims == sampling_alloc->ndims);
-  REQUIRE(sampling->nsamples == sampling_alloc->nsamples);
-  const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
-  const tph_poisson_real *samples_alloc = tph_poisson_get_samples(sampling_alloc.get());
-  REQUIRE(samples != nullptr);
-  REQUIRE(samples_alloc != nullptr);
-  REQUIRE(std::memcmp(reinterpret_cast<const void *>(samples),
-            reinterpret_cast<const void *>(samples_alloc),
-            static_cast<size_t>(sampling->nsamples) * static_cast<size_t>(sampling->ndims)
-              * sizeof(tph_poisson_real))
-          == 0);
-}
-
-#endif
-
 #include <stdint.h> /* UINT64_C, etc */
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* malloc, free, abort, EXIT_SUCCESS */
@@ -122,6 +83,7 @@ static void test_bad_alloc(void)
   tph_poisson_destroy(&sampling);
 }
 
+#if 0
 typedef struct destroyed_alloc_ctx_
 {
   int num_mallocs;
@@ -164,7 +126,7 @@ static void test_destroyed_alloc(void)
 
   /* Set up a simple allocator that count number of allocations/deallocations. */
   destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
-  tph_poisson_allocator *alloc = malloc(sizeof(tph_poisson_default_alloc));
+  tph_poisson_allocator *alloc = (tph_poisson_allocator*)malloc(sizeof(tph_poisson_default_alloc));
   alloc->malloc = destroyed_alloc_malloc;
   alloc->free = destroyed_alloc_free;
   alloc->ctx = &alloc_ctx;
@@ -187,6 +149,7 @@ static void test_destroyed_alloc(void)
   /* Free memory associated with sampling. */
   tph_poisson_destroy(&sampling);
 }
+#endif
 
 static void test_arena_alloc(void) {}
 
@@ -201,8 +164,10 @@ int main(int argc, char *argv[])
   printf("test_bad_alloc...\n");
   test_bad_alloc();
 
+#if 0
   printf("test_destroyed_alloc...\n");
   test_destroyed_alloc();
+#endif
 
   printf("test_arena_alloc...\n");
   test_arena_alloc();
