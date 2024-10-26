@@ -125,7 +125,7 @@ static void test_destroyed_alloc(void)
 
   /* Set up a simple allocator that count number of allocations/deallocations. */
   destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
-  tph_poisson_allocator *alloc = (tph_poisson_allocator*)malloc(sizeof(tph_poisson_default_alloc));
+  tph_poisson_allocator *alloc = (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));
   alloc->malloc = destroyed_alloc_malloc;
   alloc->free = destroyed_alloc_free;
   alloc->ctx = &alloc_ctx;
