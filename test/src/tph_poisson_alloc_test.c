@@ -141,7 +141,7 @@ static void test_destroyed_alloc(void)
    * internally. Instead the implementation should copy the malloc/free function
    * pointers (and context) so that it does not depend on the lifetime of the
    * allocator instance. */
-  /*free(alloc);*/
+  /* free(alloc); */
   REQUIRE(alloc_ctx.num_mallocs > 0);
   REQUIRE(alloc_ctx.num_frees > 0);
 

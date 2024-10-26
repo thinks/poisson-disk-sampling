@@ -53,7 +53,6 @@ add_test(NAME tph_poisson_f64_test COMMAND tph_poisson_f64_test)
 
 add_executable(tph_poisson_vec_test "src/tph_poisson_vec_test.c")
 target_link_libraries(tph_poisson_vec_test PRIVATE thinks::tph_poisson)
-# target_compile_definitions(tph_poisson_vec_test PRIVATE TPH_POISSON_VEC_TEST)
 target_compile_features(tph_poisson_vec_test PRIVATE c_std_11)
 add_test(NAME tph_poisson_vec_test COMMAND tph_poisson_vec_test)
 if(NOT MSVC)
