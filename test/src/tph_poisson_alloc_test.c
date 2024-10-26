@@ -127,7 +127,8 @@ static void test_destroyed_alloc(void)
       .seed = UINT64_C(1981) };
 
     /* Set up a simple allocator that count number of allocations/deallocations. */
-    tph_poisson_allocator *alloc = (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));
+    tph_poisson_allocator *alloc =
+      (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));
     alloc->malloc = destroyed_alloc_malloc;
     alloc->free = destroyed_alloc_free;
     alloc->ctx = &alloc_ctx;
@@ -135,14 +136,14 @@ static void test_destroyed_alloc(void)
     REQUIRE(tph_poisson_create(&args, alloc, &sampling) == TPH_POISSON_SUCCESS);
 
     /* Destroy the allocator before deallocating the sampling memory. The sampling
-    * should have stored the malloc/free function pointers and context internally,
-    * so there should be no errors. Note that the allocator context is not destroyed,
-    * only the allocator.
-    *
-    * This prevent the implementation from storing a pointer to the allocator
-    * internally. Instead the implementation should copy the malloc/free function
-    * pointers (and context) so that it does not depend on the lifetime of the
-    * allocator instance. */
+     * should have stored the malloc/free function pointers and context internally,
+     * so there should be no errors. Note that the allocator context is not destroyed,
+     * only the allocator.
+     *
+     * This prevent the implementation from storing a pointer to the allocator
+     * internally. Instead the implementation should copy the malloc/free function
+     * pointers (and context) so that it does not depend on the lifetime of the
+     * allocator instance. */
     /* free(alloc); */
     REQUIRE(alloc_ctx.num_mallocs > 0);
     REQUIRE(alloc_ctx.num_frees > 0);
