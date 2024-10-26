@@ -1,10 +1,10 @@
-#include <assert.h>/* assert */
-#include <stddef.h>/* ptrdiff_t */
-#include <stdint.h>/* UINT64_C, etc */
-#include <stdio.h>/* printf */
-#include <stdlib.h>/* EXIT_FAILURE, etc */
+#include <assert.h> /* assert */
+#include <stddef.h> /* ptrdiff_t */
+#include <stdint.h> /* UINT64_C, etc */
+#include <stdio.h> /* printf */
+#include <stdlib.h> /* EXIT_FAILURE, etc */
+#include <string.h> /* memset */
 
-#define TPH_POISSON_IMPLEMENTATION
 /*
 #define TPH_POISSON_REAL_TYPE double
 #include <math.h>
@@ -12,6 +12,7 @@
 #define TPH_POISSON_CEIL ceil
 #define TPH_POISSON_FLOOR floor
 */
+#define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
 
 int main(int argc, char *argv[])
@@ -28,11 +29,15 @@ int main(int argc, char *argv[])
     .ndims = INT32_C(2),
     .max_sample_attempts = UINT32_C(30),
     .seed = UINT64_C(1981) };
+
   /* Using default allocator (libc malloc). */
   const tph_poisson_allocator *alloc = NULL;
 
-  /* Create samples. */
-  tph_poisson_sampling sampling = { .internal = NULL, .ndims = INT32_C(0), .nsamples = 0 };
+  /* Initialize empty sampling. */
+  tph_poisson_sampling sampling;
+  memset(&sampling, 0, sizeof(tph_poisson_sampling));
+
+  /* Populate sampling with points. */
   const int ret = tph_poisson_create(&args, alloc, &sampling);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy sampling here! */

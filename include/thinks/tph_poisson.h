@@ -1003,8 +1003,8 @@ static void tph_poisson_rand_sample(tph_poisson_context *ctx, tph_poisson_real *
           * (ctx->bounds_max[i] - ctx->bounds_min[i]);
     /* Clamp to avoid numerical issues. */
     /* clang-format off */
-    sample[i] = sample[i] < ctx->bounds_min[i] ? ctx->bounds_min[i]
-                  : (ctx->bounds_max[i] < sample[i] ? ctx->bounds_max[i] : sample[i]);
+    sample[i] = sample[i] < ctx->bounds_min[i] ? ctx->bounds_min[i] 
+      : (ctx->bounds_max[i] < sample[i] ? ctx->bounds_max[i] : sample[i]);
     /* clang-format on */
   }
 }
@@ -1037,7 +1037,8 @@ int tph_poisson_create(const tph_poisson_args *args,
 
   /* Heuristically reserve some memory for samples to avoid reallocations while
    * growing the buffer. Estimate that 25% of the grid cells will end up
-   * containing a sample, which is a fairly conservative guess. */
+   * containing a sample, which is a fairly conservative guess. Prefering not
+   * to over-allocate up front here, at the cost of having to reallocate later. */
   ret = tph_poisson_vec_reserve(&internal->samples,
     &internal->alloc,
     (ctx.grid_linear_size / 4) * ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims),
