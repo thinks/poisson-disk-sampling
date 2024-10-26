@@ -83,7 +83,6 @@ static void test_bad_alloc(void)
   tph_poisson_destroy(&sampling);
 }
 
-#if 0
 typedef struct destroyed_alloc_ctx_
 {
   int num_mallocs;
@@ -142,14 +141,13 @@ static void test_destroyed_alloc(void)
    * internally. Instead the implementation should copy the malloc/free function
    * pointers (and context) so that it does not depend on the lifetime of the
    * allocator instance. */
-  free(alloc);
+  /*free(alloc);*/
   REQUIRE(alloc_ctx.num_mallocs > 0);
   REQUIRE(alloc_ctx.num_frees > 0);
 
   /* Free memory associated with sampling. */
   tph_poisson_destroy(&sampling);
 }
-#endif
 
 static void test_arena_alloc(void) {}
 
