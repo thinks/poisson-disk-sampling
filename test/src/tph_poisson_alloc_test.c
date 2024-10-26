@@ -127,13 +127,13 @@ static void test_destroyed_alloc(void)
       .seed = UINT64_C(1981) };
 
     /* Set up a simple allocator that count number of allocations/deallocations. */
-    tph_poisson_allocator *alloc =
-      (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));
-    alloc->malloc = destroyed_alloc_malloc;
-    alloc->free = destroyed_alloc_free;
-    alloc->ctx = &alloc_ctx;
+    tph_poisson_allocator alloc; /* =
+       (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));*/
+    alloc.malloc = destroyed_alloc_malloc;
+    alloc.free = destroyed_alloc_free;
+    alloc.ctx = &alloc_ctx;
 
-    REQUIRE(tph_poisson_create(&args, alloc, &sampling) == TPH_POISSON_SUCCESS);
+    REQUIRE(tph_poisson_create(&args, &alloc, &sampling) == TPH_POISSON_SUCCESS);
 
     /* Destroy the allocator before deallocating the sampling memory. The sampling
      * should have stored the malloc/free function pointers and context internally,
