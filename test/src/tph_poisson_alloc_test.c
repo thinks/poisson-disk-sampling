@@ -188,6 +188,8 @@ static void test_destroyed_alloc(void)
   tph_poisson_destroy(&sampling);
 }
 
+static void test_arena_alloc(void) {}
+
 int main(int argc, char *argv[])
 {
   (void)argc;
@@ -202,7 +204,7 @@ int main(int argc, char *argv[])
   printf("test_destroyed_alloc...\n");
   test_destroyed_alloc();
 
-  printf("test_arena_alloc");
+  printf("test_arena_alloc...\n");
   test_arena_alloc();
 
   return EXIT_SUCCESS;

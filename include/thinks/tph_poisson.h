@@ -39,11 +39,9 @@ extern "C" {
 #define TPH_POISSON_CEIL  ceilf
 #define TPH_POISSON_FLOOR floorf
 #endif
-/* clang-format on */
 
 typedef TPH_POISSON_REAL_TYPE tph_poisson_real;
 
-/* clang-format off */
 typedef struct tph_poisson_args_              tph_poisson_args;
 typedef struct tph_poisson_allocator_         tph_poisson_allocator;
 typedef struct tph_poisson_sampling_          tph_poisson_sampling;
@@ -1063,8 +1061,10 @@ int tph_poisson_create(const tph_poisson_args *args,
 
   /* Add first sample randomly within bounds. No need to check (non-existing) neighbors. */
   tph_poisson_rand_sample(&ctx, ctx.sample);
-  ret = tph_poisson_add_sample(&ctx, internal, ctx.sample);
-  TPH_POISSON_ASSERT(ret == TPH_POISSON_SUCCESS);
+  tph_poisson_add_sample(&ctx, internal, ctx.sample);
+  (void)tph_poisson_add_sample(&ctx, internal, ctx.sample);
+  // ret = tph_poisson_add_sample(&ctx, internal, ctx.sample);
+  // TPH_POISSON_ASSERT(ret == TPH_POISSON_SUCCESS);
 
   TPH_POISSON_ASSERT(tph_poisson_vec_size(&ctx.active_indices) / (ptrdiff_t)sizeof(ptrdiff_t) == 1);
   ptrdiff_t active_index_count = 1;

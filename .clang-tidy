@@ -16,7 +16,7 @@ Checks: "-*,\
   -readability-magic-numbers,\
   -readability-identifier-length,\
   -readability-function-cognitive-complexity"
-WarningsAsErrors: ''
+WarningsAsErrors: '*'
 CheckOptions:
   - key: 'bugprone-argument-comment.StrictMode'
     value: 'true'
