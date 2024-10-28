@@ -1,6 +1,6 @@
 #include <stdint.h> /* UINT64_C, etc */
 #include <stdio.h> /* printf */
-#include <stdlib.h> /* malloc, free, abort, EXIT_SUCCESS */
+#include <stdlib.h> /* malloc, free, EXIT_SUCCESS */
 #include <string.h> /* memset */
 
 #define TPH_POISSON_IMPLEMENTATION
@@ -89,7 +89,6 @@ typedef struct destroyed_alloc_ctx_
   int num_frees;
 } destroyed_alloc_ctx;
 
-#if 1
 static void *destroyed_alloc_malloc(ptrdiff_t size, void *ctx)
 {
   if (size == 0) { return NULL; }
@@ -107,15 +106,12 @@ static void destroyed_alloc_free(void *ptr, ptrdiff_t size, void *ctx)
   ++a_ctx->num_frees;
   free(ptr);
 }
-#endif
 
 static void test_destroyed_alloc(void)
 {
   /* Initialize empty sampling. */
   tph_poisson_sampling sampling;
   memset(&sampling, 0, sizeof(tph_poisson_sampling));
-
-  destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
 
   /* Configure arguments. */
   const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
@@ -128,12 +124,14 @@ static void test_destroyed_alloc(void)
     .seed = UINT64_C(1981) };
 
   /* Set up a simple allocator that just counts number of allocations/deallocations. */
+  destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
   tph_poisson_allocator *alloc = (tph_poisson_allocator *)malloc(sizeof(tph_poisson_allocator));
   alloc->malloc = destroyed_alloc_malloc;
   alloc->free = destroyed_alloc_free;
   alloc->ctx = &alloc_ctx;
 
-  REQUIRE(tph_poisson_create(&args, alloc, &sampling) == TPH_POISSON_SUCCESS);
+  const int ret = tph_poisson_create(&args, alloc, &sampling);
+  REQUIRE(ret == TPH_POISSON_SUCCESS);
 
   /* Destroy the allocator before deallocating the sampling memory. The sampling
    * should have stored the malloc/free function pointers and context internally,
@@ -149,6 +147,8 @@ static void test_destroyed_alloc(void)
   /* Free memory associated with sampling. */
   tph_poisson_destroy(&sampling);
 
+  /* Note that we have not freed the allocator context memory, so we should
+   * still be able to read from it. */
   REQUIRE(alloc_ctx.num_mallocs > 0);
   REQUIRE(alloc_ctx.num_frees > 0);
 }

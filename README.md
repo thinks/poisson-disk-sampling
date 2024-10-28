@@ -45,16 +45,19 @@ int main(int argc, char *argv[])
     .ndims = INT32_C(2),
     .max_sample_attempts = UINT32_C(30),
     .seed = UINT64_C(1981) };
+
   /* Using default allocator (libc malloc). */
   const tph_poisson_allocator *alloc = NULL;
 
-  /* Create samples. */
+  /* Initialize empty sampling. */
   tph_poisson_sampling sampling;
   memset(&sampling, 0, sizeof(tph_poisson_sampling));
+
+  /* Populate sampling with points. */
   const int ret = tph_poisson_create(&args, alloc, &sampling);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy sampling here! */
-    printf("tph_poisson error, code: %d\n", ret);
+    printf("tph_poisson_create error, code: %d\n", ret);
     return EXIT_FAILURE;
   }
 
@@ -63,7 +66,6 @@ int main(int argc, char *argv[])
   assert(samples != NULL);
 
   /* Print first and last sample positions. */
-  printf("\nsimple_c:\n");
   printf("samples[%td] = ( %.3f, %.3f )\n", 
     (ptrdiff_t)0, 
     (double)samples[0], 

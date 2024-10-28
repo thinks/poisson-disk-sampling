@@ -51,6 +51,7 @@ add_example(json.cpp DEPS nlohmann_json::nlohmann_json)
 # add_example(periodogram.c DEPS fftw3f nothings::stb)
 add_example(simple_c.c)
 add_example(simple_cpp.cpp)
+add_example(custom_malloc.c)
 
 # ---- End-of-file commands ----
 
