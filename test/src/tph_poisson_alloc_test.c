@@ -118,7 +118,7 @@ static void test_destroyed_alloc(void)
   destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
 
   {
-#if 0
+#if 1
     /* Configure arguments. */
     const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
     const tph_poisson_real bounds_max[2] = { (tph_poisson_real)10, (tph_poisson_real)10 };
@@ -129,7 +129,7 @@ static void test_destroyed_alloc(void)
       .max_sample_attempts = UINT32_C(30),
       .seed = UINT64_C(1981) };
 
-    /* Set up a simple allocator that count number of allocations/deallocations. */
+    /* Set up a simple allocator that counts number of allocations/deallocations. */
     tph_poisson_allocator alloc; /* =
        (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));*/
     alloc.malloc = destroyed_alloc_malloc;
