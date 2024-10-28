@@ -89,7 +89,7 @@ typedef struct destroyed_alloc_ctx_
   int num_frees;
 } destroyed_alloc_ctx;
 
-#if 0
+#if 1
 static void *destroyed_alloc_malloc(ptrdiff_t size, void *ctx)
 {
   if (size == 0) { return NULL; }
