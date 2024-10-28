@@ -1,6 +1,5 @@
 set(
     FORMAT_PATTERNS
-    # source/*.c source/*.h
     include/*.h
     test/*.c test/*.cpp test/*.h
     examples/*.c examples/*.cpp examples/*.h

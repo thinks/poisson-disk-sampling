@@ -513,9 +513,9 @@ static int tph_poisson_vec_shrink_to_fit(tph_poisson_vec *vec,
   const tph_poisson_allocator *alloc,
   const ptrdiff_t alignment)
 {
-  assert(vec != NULL);
-  assert(alloc != NULL);
-  assert(alignment > 0);
+  TPH_POISSON_ASSERT(vec != NULL);
+  TPH_POISSON_ASSERT(alloc != NULL);
+  TPH_POISSON_ASSERT(alignment > 0);
 
   const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
   if (size == 0) {
@@ -523,18 +523,18 @@ static int tph_poisson_vec_shrink_to_fit(tph_poisson_vec *vec,
      * This includes the case of a zero-initialized vector. */
     if (vec->mem != NULL) {
       /* Existing vector is empty but has capacity. */
-      assert(vec->mem_size > 0);
+      TPH_POISSON_ASSERT(vec->mem_size > 0);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
       TPH_POISSON_MEMSET((void *)vec, 0, sizeof(tph_poisson_vec));
     }
-    assert(vec->mem == NULL);
-    assert(vec->mem_size == 0);
+    TPH_POISSON_ASSERT(vec->mem == NULL);
+    TPH_POISSON_ASSERT(vec->mem_size == 0);
     return TPH_POISSON_SUCCESS;
   }
 
   /* Check if allocating a new buffer (size + alignment) would be smaller than
    * the existing buffer. */
-  assert(vec->mem_size > alignment);
+  TPH_POISSON_ASSERT(vec->mem_size > alignment);
   const ptrdiff_t new_mem_size = size + alignment;
   if (vec->mem_size > new_mem_size) {
     /* Allocate and align a new buffer with sufficient capacity. Take into
@@ -545,7 +545,7 @@ static int tph_poisson_vec_shrink_to_fit(tph_poisson_vec *vec,
     void *const new_begin = tph_poisson_align(new_mem, (size_t)alignment);
 
     /* Copy existing data to the new buffer and destroy the old buffer. */
-    memcpy(new_begin, vec->begin, (size_t)size);
+    TPH_POISSON_MEMCPY(new_begin, vec->begin, (size_t)size);
     alloc->free(vec->mem, vec->mem_size, alloc->ctx);
 
     /* Configure vector to use the new buffer. */
@@ -1126,12 +1126,10 @@ int tph_poisson_create(const tph_poisson_args *args,
     return ret;
   }
 
-  TPH_POISSON_ASSERT(
-    tph_poisson_vec_size(&internal->samples) % ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims)
-    == 0);
+  const ptrdiff_t sample_size = (ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims;
+  TPH_POISSON_ASSERT(tph_poisson_vec_size(&internal->samples) % sample_size == 0);
   sampling->ndims = ctx.ndims;
-  sampling->nsamples =
-    tph_poisson_vec_size(&internal->samples) / ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims);
+  sampling->nsamples = tph_poisson_vec_size(&internal->samples) / sample_size;
 
   tph_poisson_context_destroy(&ctx, &internal->alloc);
 

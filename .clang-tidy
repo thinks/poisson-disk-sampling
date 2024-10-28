@@ -1,8 +1,13 @@
 ---
-# Enable ALL the things! Except not really
+# Enable ALL the things! Except not really.
+# 
+# NOTE(thinks):
+# Sadly, clang-analyzer-unix.Malloc gives false positives when using our 
+# custom allocators.
 Checks: "-*,\
   -google-readability-todo,\
   clang-analyzer-*,\
+  -clang-analyzer-unix.Malloc,\ 
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,\
   cert-*,\
   bugprone-*,\

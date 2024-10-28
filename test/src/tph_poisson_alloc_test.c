@@ -117,46 +117,40 @@ static void test_destroyed_alloc(void)
 
   destroyed_alloc_ctx alloc_ctx = { .num_mallocs = 0, .num_frees = 0 };
 
-  {
-#if 1
-    /* Configure arguments. */
-    const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
-    const tph_poisson_real bounds_max[2] = { (tph_poisson_real)10, (tph_poisson_real)10 };
-    const tph_poisson_args args = { .bounds_min = bounds_min,
-      .bounds_max = bounds_max,
-      .radius = (tph_poisson_real)1,
-      .ndims = INT32_C(2),
-      .max_sample_attempts = UINT32_C(30),
-      .seed = UINT64_C(1981) };
+  /* Configure arguments. */
+  const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-10, (tph_poisson_real)-10 };
+  const tph_poisson_real bounds_max[2] = { (tph_poisson_real)10, (tph_poisson_real)10 };
+  const tph_poisson_args args = { .bounds_min = bounds_min,
+    .bounds_max = bounds_max,
+    .radius = (tph_poisson_real)1,
+    .ndims = INT32_C(2),
+    .max_sample_attempts = UINT32_C(30),
+    .seed = UINT64_C(1981) };
 
-    /* Set up a simple allocator that counts number of allocations/deallocations. */
-    tph_poisson_allocator alloc; /* =
-       (tph_poisson_allocator *)malloc(sizeof(tph_poisson_default_alloc));*/
-    alloc.malloc = destroyed_alloc_malloc;
-    alloc.free = destroyed_alloc_free;
-    alloc.ctx = &alloc_ctx;
+  /* Set up a simple allocator that just counts number of allocations/deallocations. */
+  tph_poisson_allocator *alloc = (tph_poisson_allocator *)malloc(sizeof(tph_poisson_allocator));
+  alloc->malloc = destroyed_alloc_malloc;
+  alloc->free = destroyed_alloc_free;
+  alloc->ctx = &alloc_ctx;
 
-    REQUIRE(tph_poisson_create(&args, &alloc, &sampling) == TPH_POISSON_SUCCESS);
+  REQUIRE(tph_poisson_create(&args, alloc, &sampling) == TPH_POISSON_SUCCESS);
 
-    /* Destroy the allocator before deallocating the sampling memory. The sampling
-     * should have stored the malloc/free function pointers and context internally,
-     * so there should be no errors. Note that the allocator context is not destroyed,
-     * only the allocator.
-     *
-     * This prevent the implementation from storing a pointer to the allocator
-     * internally. Instead the implementation should copy the malloc/free function
-     * pointers (and context) so that it does not depend on the lifetime of the
-     * allocator instance. */
-    /* free(alloc); */
-#endif
-  }
-
-  /* TMP >= !!! */
-  REQUIRE(alloc_ctx.num_mallocs >= 0);
-  REQUIRE(alloc_ctx.num_frees >= 0);
+  /* Destroy the allocator before deallocating the sampling memory. The sampling
+   * should have stored the malloc/free function pointers and context internally,
+   * so there should be no errors. Note that the allocator context is not destroyed,
+   * only the allocator.
+   *
+   * This prevent the implementation from storing a pointer directly to the allocator.
+   * Instead the implementation should copy the malloc/free function
+   * pointers (and context) so that it does not depend on the lifetime of the
+   * allocator instance. */
+  free(alloc);
 
   /* Free memory associated with sampling. */
   tph_poisson_destroy(&sampling);
+
+  REQUIRE(alloc_ctx.num_mallocs > 0);
+  REQUIRE(alloc_ctx.num_frees > 0);
 }
 
 #if 0
