@@ -156,6 +156,9 @@ static void test_destroyed_alloc(void)
   REQUIRE(alloc_ctx.num_frees >= 0);
 
   /* Free memory associated with sampling. */
+#ifdef __clang_analyzer__  
+  [[clang::suppress]]
+#endif
   tph_poisson_destroy(&sampling);
 }
 

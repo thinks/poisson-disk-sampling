@@ -38,6 +38,4 @@ CheckOptions:
     value: 'true'
   - key: 'readability-inconsistent-declaration-parameter-name.Strict'
     value: 'true'
-  - key: 'clang-analyzer-unix.Malloc:Optimistic'
-    value: 'true'
 ...
