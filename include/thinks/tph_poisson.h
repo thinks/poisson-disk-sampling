@@ -1141,8 +1141,8 @@ int tph_poisson_create(const tph_poisson_args *args,
 void tph_poisson_destroy(tph_poisson_sampling *sampling)
 {
   if (sampling != NULL) {
-    if (sampling->internal != NULL) {
-      tph_poisson_sampling_internal *internal = sampling->internal;
+    tph_poisson_sampling_internal *internal = sampling->internal;
+    if (internal != NULL) {
       tph_poisson_vec_free(&internal->samples, &internal->alloc);
       tph_poisson_free_fn free_fn = internal->alloc.free;
       void *alloc_ctx = internal->alloc.ctx;
