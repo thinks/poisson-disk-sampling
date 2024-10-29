@@ -61,11 +61,18 @@ endif()
 
 add_executable(tph_poisson_alloc_test "src/tph_poisson_alloc_test.c")
 target_link_libraries(tph_poisson_alloc_test PRIVATE thinks::tph_poisson)
-target_compile_definitions(tph_poisson_alloc_test PRIVATE TPH_POISSON_VEC_TEST)
 target_compile_features(tph_poisson_alloc_test PRIVATE c_std_11)
 add_test(NAME tph_poisson_alloc_test COMMAND tph_poisson_alloc_test)
 if(NOT MSVC)
   target_link_libraries(tph_poisson_alloc_test PRIVATE m)
+endif()
+
+add_executable(tph_poisson_libc_test "src/tph_poisson_libc_test.c")
+target_link_libraries(tph_poisson_libc_test PRIVATE thinks::tph_poisson)
+target_compile_features(tph_poisson_libc_test PRIVATE c_std_11)
+add_test(NAME tph_poisson_libc_test COMMAND tph_poisson_libc_test)
+if(NOT MSVC)
+  target_link_libraries(tph_poisson_libc_test PRIVATE m)
 endif()
 
 # ---- End-of-file commands ----

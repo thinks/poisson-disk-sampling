@@ -8,11 +8,9 @@
 void *my_malloc(size_t size);
 void my_free(void *ptr);
 
-/* Provide new function names for both malloc and free.
- * Note that this is quite different from using a custom allocator,
- * since it is not really possible to use an allocation context using
- * this approach. (Sure, you could use a static context, but that doesn't
- * seem like a great idea...) */
+/* Provide custom functions for both malloc and free. Note that this
+ * is quite different from using a custom allocator, since it is not
+ * really possible to use an allocation context with this approach. */
 #define TPH_POISSON_MALLOC my_malloc
 #define TPH_POISSON_FREE my_free
 #define TPH_POISSON_IMPLEMENTATION

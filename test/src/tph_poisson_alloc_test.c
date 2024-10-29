@@ -67,7 +67,7 @@ static void test_bad_alloc(void)
   int i = 0;
   while (ret != TPH_POISSON_SUCCESS) {
     /* Use a custom allocator that will fail after 'i' allocations. Note that
-     * if 'i' == 0 the first allocation fails. */
+     * when 'i' == 0 the first allocation fails. */
     bad_alloc_ctx alloc_ctx = { .num_mallocs = 0, .max_mallocs = i };
     tph_poisson_allocator alloc = {
       .malloc = bad_alloc_malloc, .free = bad_alloc_free, .ctx = &alloc_ctx
