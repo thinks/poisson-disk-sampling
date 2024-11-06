@@ -8,7 +8,7 @@ static void my_free(void *ptr);
 static void *my_memcpy(void *dest, const void *src, size_t count);
 static void *my_memset(void *dest, int ch, size_t count);
 
-/* Provide custom functions for both malloc, free, memcpy, and memset. */
+/* Provide custom libc functions for malloc, free, memcpy, and memset. */
 #define TPH_POISSON_MALLOC my_malloc
 #define TPH_POISSON_FREE my_free
 #define TPH_POISSON_MEMCPY my_memcpy
@@ -19,45 +19,47 @@ static void *my_memset(void *dest, int ch, size_t count);
 #include "require.h"
 
 /* Global variables to count the number of calls to our custom libc functions. */
-static int num_malloc = 0;
-static int num_free = 0;
-static int num_memcpy = 0;
-static int num_memset = 0;
+static int libc_malloc_calls = 0;
+static int libc_free_calls = 0;
+static int memcpy_calls = 0;
+static int memset_calls = 0;
 
 static void *my_malloc(size_t size)
 {
-  ++num_malloc;
+  ++libc_malloc_calls;
   return malloc(size);
 }
 
 static void my_free(void *ptr)
 {
-  ++num_free;
+  ++libc_free_calls;
   free(ptr);
 }
 
 static void *my_memcpy(void *dest, const void *src, size_t count)
 {
-  ++num_memcpy;
+  ++memcpy_calls;
   return memcpy(dest, src, count);
 }
 
 static void *my_memset(void *dest, int ch, size_t count)
 {
-  ++num_memset;
+  ++memset_calls;
   return memset(dest, ch, count);
 }
 
+/* Custom allocator used to ensure that no libc functions are called
+ * when custom allocation is active. */
 typedef struct my_tph_alloc_ctx_
 {
-  int num_malloc;
-  int num_free;
+  int malloc_calls;
+  int free_calls;
 } my_tph_alloc_ctx;
 
 static void *my_tph_malloc(ptrdiff_t size, void *ctx)
 {
   my_tph_alloc_ctx *a_ctx = (my_tph_alloc_ctx *)ctx;
-  ++a_ctx->num_malloc;
+  ++a_ctx->malloc_calls;
   return malloc((size_t)size);
 }
 
@@ -65,7 +67,7 @@ static void my_tph_free(void *ptr, ptrdiff_t size, void *ctx)
 {
   (void)size;
   my_tph_alloc_ctx *a_ctx = (my_tph_alloc_ctx *)ctx;
-  ++a_ctx->num_free;
+  ++a_ctx->free_calls;
   free(ptr);
 }
 
@@ -89,26 +91,26 @@ static void test_custom_libc(void)
 
   /* Populate sampling with points using default allocator. This should call
    * our custom libc functions. */
-  num_malloc = 0;
-  num_free = 0;
-  num_memcpy = 0;
-  num_memset = 0;
+  libc_malloc_calls = 0;
+  libc_free_calls = 0;
+  memcpy_calls = 0;
+  memset_calls = 0;
   int ret = tph_poisson_create(&args, /*alloc=*/NULL, &sampling);
   REQUIRE(ret == TPH_POISSON_SUCCESS);
   REQUIRE(tph_poisson_get_samples(&sampling) != NULL);
   tph_poisson_destroy(&sampling);
-  REQUIRE(num_malloc > 0);
-  REQUIRE(num_free > 0);
-  REQUIRE(num_memcpy > 0);
-  REQUIRE(num_memset > 0);
-  const int num_default_malloc = num_malloc;
-  const int num_default_free = num_free;
-  const int num_default_memcpy = num_memcpy;
-  const int num_default_memset = num_memset;
+  REQUIRE(libc_malloc_calls > 0);
+  REQUIRE(libc_free_calls > 0);
+  REQUIRE(memcpy_calls > 0);
+  REQUIRE(memset_calls > 0);
+  const int num_default_malloc = libc_malloc_calls;
+  const int num_default_free = libc_free_calls;
+  const int num_default_memcpy = memcpy_calls;
+  const int num_default_memset = memset_calls;
 
   /* Populate sampling again with points using a custom allocator. This should NOT
    * call our custom libc functions. */
-  my_tph_alloc_ctx my_alloc_ctx = { .num_malloc = 0, .num_free = 0 };
+  my_tph_alloc_ctx my_alloc_ctx = { .malloc_calls = 0, .free_calls = 0 };
   tph_poisson_allocator my_alloc = {
     .malloc = my_tph_malloc, .free = my_tph_free, .ctx = &my_alloc_ctx
   };
@@ -118,14 +120,16 @@ static void test_custom_libc(void)
   tph_poisson_destroy(&sampling);
 
   /* Unchanged. */
-  REQUIRE(num_malloc == num_default_malloc);
-  REQUIRE(num_free == num_default_free);
+  REQUIRE(libc_malloc_calls == num_default_malloc);
+  REQUIRE(libc_free_calls == num_default_free);
 
   /* Same number of calls. */
-  REQUIRE(num_default_malloc == my_alloc_ctx.num_malloc);
-  REQUIRE(num_default_free == my_alloc_ctx.num_free);
-  REQUIRE(num_memcpy == 2 * num_default_memcpy);
-  REQUIRE(num_memset == 2 * num_default_memset);
+  REQUIRE(num_default_malloc == my_alloc_ctx.malloc_calls);
+  REQUIRE(num_default_free == my_alloc_ctx.free_calls);
+
+  /* Custom allocator still uses overriden memcpy/memset. */
+  REQUIRE(memcpy_calls == 2 * num_default_memcpy);
+  REQUIRE(memset_calls == 2 * num_default_memset);
 }
 
 int main(int argc, char *argv[])
