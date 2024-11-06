@@ -45,8 +45,13 @@ endif()
 
 add_custom_target(run-examples)
 
+# Install dependencies in the build folder.
 include(../cmake/fetch-nlohmann_json.cmake)
-fetch_nlohmann_json(VERSION "3.7.0")
+fetch_nlohmann_json(VERSION "3.11.3")
+include(../cmake/fetch-fftw.cmake)
+fetch_fftw(VERSION "3.3.10")
+
+# Add example targets.
 add_example(json.cpp DEPS nlohmann_json::nlohmann_json)
 # add_example(periodogram.c DEPS fftw3f nothings::stb)
 add_example(simple_c.c)

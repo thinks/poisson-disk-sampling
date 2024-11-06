@@ -1,4 +1,3 @@
-#include <assert.h> /* assert */
 #include <stddef.h> /* ptrdiff_t */
 #include <stdint.h> /* UINT64_C, etc */
 #include <stdio.h> /* printf */
@@ -18,16 +17,16 @@ void my_free(void *ptr);
 
 void *my_malloc(size_t size)
 {
-  static int count = 0;
+  static int call_count = 0;
   void *ptr = malloc(size);
-  printf("%d - my_malloc(%zu) -> %p\n", count++, size, ptr);
+  printf("%d - my_malloc(%zu) -> %p\n", call_count++, size, ptr);
   return ptr;
 }
 
 void my_free(void *ptr)
 {
-  static int count = 0;
-  printf("%d - my_free(%p)\n", count++, ptr);
+  static int call_count = 0;
+  printf("%d - my_free(%p)\n", call_count++, ptr);
   free(ptr);
 }
 

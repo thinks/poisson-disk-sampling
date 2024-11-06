@@ -153,28 +153,16 @@ static void test_destroyed_alloc(void)
   REQUIRE(alloc_ctx.num_frees > 0);
 }
 
-#if 0
-static void test_arena_alloc(void) {}
-#endif
-
 int main(int argc, char *argv[])
 {
   (void)argc;
   (void)argv;
-
-  // printf("TestUserAlloc...\n");
-  // TestUserAlloc();
 
   printf("test_bad_alloc...\n");
   test_bad_alloc();
 
   printf("test_destroyed_alloc...\n");
   test_destroyed_alloc();
-
-#if 0
-  printf("test_arena_alloc...\n");
-  test_arena_alloc();
-#endif
 
   return EXIT_SUCCESS;
 }
