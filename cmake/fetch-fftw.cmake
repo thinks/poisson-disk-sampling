@@ -105,6 +105,7 @@ function(fetch_fftw)
   endif() # fftw_POPULATED
   
   # Confirm that we can find FFTW.
+  set(_cmake_import_check_xcframework_for_FFTW3::fftw3f "")
   find_package(FFTW3f
     QUIET
     REQUIRED 
@@ -112,6 +113,7 @@ function(fetch_fftw)
     PATHS "${fftw_BINARY_DIR}/install"
     NO_DEFAULT_PATH 
   )
+  unset(_cmake_import_check_xcframework_for_FFTW3::fftw3f)
   if(NOT FFTW3f_FOUND) 
     message(FATAL_ERROR "FFTW-${args_VERSION} not found")
   endif()
