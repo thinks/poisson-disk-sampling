@@ -82,10 +82,11 @@ function(fetch_fftw)
     endif()
   
     message(STATUS "Configuring and building FFTW-${args_VERSION} immediately")
+    #${CMAKE_GENERATOR}
     execute_process(
       COMMAND ${CMAKE_CTEST_COMMAND}
               --build-and-test  ${fftw_SOURCE_DIR} ${fftw_BINARY_DIR}
-              --build-generator ${CMAKE_GENERATOR} ${fftw_GENERATOR_ARGS}
+              --build-generator "Unix Makefiles" ${fftw_GENERATOR_ARGS}
               --build-target    install
               --build-noclean
               --build-options   ${fftw_CACHE_ARGS}
@@ -105,7 +106,10 @@ function(fetch_fftw)
   endif() # fftw_POPULATED
   
   # Confirm that we can find FFTW.
+
+  # Ugly work-around for CMake errors in CI builds.
   set(_cmake_import_check_xcframework_for_FFTW3::fftw3f "")
+
   find_package(FFTW3f
     QUIET
     REQUIRED 
@@ -113,7 +117,9 @@ function(fetch_fftw)
     PATHS "${fftw_BINARY_DIR}/install"
     NO_DEFAULT_PATH 
   )
+
   unset(_cmake_import_check_xcframework_for_FFTW3::fftw3f)
+
   if(NOT FFTW3f_FOUND) 
     message(FATAL_ERROR "FFTW-${args_VERSION} not found")
   endif()
