@@ -113,7 +113,7 @@ function(fetch_fftw)
     NO_DEFAULT_PATH 
   )
   if(NOT FFTW3f_FOUND) 
-      message(FATAL_ERROR "FFTW-${args_VERSION} not found")
+    message(FATAL_ERROR "FFTW-${args_VERSION} not found")
   endif()
 endfunction()
 
