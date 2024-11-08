@@ -87,7 +87,7 @@ function(fetch_fftw)
     else()
       set(generator "Unix Makefiles")
     endif()
-    #${CMAKE_GENERATOR}
+
     execute_process(
       COMMAND ${CMAKE_CTEST_COMMAND}
               --build-and-test  ${fftw_SOURCE_DIR} ${fftw_BINARY_DIR}
@@ -100,7 +100,9 @@ function(fetch_fftw)
       ERROR_FILE        ${fftw_BINARY_DIR}/build_output.log
       RESULT_VARIABLE   result
     )
+
     unset(generator)
+    
     if(result)
       file(READ ${fftw_BINARY_DIR}/build_output.log build_log)
       message(FATAL_ERROR "Result = ${result}\nFailed FFTW-${args_VERSION} build, see build log:\n"

@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   /* Retrieve samples. */
   const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
   if (samples == NULL) {
-    /* Cannot happen since we check the return value from tph_poisson_create! */
+    /* Shouldn't happen since we check the return value from tph_poisson_create! */
     printf("Bad samples!\n");
     tph_poisson_destroy(&sampling);
     return EXIT_FAILURE;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
   /* Print first and last sample positions. */
   /* clang-format off */
-  printf("\ncustom_malloc:\n");
+  printf("\ncustom_libc:\n");
   printf("samples[%td] = ( %.3f, %.3f )\n", 
     (ptrdiff_t)0, 
     (double)samples[0], 

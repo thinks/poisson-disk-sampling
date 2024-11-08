@@ -1,5 +1,20 @@
 
+#include <fftw3.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
+int main(int argc, char *argv[])
+{
+  (void)argc;
+  (void)argv;
+
+  // const int kImageCount = 100;
+  // const int kPixelSize = 2048;
+
+
+  return 0;
+}
 
 #if 0
 // Copyright(C) Tommy Hinks <tommy.hinks@gmail.com>

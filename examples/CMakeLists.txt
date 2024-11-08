@@ -53,41 +53,18 @@ fetch_nlohmann_json(VERSION "3.11.3")
 add_example(json.cpp DEPS nlohmann_json::nlohmann_json)
 add_example(simple_c.c)
 add_example(simple_cpp.cpp)
-add_example(custom_malloc.c)
+add_example(custom_libc.c)
 
 if (LINUX)
+  # FFTW is tricky to build on Mac/Windows. Only build this example on Linux.
   include(../cmake/fetch-fftw.cmake)
   fetch_fftw(VERSION "3.3.10")
-  # add_example(periodogram.c DEPS fftw3f nothings::stb)
+  include(../cmake/fetch-stb.cmake)
+  fetch_stb()
+
+  add_example(periodogram.c DEPS FFTW3::fftw3f nothings::stb)
 endif()
 
 # ---- End-of-file commands ----
 
 add_folders(Examples)
-
-
-# FetchFFTW(
-#   VERSION "x.y.z"
-# )
-# FetchStb(
-#   VERSION "x.y.z"
-# )
-# add_executable(tph_poisson_periodogram "periodogram.c")
-# target_link_libraries(tph_poisson_periodogram PRIVATE 
-#   nothings::stb... 
-#   fftw3f...
-#   thinks::tph_poisson
-# )
-# set_target_properties(tph_poisson_periodogram PROPERTIES
-#   C_STANDARD ${_c_standard}
-#   C_STANDARD_REQUIRED ON
-#   C_EXTENSIONS OFF
-# )
-
-# add_executable(tph_poisson_simple_cpp simple.cpp)
-# target_link_libraries(tph_poisson_simple_cpp PRIVATE thinks::tph_poisson)
-# set_target_properties(tph_poisson_simple_cpp PROPERTIES
-#   CXX_STANDARD ${_cxx_standard}
-#   CXX_STANDARD_REQUIRED ON
-#   CXX_EXTENSIONS OFF
-# )
