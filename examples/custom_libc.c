@@ -1,3 +1,4 @@
+#include <assert.h> /* assert */
 #include <stddef.h> /* ptrdiff_t */
 #include <stdint.h> /* UINT64_C, etc */
 #include <stdio.h> /* printf */
@@ -59,6 +60,8 @@ int main(int argc, char *argv[])
     printf("tph_poisson_create error, code: %d\n", ret);
     return EXIT_FAILURE;
   }
+
+  assert(sampling.nsamples >= 2);
 
   /* Retrieve samples. */
   const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
