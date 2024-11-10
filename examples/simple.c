@@ -5,33 +5,10 @@
 #include <stdlib.h> /* EXIT_FAILURE, etc */
 #include <string.h> /* memset */
 
-void *my_malloc(size_t size);
-void my_free(void *ptr);
-
-/* Provide custom functions for both malloc and free. Note that this
- * is quite different from using a custom allocator, since it is not
- * really possible to use an allocation context with this approach. */
-#define TPH_POISSON_MALLOC my_malloc
-#define TPH_POISSON_FREE my_free
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
 
 static_assert(sizeof(tph_poisson_real) == 4);
-
-void *my_malloc(size_t size)
-{
-  static int call_count = 0;
-  void *ptr = malloc(size);
-  printf("%d - my_malloc(%zu) -> %p\n", call_count++, size, ptr);
-  return ptr;
-}
-
-void my_free(void *ptr)
-{
-  static int call_count = 0;
-  printf("%d - my_free(%p)\n", call_count++, ptr);
-  free(ptr);
-}
 
 int main(int argc, char *argv[])
 {
@@ -48,10 +25,10 @@ int main(int argc, char *argv[])
   /* Configure arguments. */
   const tph_poisson_args args = { .bounds_min = bounds_min,
     .bounds_max = bounds_max,
-    .radius = (tph_poisson_real)1.47,
+    .radius = (tph_poisson_real)3,
     .ndims = INT32_C(2),
-    .max_sample_attempts = UINT32_C(40),
-    .seed = UINT64_C(2017) };
+    .max_sample_attempts = UINT32_C(30),
+    .seed = UINT64_C(1981) };
 
   /* Using default allocator (libc malloc). */
   const tph_poisson_allocator *alloc = NULL;
@@ -64,11 +41,11 @@ int main(int argc, char *argv[])
   const int ret = tph_poisson_create(&args, alloc, &sampling);
   if (ret != TPH_POISSON_SUCCESS) {
     /* No need to destroy sampling here! */
-    printf("tph_poisson_create error, code: %d\n", ret);
+    printf("Failed creating Poisson sampling! Error code: %d\n", ret);
     return EXIT_FAILURE;
   }
 
-  /* Retrieve samples. */
+  /* Retrieve sampling points. */
   const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
   if (samples == NULL) {
     /* Shouldn't happen since we check the return value from tph_poisson_create! */
@@ -84,7 +61,7 @@ int main(int argc, char *argv[])
          "samples[%td] = ( %.3f, %.3f )\n"
          "...\n"
          "samples[%td] = ( %.3f, %.3f )\n\n", 
-    "custom_libc",
+    "simple (C)",
     (ptrdiff_t)0, 
     (double)samples[0], 
     (double)samples[1],
