@@ -8,7 +8,7 @@
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
 
-static_assert(sizeof(tph_poisson_real) == 4);
+static_assert(sizeof(tph_poisson_real) == 4, "");
 
 int main(int argc, char *argv[])
 {

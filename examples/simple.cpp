@@ -58,16 +58,17 @@ int main(int /*argc*/, char * /*argv*/[])
   // Print first and last sample positions.
   // clang-format off
   assert(sampling->nsamples >= 2);
-  std::printf("\nsimple (Cpp):\n");
-  std::printf("sample[%td] = ( %.3f, %.3f )\n", 
-    static_cast<ptrdiff_t>(0), 
-    static_cast<double>(samples[0]), 
-    static_cast<double>(samples[1]));
-  std::printf("...\n");
-  std::printf("sample[%td] = ( %.3f, %.3f )\n\n",
-    static_cast<ptrdiff_t>(sampling->nsamples - 1),
-    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims]),
-    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims + 1]));
+  std::printf("\n%s:\n"
+              "samples[%td] = ( %.3f, %.3f )\n"
+              "...\n"
+              "samples[%td] = ( %.3f, %.3f )\n\n", 
+    "simple (Cpp)",
+    (ptrdiff_t)0, 
+    (double)samples[0], 
+    (double)samples[1],
+    (ptrdiff_t)(sampling->nsamples - 1),
+    (double)samples[(sampling->nsamples - 1) * sampling->ndims],
+    (double)samples[(sampling->nsamples - 1) * sampling->ndims + 1]);
   // clang-format on
 
   // tph_poisson_destroy is called by unique_poisson_ptr destructor.

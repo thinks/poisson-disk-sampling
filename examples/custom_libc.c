@@ -16,7 +16,7 @@ void my_free(void *ptr);
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
 
-static_assert(sizeof(tph_poisson_real) == 4);
+static_assert(sizeof(tph_poisson_real) == 4, "");
 
 void *my_malloc(size_t size)
 {
