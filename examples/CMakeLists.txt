@@ -50,21 +50,30 @@ fetch_nlohmann_json(VERSION "3.11.3")
 
 # Add example targets.
 add_example(
-  NAME json 
-  SRC json.cpp 
-  DEPS nlohmann_json::nlohmann_json)
-add_example(
-  NAME simple_c 
-  SRC simple.c)
-add_example(
-  NAME f64 
-  SRC f64.c)
-add_example(
-  NAME simple_cpp 
-  SRC simple.cpp)
+  NAME custom_alloc 
+  SRC custom_alloc.c
+)
 add_example(
   NAME custom_libc 
-  SRC custom_libc.c)
+  SRC custom_libc.c
+)
+add_example(
+  NAME f64 
+  SRC f64.c
+)
+add_example(
+  NAME json 
+  SRC json.cpp 
+  DEPS nlohmann_json::nlohmann_json
+)
+add_example(
+  NAME simple_c 
+  SRC simple.c
+)
+add_example(
+  NAME simple_cpp 
+  SRC simple.cpp
+)
 
 if (LINUX)
   # FFTW is tricky to build on Mac/Windows. Only build this example on Linux.
