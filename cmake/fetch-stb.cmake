@@ -22,7 +22,7 @@ function(fetch_stb)
 
   FetchContent_Declare(nothings_stb
     GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG        0dd01c26ef47750512cdc1830581480c25a19f1d # master
+    GIT_TAG        5c205738c191bcb0abc65c4febfa9bd25ff35234 # master
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
   )
