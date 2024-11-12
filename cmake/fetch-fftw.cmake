@@ -42,7 +42,7 @@ function(fetch_fftw)
       "-DENABLE_THREADS:BOOL=ON" # Use pthread
       "-DWITH_COMBINED_THREADS:BOOL=ON" # Don't need to link in fftw3f_threads
   
-      "-DENABLE_FLOAT:BOOL=ON" # <float>
+      # "-DENABLE_FLOAT:BOOL=ON" # <float>
   
       # Use SSE, but not AVX.
       "-DENABLE_SSE:BOOL=ON" 
@@ -102,7 +102,7 @@ function(fetch_fftw)
     )
 
     unset(generator)
-    
+
     if(result)
       file(READ ${fftw_BINARY_DIR}/build_output.log build_log)
       message(FATAL_ERROR "Result = ${result}\nFailed FFTW-${args_VERSION} build, see build log:\n"
@@ -116,9 +116,9 @@ function(fetch_fftw)
   # Confirm that we can find FFTW.
 
   # Ugly work-around for CMake errors in CI builds.
-  set(_cmake_import_check_xcframework_for_FFTW3::fftw3f "")
+  set(_cmake_import_check_xcframework_for_FFTW3::fftw3 "")
 
-  find_package(FFTW3f
+  find_package(FFTW3
     QUIET
     REQUIRED 
     CONFIG
@@ -126,9 +126,9 @@ function(fetch_fftw)
     NO_DEFAULT_PATH 
   )
 
-  unset(_cmake_import_check_xcframework_for_FFTW3::fftw3f)
+  unset(_cmake_import_check_xcframework_for_FFTW3::fftw3)
 
-  if(NOT FFTW3f_FOUND) 
+  if(NOT FFTW3_FOUND) 
     message(FATAL_ERROR "FFTW-${args_VERSION} not found")
   endif()
 endfunction()

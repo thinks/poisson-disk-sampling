@@ -85,7 +85,7 @@ if (LINUX)
   add_example(
     NAME periodogram
     SRC periodogram.c 
-    DEPS FFTW3::fftw3f nothings::stb)
+    DEPS FFTW3::fftw3 nothings::stb)
 endif()
 
 # ---- End-of-file commands ----

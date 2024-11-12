@@ -135,7 +135,7 @@ extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
  * call to the tph_poisson_create function (without being destroy by the tph_poisson_destroy
  * function in between).
  */
-extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling);
+extern const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_sampling *sampling);
 
 /* END PUBLIC API ----------------------------------------------------------- */
 
@@ -1151,7 +1151,7 @@ void tph_poisson_destroy(tph_poisson_sampling *sampling)
   }
 }
 
-const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
+const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_sampling *sampling)
 {
   /* Make sure that a 'destroyed' sampling does not return any samples. */
   if (sampling != NULL && sampling->internal != NULL) {

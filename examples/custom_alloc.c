@@ -8,6 +8,8 @@
 #define TPH_POISSON_IMPLEMENTATION
 #include "thinks/tph_poisson.h"
 
+static_assert(sizeof(tph_poisson_real) == 4, "");
+
 typedef struct my_alloc_ctx_
 {
   ptrdiff_t total_malloc;
