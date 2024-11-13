@@ -182,9 +182,9 @@ Besides radius and bounds, there are two additional arguments: `seed` and `max_s
 
 ## Periodogram
 
-Poisson disk sampling generates samples from a blue noise distribution. We can verify this by plotting the corresponding periodogram, noticing that there are minimal low frequency components (close to the center) and no concentrated spikes in energy.
+Poisson disk sampling generates samples from a blue noise distribution. We can verify this by plotting the corresponding [periodogram](https://en.wikipedia.org/wiki/Periodogram), noticing that there are minimal low frequency components (close to the center) and no concentrated spikes in energy.
 
-The image below was generated using the provided [periodogram example](examples/periodogram_example.cc) and is an average over 100 sampling patterns (original pixel resolution was 2048x2048).
+The image below was generated using the provided [periodogram example](examples/periodogram_example.c) and is an average over 100 sampling patterns (original pixel resolution was 2048x2048).
 
 ![Average periodogram](images/tph_poisson_periodogram_512.png "Average periodogram")
 
