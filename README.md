@@ -12,7 +12,7 @@ This repository contains a [single file](include/thinks/tph_poisson.h), header-o
 
 ## Usage
 
-Poisson disk sampling aims to generate a set of points within a bounded region such that no two points are closer than some user-specified radius to each other. Let's consider a simple [example](examples/simple.c) written in C.
+Poisson disk sampling aims to generate a set of points within a bounded region such that no two points are closer than some user-specified radius to each other. Let's consider a simple [example](examples/src/simple.c) written in C.
 
 ```C
 /* C11 */
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-When using C++ it is possible to safely manage the memory allocated by the tph_poisson functions ([example](examples/simple.cpp)), as illustrated below:
+When using C++ it is possible to safely manage the memory allocated by the tph_poisson functions ([example](examples/src/simple.cpp)), as illustrated below:
 
 ```C++
 // C++17
@@ -184,7 +184,7 @@ Besides radius and bounds, there are two additional arguments: `seed` and `max_s
 
 Poisson disk sampling generates samples from a blue noise distribution. We can verify this by plotting the corresponding [periodogram](https://en.wikipedia.org/wiki/Periodogram), noticing that there are minimal low frequency components (close to the center) and no concentrated spikes in energy.
 
-The image below was generated using the provided [periodogram example](examples/periodogram_example.c) and is an average over 100 sampling patterns (original pixel resolution was 2048x2048).
+The image below was generated using the provided [periodogram example](examples/src/periodogram_example.c) and is an average over 100 sampling patterns (original pixel resolution was 2048x2048).
 
 ![Average periodogram](images/tph_poisson_periodogram_512.png "Average periodogram")
 
