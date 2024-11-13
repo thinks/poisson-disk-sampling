@@ -140,7 +140,7 @@ int main(int /*argc*/, char * /*argv*/[])
   // Populate sampling with points.                                     
   if (const int ret = tph_poisson_create(&args, alloc, sampling.get());
       ret != TPH_POISSON_SUCCESS) {
-    std::printf("tph_poisson error, code: %d\n", ret);
+    std::printf("Failed creating Poisson sampling! Error code: %d\n", ret);
     return EXIT_FAILURE;
   };
 
