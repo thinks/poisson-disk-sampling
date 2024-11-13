@@ -1178,7 +1178,8 @@ ABOUT:
 
 HISTORY:
 
-    0.4     2024-08-XYZ  - ...
+    0.4.0    2024-11-13 - C interface and implementation, new build system.
+    v0.3     2020-06-30 - C++ interface and implementation.
 
 LICENSE:
 
@@ -1219,29 +1220,23 @@ USAGE:
 
     The API consists of these functions:
 
-    int tph_poisson_create(tph_poisson_sampling *sampling,
-                           const tph_poisson_args *args,
-                           tph_poisson_allocator *alloc);
+    int tph_poisson_create(const tph_poisson_args *args,
+                           const tph_poisson_allocator *alloc,
+                           tph_poisson_sampling *sampling);
 
     void tph_poisson_destroy(tph_poisson_sampling *sampling);
 
-    const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling);
+    const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_sampling *sampling);
 
     Example usage:
 
     #include <assert.h>
-    #include <stddef.h>// ptrdiff_t
-    #include <stdint.h>// UINT64_C, etc
-    #include <stdio.h>// printf
-    #include <stdlib.h>// EXIT_FAILURE, etc
+    #include <stddef.h> // ptrdiff_t
+    #include <stdint.h> // UINT64_C, etc
+    #include <stdio.h> // printf
+    #include <stdlib.h> // EXIT_FAILURE, etc
+    #include <string.h> // memset
 
-    #if 0 // To use double.
-    #define TPH_POISSON_REAL_TYPE double
-    #include <math.h>
-    #define TPH_POISSON_SQRT  sqrt
-    #define TPH_POISSON_CEIL  ceil
-    #define TPH_POISSON_FLOOR floor
-    #endif
     #define TPH_POISSON_IMPLEMENTATION
     #include "thinks/tph_poisson.h"
 
@@ -1252,16 +1247,18 @@ USAGE:
 
       const tph_poisson_real bounds_min[2] = { (tph_poisson_real)-100, (tph_poisson_real)-100 };
       const tph_poisson_real bounds_max[2] = { (tph_poisson_real)100, (tph_poisson_real)100 };
-      tph_poisson_args args = { NULL };
-      args.bounds_min = bounds_min;
-      args.bounds_max = bounds_max;
-      args.radius = (tph_poisson_real)10;
-      args.ndims = INT32_C(2);
-      args.max_sample_attempts = UINT32_C(30);
-      args.seed = UINT64_C(1981);
+      const tph_poisson_args args = { .bounds_min = bounds_min,
+        .bounds_max = bounds_max,
+        .radius = (tph_poisson_real)3,
+        .ndims = INT32_C(2),
+        .max_sample_attempts = UINT32_C(30),
+        .seed = UINT64_C(1981) };      
 
-      tph_poisson_sampling sampling = { NULL };
       tph_poisson_allocator *alloc = NULL;
+      
+      tph_poisson_sampling sampling;
+      memset(&sampling, 0, sizeof(tph_poisson_sampling));
+
       int ret = tph_poisson_create(&args, alloc, &sampling);
       if (ret != TPH_POISSON_SUCCESS) {
         // No need to destroy sampling here!
@@ -1270,7 +1267,12 @@ USAGE:
       }
 
       const tph_poisson_real *samples = tph_poisson_get_samples(&sampling);
-      assert(samples);
+      if (samples == NULL) {
+        // Shouldn't happen since we check the return value from tph_poisson_create!
+        printf("Bad samples!\n");
+        tph_poisson_destroy(&sampling);
+        return EXIT_FAILURE;
+      }      
 
       // Print sample positions.
       for (ptrdiff_t i = 0; i < sampling.nsamples; ++i) {
