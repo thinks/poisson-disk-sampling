@@ -2,9 +2,13 @@
 
 cmake_policy(PUSH)
 
-# Allow calling FetchContent_Populate directly.
 if(POLICY CMP0169)
+  # Allow calling FetchContent_Populate directly.
   cmake_policy(SET CMP0169 OLD)
+endif()
+if(POLICY CMP0135)
+  # Set the timestamps of extracted contents to the time of extraction.
+  cmake_policy(SET CMP0135 NEW)
 endif()
 
 include(FetchContent)
@@ -21,10 +25,7 @@ function(fetch_nlohmann_json)
   )
 
   FetchContent_Declare(nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG        v${args_VERSION}
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    URL "https://github.com/nlohmann/json/releases/download/v${args_VERSION}/json.tar.xz"
   )
 
   FetchContent_GetProperties(nlohmann_json)

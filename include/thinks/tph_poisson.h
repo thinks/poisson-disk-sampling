@@ -39,11 +39,9 @@ extern "C" {
 #define TPH_POISSON_CEIL  ceilf
 #define TPH_POISSON_FLOOR floorf
 #endif
-/* clang-format on */
 
 typedef TPH_POISSON_REAL_TYPE tph_poisson_real;
 
-/* clang-format off */
 typedef struct tph_poisson_args_              tph_poisson_args;
 typedef struct tph_poisson_allocator_         tph_poisson_allocator;
 typedef struct tph_poisson_sampling_          tph_poisson_sampling;
@@ -137,7 +135,7 @@ extern void tph_poisson_destroy(tph_poisson_sampling *sampling);
  * call to the tph_poisson_create function (without being destroy by the tph_poisson_destroy
  * function in between).
  */
-extern const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling);
+extern const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_sampling *sampling);
 
 /* END PUBLIC API ----------------------------------------------------------- */
 
@@ -515,9 +513,9 @@ static int tph_poisson_vec_shrink_to_fit(tph_poisson_vec *vec,
   const tph_poisson_allocator *alloc,
   const ptrdiff_t alignment)
 {
-  assert(vec != NULL);
-  assert(alloc != NULL);
-  assert(alignment > 0);
+  TPH_POISSON_ASSERT(vec != NULL);
+  TPH_POISSON_ASSERT(alloc != NULL);
+  TPH_POISSON_ASSERT(alignment > 0);
 
   const ptrdiff_t size = (intptr_t)vec->end - (intptr_t)vec->begin;
   if (size == 0) {
@@ -525,18 +523,18 @@ static int tph_poisson_vec_shrink_to_fit(tph_poisson_vec *vec,
      * This includes the case of a zero-initialized vector. */
     if (vec->mem != NULL) {
       /* Existing vector is empty but has capacity. */
-      assert(vec->mem_size > 0);
+      TPH_POISSON_ASSERT(vec->mem_size > 0);
       alloc->free(vec->mem, vec->mem_size, alloc->ctx);
       TPH_POISSON_MEMSET((void *)vec, 0, sizeof(tph_poisson_vec));
     }
-    assert(vec->mem == NULL);
-    assert(vec->mem_size == 0);
+    TPH_POISSON_ASSERT(vec->mem == NULL);
+    TPH_POISSON_ASSERT(vec->mem_size == 0);
     return TPH_POISSON_SUCCESS;
   }
 
   /* Check if allocating a new buffer (size + alignment) would be smaller than
    * the existing buffer. */
-  assert(vec->mem_size > alignment);
+  TPH_POISSON_ASSERT(vec->mem_size > alignment);
   const ptrdiff_t new_mem_size = size + alignment;
   if (vec->mem_size > new_mem_size) {
     /* Allocate and align a new buffer with sufficient capacity. Take into
@@ -547,7 +545,7 @@ static int tph_poisson_vec_shrink_to_fit(tph_poisson_vec *vec,
     void *const new_begin = tph_poisson_align(new_mem, (size_t)alignment);
 
     /* Copy existing data to the new buffer and destroy the old buffer. */
-    memcpy(new_begin, vec->begin, (size_t)size);
+    TPH_POISSON_MEMCPY(new_begin, vec->begin, (size_t)size);
     alloc->free(vec->mem, vec->mem_size, alloc->ctx);
 
     /* Configure vector to use the new buffer. */
@@ -1003,8 +1001,8 @@ static void tph_poisson_rand_sample(tph_poisson_context *ctx, tph_poisson_real *
           * (ctx->bounds_max[i] - ctx->bounds_min[i]);
     /* Clamp to avoid numerical issues. */
     /* clang-format off */
-    sample[i] = sample[i] < ctx->bounds_min[i] ? ctx->bounds_min[i]
-                  : (ctx->bounds_max[i] < sample[i] ? ctx->bounds_max[i] : sample[i]);
+    sample[i] = sample[i] < ctx->bounds_min[i] ? ctx->bounds_min[i] 
+      : (ctx->bounds_max[i] < sample[i] ? ctx->bounds_max[i] : sample[i]);
     /* clang-format on */
   }
 }
@@ -1037,7 +1035,8 @@ int tph_poisson_create(const tph_poisson_args *args,
 
   /* Heuristically reserve some memory for samples to avoid reallocations while
    * growing the buffer. Estimate that 25% of the grid cells will end up
-   * containing a sample, which is a fairly conservative guess. */
+   * containing a sample, which is a fairly conservative guess. Prefering not
+   * to over-allocate up front here, at the cost of having to reallocate later. */
   ret = tph_poisson_vec_reserve(&internal->samples,
     &internal->alloc,
     (ctx.grid_linear_size / 4) * ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims),
@@ -1064,6 +1063,7 @@ int tph_poisson_create(const tph_poisson_args *args,
   tph_poisson_rand_sample(&ctx, ctx.sample);
   ret = tph_poisson_add_sample(&ctx, internal, ctx.sample);
   TPH_POISSON_ASSERT(ret == TPH_POISSON_SUCCESS);
+  (void)ret;
 
   TPH_POISSON_ASSERT(tph_poisson_vec_size(&ctx.active_indices) / (ptrdiff_t)sizeof(ptrdiff_t) == 1);
   ptrdiff_t active_index_count = 1;
@@ -1126,12 +1126,10 @@ int tph_poisson_create(const tph_poisson_args *args,
     return ret;
   }
 
-  TPH_POISSON_ASSERT(
-    tph_poisson_vec_size(&internal->samples) % ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims)
-    == 0);
+  const ptrdiff_t sample_size = (ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims;
+  TPH_POISSON_ASSERT(tph_poisson_vec_size(&internal->samples) % sample_size == 0);
   sampling->ndims = ctx.ndims;
-  sampling->nsamples =
-    tph_poisson_vec_size(&internal->samples) / ((ptrdiff_t)sizeof(tph_poisson_real) * ctx.ndims);
+  sampling->nsamples = tph_poisson_vec_size(&internal->samples) / sample_size;
 
   tph_poisson_context_destroy(&ctx, &internal->alloc);
 
@@ -1141,8 +1139,8 @@ int tph_poisson_create(const tph_poisson_args *args,
 void tph_poisson_destroy(tph_poisson_sampling *sampling)
 {
   if (sampling != NULL) {
-    if (sampling->internal != NULL) {
-      tph_poisson_sampling_internal *internal = sampling->internal;
+    tph_poisson_sampling_internal *internal = sampling->internal;
+    if (internal != NULL) {
       tph_poisson_vec_free(&internal->samples, &internal->alloc);
       tph_poisson_free_fn free_fn = internal->alloc.free;
       void *alloc_ctx = internal->alloc.ctx;
@@ -1153,7 +1151,7 @@ void tph_poisson_destroy(tph_poisson_sampling *sampling)
   }
 }
 
-const tph_poisson_real *tph_poisson_get_samples(tph_poisson_sampling *sampling)
+const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_sampling *sampling)
 {
   /* Make sure that a 'destroyed' sampling does not return any samples. */
   if (sampling != NULL && sampling->internal != NULL) {
