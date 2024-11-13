@@ -51,28 +51,28 @@ fetch_nlohmann_json(VERSION "3.11.3")
 # Add example targets.
 add_example(
   NAME custom_alloc 
-  SRC custom_alloc.c
+  SRC "src/custom_alloc.c"
 )
 add_example(
   NAME custom_libc 
-  SRC custom_libc.c
+  SRC "src/custom_libc.c"
 )
 add_example(
   NAME f64 
-  SRC f64.c
+  SRC "src/f64.c"
 )
 add_example(
   NAME json 
-  SRC json.cpp 
+  SRC "src/json.cpp"
   DEPS nlohmann_json::nlohmann_json
 )
 add_example(
   NAME simple_c 
-  SRC simple.c
+  SRC "src/simple.c"
 )
 add_example(
   NAME simple_cpp 
-  SRC simple.cpp
+  SRC "src/simple.cpp"
 )
 
 if (LINUX)
@@ -84,7 +84,7 @@ if (LINUX)
 
   add_example(
     NAME periodogram
-    SRC periodogram.c 
+    SRC "src/periodogram.c"
     DEPS FFTW3::fftw3 nothings::stb)
 endif()
 

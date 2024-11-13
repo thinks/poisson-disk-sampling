@@ -13,11 +13,11 @@
 #include <type_traits>
 #include <vector>
 
-#ifdef TPH_POISSON_TEST_USE_DOUBLE
-#include "tph_poisson_d.h"
+#ifdef TPH_POISSON_TEST_USE_F64
+#include "tph_poisson_f64.h"
 static_assert(std::is_same_v<tph_poisson_real, double>);
 #else
-#include "tph_poisson_f.h"
+#include "tph_poisson_f32.h"
 static_assert(std::is_same_v<tph_poisson_real, float>);
 #endif
 

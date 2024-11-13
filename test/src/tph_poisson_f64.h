@@ -1,5 +1,5 @@
-#ifndef TPH_POISSON_D_H
-#define TPH_POISSON_D_H
+#ifndef TPH_POISSON_F64_H
+#define TPH_POISSON_F64_H
 
 #include <math.h>
 #define TPH_POISSON_REAL_TYPE double
@@ -9,4 +9,4 @@
 
 #include "thinks/tph_poisson.h"
 
-#endif /* TPH_POISSON_D_H */
+#endif /* TPH_POISSON_F64_H */

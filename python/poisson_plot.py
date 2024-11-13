@@ -22,11 +22,11 @@ def main(json_input_filename, image_output_filename, draw_circles):
 
     fig, ax = plt.subplots()  # note we must use plt.subplots, not plt.subplot
 
-    ax.set_xlim((data["min"][0], data["max"][0]))
-    ax.set_ylim((data["min"][1], data["max"][1]))
+    ax.set_xlim((data["bounds_min"][0], data["bounds_max"][0]))
+    ax.set_ylim((data["bounds_min"][1], data["bounds_max"][1]))
     ax.set_aspect('equal')
 
-    xy_list = data["samples"]
+    xy_list = data["points"]
     radius = data["radius"]
 
     draw_samples(ax, xy_list, radius, draw_circles)
