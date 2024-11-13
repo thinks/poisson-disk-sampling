@@ -1252,10 +1252,10 @@ USAGE:
         .radius = (tph_poisson_real)3,
         .ndims = INT32_C(2),
         .max_sample_attempts = UINT32_C(30),
-        .seed = UINT64_C(1981) };      
+        .seed = UINT64_C(1981) };
 
       tph_poisson_allocator *alloc = NULL;
-      
+
       tph_poisson_sampling sampling;
       memset(&sampling, 0, sizeof(tph_poisson_sampling));
 
@@ -1272,7 +1272,7 @@ USAGE:
         printf("Bad samples!\n");
         tph_poisson_destroy(&sampling);
         return EXIT_FAILURE;
-      }      
+      }
 
       // Print sample positions.
       for (ptrdiff_t i = 0; i < sampling.nsamples; ++i) {
