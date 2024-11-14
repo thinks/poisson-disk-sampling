@@ -54,7 +54,7 @@ typedef void (*tph_poisson_free_fn)(void *ptr, ptrdiff_t size, void *ctx);
 #pragma pack(push, 1)
 
 /**
- * Allocator interface. Must provide malloc and free functions. 
+ * Allocator interface. Must provide malloc and free functions.
  * Context is optional and may be NULL.
  */
 struct tph_poisson_allocator_
@@ -65,7 +65,7 @@ struct tph_poisson_allocator_
 };
 
 /**
- * Parameters used when creating a Poisson disk sampling. 
+ * Parameters used when creating a Poisson disk sampling.
  * bounds_min/max are assumed to point to arrays of length ndims.
  */
 struct tph_poisson_args_
@@ -79,7 +79,7 @@ struct tph_poisson_args_
 };
 
 /**
- * Result of creating a Poisson disk sampling. 
+ * Result of creating a Poisson disk sampling.
  * Use with tph_poisson_get_samples to retrieve sample positions.
  * Memory must be freed after use by calling tph_poisson_destroy.
  */
@@ -220,7 +220,7 @@ static TPH_POISSON_INLINE void tph_poisson_free(void *ptr, ptrdiff_t size, void 
   TPH_POISSON_FREE(ptr);
 }
 
-/** 
+/**
  * Default allocator used when no custom allocator is provided.
  */
 static tph_poisson_allocator tph_poisson_default_alloc = { tph_poisson_malloc,
