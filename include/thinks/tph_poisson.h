@@ -35,9 +35,9 @@ extern "C" {
   && !defined(TPH_POISSON_FLOOR)
 #define TPH_POISSON_REAL_TYPE float
 #include <math.h>
-#define TPH_POISSON_SQRT  sqrtf
-#define TPH_POISSON_CEIL  ceilf
-#define TPH_POISSON_FLOOR floorf
+#define TPH_POISSON_SQRT(_X_)  sqrtf((_X_))
+#define TPH_POISSON_CEIL(_X_)  ceilf((_X_))
+#define TPH_POISSON_FLOOR(_X_) floorf((_X_))
 #endif
 
 typedef TPH_POISSON_REAL_TYPE tph_poisson_real;
@@ -53,6 +53,10 @@ typedef void (*tph_poisson_free_fn)(void *ptr, ptrdiff_t size, void *ctx);
 
 #pragma pack(push, 1)
 
+/**
+ * Allocator interface. Must provide malloc and free functions. 
+ * Context is optional and may be NULL.
+ */
 struct tph_poisson_allocator_
 {
   tph_poisson_malloc_fn malloc;
@@ -60,6 +64,10 @@ struct tph_poisson_allocator_
   void *ctx;
 };
 
+/**
+ * Parameters used when creating a Poisson disk sampling. 
+ * bounds_min/max are assumed to point to arrays of length ndims.
+ */
 struct tph_poisson_args_
 {
   const tph_poisson_real *bounds_min;
@@ -70,6 +78,11 @@ struct tph_poisson_args_
   uint32_t max_sample_attempts;
 };
 
+/**
+ * Result of creating a Poisson disk sampling. 
+ * Use with tph_poisson_get_samples to retrieve sample positions.
+ * Memory must be freed after use by calling tph_poisson_destroy.
+ */
 struct tph_poisson_sampling_
 {
   tph_poisson_sampling_internal *internal;
@@ -108,7 +121,7 @@ struct tph_poisson_sampling_
  *   - an invalid allocator is provided.
  *   TPH_POISSON_OVERFLOW - The number of samples exceeds the maximum number.
  *
- * Note that when an error is returned the sampling does not need to be destroyed
+ * Note that when an error is returned the sampling doesn't need to be destroyed
  * using the tph_poisson_destroy function.
  *
  * @param sampling Sampling to store samples.
@@ -166,12 +179,12 @@ extern const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_samplin
 
 #ifndef TPH_POISSON_MEMCPY
 #include <string.h>
-#define TPH_POISSON_MEMCPY(dst, src, n) memcpy((dst), (src), (n))
+#define TPH_POISSON_MEMCPY(_DST_, _SRC_, _N_) memcpy((_DST_), (_SRC_), (_N_))
 #endif
 
 #ifndef TPH_POISSON_MEMSET
 #include <string.h>
-#define TPH_POISSON_MEMSET(s, c, n) memset((s), (c), (n))
+#define TPH_POISSON_MEMSET(_S_, _C_, _N_) memset((_S_), (_C_), (_N_))
 #endif
 
 /*
@@ -186,8 +199,8 @@ extern const tph_poisson_real *tph_poisson_get_samples(const tph_poisson_samplin
 #endif
 #if !defined(TPH_POISSON_MALLOC) && !defined(TPH_POISSON_FREE)
 #include <stdlib.h>
-#define TPH_POISSON_MALLOC malloc
-#define TPH_POISSON_FREE free
+#define TPH_POISSON_MALLOC(_SIZE_) malloc((_SIZE_))
+#define TPH_POISSON_FREE(_PTR_) free((_PTR_))
 #endif
 /* clang-format on */
 
@@ -207,6 +220,13 @@ static TPH_POISSON_INLINE void tph_poisson_free(void *ptr, ptrdiff_t size, void 
   TPH_POISSON_FREE(ptr);
 }
 
+/** 
+ * Default allocator used when no custom allocator is provided.
+ */
+static tph_poisson_allocator tph_poisson_default_alloc = { tph_poisson_malloc,
+  tph_poisson_free,
+  /*.ctx=*/NULL };
+
 /**
  * @brief Returns a pointer aligned to the provided alignment. The address pointed
  * to is a multiple of the alignment. Assumes that alignment is a power of two (which
@@ -222,10 +242,6 @@ static TPH_POISSON_INLINE void *tph_poisson_align(void *const ptr, const size_t 
   TPH_POISSON_ASSERT((alignment > 0) & ((alignment & (alignment - 1)) == 0));
   return (void *)(((uintptr_t)ptr + (alignment - 1)) & ~(alignment - 1));
 }
-
-static tph_poisson_allocator tph_poisson_default_alloc = { tph_poisson_malloc,
-  tph_poisson_free,
-  /*.ctx=*/NULL };
 
 /*
  * PSEUDO-RANDOM NUMBER GENERATION
@@ -250,7 +266,7 @@ static uint64_t tph_poisson_splitmix64(tph_poisson_splitmix64_state *state)
   return result ^ (result >> 31);
 }
 
-typedef struct
+typedef struct tph_poisson_xoshiro256p_state_
 {
   uint64_t s[4];
 } tph_poisson_xoshiro256p_state;
