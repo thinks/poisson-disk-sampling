@@ -147,7 +147,7 @@ int main(int /*argc*/, char * /*argv*/[])
   // Retrieve sampling points.
   const tph_poisson_real *samples = tph_poisson_get_samples(sampling.get());
   if (samples == nullptr) {
-    /* Shouldn't happen since we check the return value from tph_poisson_create! */
+    // Shouldn't happen since we check the return value from tph_poisson_create!
     std::printf("Bad samples!\n");
     return EXIT_FAILURE;
   }
