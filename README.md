@@ -1,10 +1,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Standard](https://img.shields.io/badge/c-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
-[![Standard](https://img.shields.io/badge/c%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
 
 ![CI](https://github.com/thinks/poisson-disk-sampling/actions/workflows/ci.yml/badge.svg?branch=master)
 [![codecov](https://codecov.io/github/thinks/poisson-disk-sampling/graph/badge.svg?token=NXIAKWPKAB)](https://codecov.io/github/thinks/poisson-disk-sampling)
 
+[![Standard](https://img.shields.io/badge/c-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
+[![Standard](https://img.shields.io/badge/c%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
 ![Version](https://img.shields.io/badge/version-0.4.0-blue)
 
 # tph_poisson
@@ -159,12 +159,12 @@ int main(int /*argc*/, char * /*argv*/[])
               "...\n"
               "samples[%td] = ( %.3f, %.3f )\n\n", 
     "simple (Cpp)",
-    (ptrdiff_t)0, 
-    (double)samples[0], 
-    (double)samples[1],
-    (ptrdiff_t)(sampling->nsamples - 1),
-    (double)samples[(sampling->nsamples - 1) * sampling->ndims],
-    (double)samples[(sampling->nsamples - 1) * sampling->ndims + 1]);
+    static_cast<ptrdiff_t>(0), 
+    static_cast<double>(samples[0]), 
+    static_cast<double>(samples[1]),
+    static_cast<ptrdiff_t>(sampling->nsamples - 1),
+    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims]),
+    static_cast<double>(samples[(sampling->nsamples - 1) * sampling->ndims + 1]));
 
   // tph_poisson_destroy is called by unique_poisson_ptr destructor.
 
