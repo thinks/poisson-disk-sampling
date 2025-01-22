@@ -1,3 +1,4 @@
+![Version](https://img.shields.io/badge/version-0.4.0-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ![CI](https://github.com/thinks/poisson-disk-sampling/actions/workflows/ci.yml/badge.svg?branch=master)
@@ -5,10 +6,13 @@
 
 [![Standard](https://img.shields.io/badge/c-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 [![Standard](https://img.shields.io/badge/c%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
-![Version](https://img.shields.io/badge/version-0.4.0-blue)
 
 # tph_poisson
 This repository contains a [single file](include/thinks/tph_poisson.h), header-only, no-dependencies, C library for generating Poisson disk samplings in arbitrary dimensions. The implementation uses the techniques reported in the paper [Fast Poisson Disk Sampling in Arbitrary Dimensions](http://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf) published by [Rook Bridson](http://www.cs.ubc.ca/~rbridson/) in 2007.  
+
+Main features:
+* Custom allocator interface for memory management at run-time.
+* Possibility to override libc function at compile-time (using macros).
 
 ## Usage
 
